@@ -14,8 +14,8 @@ read -p "Enter your git email: " gitemail
 git config --global user.email "$gitemail"
 
 echo "Creating ~/Ansible directory..."
-mkdir -p ~/Ansible
-cd ~/Ansible
+mkdir -p ~/Test
+cd ~/Test
 
 REPO_URL="https://github.com/YOUR_USERNAME/YOUR_REPO.git"
 REPO_NAME="YOUR_REPO"
@@ -32,5 +32,8 @@ fi
 
 cd "$REPO_NAME"
 
-echo "Running test-install.sh..."
-bash test-install.sh
+echo "Make installer executable..."
+chmod +x install.sh
+
+echo "Running installer"
+bash install.sh
