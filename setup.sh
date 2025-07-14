@@ -1,5 +1,14 @@
 #!/bin/bash
 
+##################
+# Variables
+##################
+REPO_URL="https://github.com/crimsonclyde/CrimsonCFG.git"
+REPO_NAME="CrimsonCFG"
+
+##################
+# Execute
+##################
 set -e
 
 echo "Installing prerequisites..."
@@ -16,9 +25,6 @@ git config --global user.email "$gitemail"
 echo "Creating ~/Ansible directory..."
 mkdir -p ~/Test
 cd ~/Test
-
-REPO_URL="https://github.com/YOUR_USERNAME/YOUR_REPO.git"
-REPO_NAME="YOUR_REPO"
 
 if [ ! -d "$REPO_NAME" ]; then
     echo "Cloning repository..."
