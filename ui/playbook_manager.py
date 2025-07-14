@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""
+CrimsonCFG Playbook Manager
+Handles playbook selection and management logic
+"""
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk  # type: ignore
+from typing import Dict, List
+
+class PlaybookManager:
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.debug = main_window.debug
+        
+    def on_category_changed(self, button, category):
+        """Handle category selection change"""
+        if button.get_active():
+            self.main_window.current_category = category
+            self.update_playbook_list()
+            
+    def update_playbook_list(self):
+        """Update the playbook list based on selected category"""
+        # Clear existing items
+        self.main_window.playbook_store.clear()
+        
+        if self.main_window.current_category not in self.main_window.config["categories"]:
+            return
+            
+        cat_info = self.main_window.config["categories"][self.main_window.current_category]
+        for playbook in cat_info["playbooks"]:
+            essential = "✓" if playbook.get("essential", False) else ""
+            description = playbook.get("description", "")
+            playbook_key = f"{self.main_window.current_category}:{playbook['name']}"
+            selected = playbook_key in self.main_window.selected_playbooks
+            
+            self.main_window.playbook_store.append([
+                playbook["name"],
+                essential,
+                description,
+                selected
+            ])
+            
+    def on_playbook_selection_changed(self, selection):
+        """Handle playbook selection change"""
+        model, treeiter = selection.get_selected()
+        if treeiter:
+            playbook_name = model[treeiter][0]
+            playbook_key = f"{self.main_window.current_category}:{playbook_name}"
+            
+            if playbook_key in self.main_window.selected_playbooks:
+                self.main_window.selected_playbooks.remove(playbook_key)
+                model[treeiter][3] = False
+            else:
+                self.main_window.selected_playbooks.add(playbook_key)
+                model[treeiter][3] = True
+                
+            self.update_selected_display()
+            
+    def select_all(self, button):
+        """Select all playbooks in current category"""
+        if self.main_window.current_category not in self.main_window.config["categories"]:
+            return
+            
+        for playbook in self.main_window.config["categories"][self.main_window.current_category]["playbooks"]:
+            playbook_key = f"{self.main_window.current_category}:{playbook['name']}"
+            self.main_window.selected_playbooks.add(playbook_key)
+            
+        self.update_playbook_list()
+        self.update_selected_display()
+        
+    def deselect_all(self, button):
+        """Deselect all playbooks in current category"""
+        if self.main_window.current_category not in self.main_window.config["categories"]:
+            return
+            
+        for playbook in self.main_window.config["categories"][self.main_window.current_category]["playbooks"]:
+            playbook_key = f"{self.main_window.current_category}:{playbook['name']}"
+            self.main_window.selected_playbooks.discard(playbook_key)
+            
+        self.update_playbook_list()
+        self.update_selected_display()
+        
+    def select_essential_playbooks(self):
+        """Automatically select all essential playbooks across all categories"""
+        for category, cat_info in self.main_window.config["categories"].items():
+            for playbook in cat_info["playbooks"]:
+                if playbook.get("essential", False):
+                    playbook_key = f"{category}:{playbook['name']}"
+                    self.main_window.selected_playbooks.add(playbook_key)
+                    
+        self.update_playbook_list()
+        self.update_selected_display()
+        
+    def remove_essential(self, button):
+        """Remove all essential playbooks with warning"""
+        # Show warning dialog
+        warning_dialog = Gtk.MessageDialog(
+            transient_for=self.main_window.window,
+            modal=True,
+            message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text="Warning: Removing Essential Playbooks",
+            secondary_text="Essential playbooks are mandatory for proper system functionality. Removing them may cause issues with your system setup.\n\nAre you sure you want to remove all essential playbooks?"
+        )
+        
+        response = warning_dialog.run()
+        warning_dialog.destroy()
+        
+        if response == Gtk.ResponseType.YES:
+            # Remove all essential playbooks
+            for category, cat_info in self.main_window.config["categories"].items():
+                for playbook in cat_info["playbooks"]:
+                    if playbook.get("essential", False):
+                        playbook_key = f"{category}:{playbook['name']}"
+                        self.main_window.selected_playbooks.discard(playbook_key)
+                        
+            self.update_playbook_list()
+            self.update_selected_display()
+            
+    def select_essential(self, button):
+        """Select all essential playbooks across all categories"""
+        for category, cat_info in self.main_window.config["categories"].items():
+            for playbook in cat_info["playbooks"]:
+                if playbook.get("essential", False):
+                    playbook_key = f"{category}:{playbook['name']}"
+                    self.main_window.selected_playbooks.add(playbook_key)
+                    
+        self.update_playbook_list()
+        self.update_selected_display()
+        
+    def select_none(self, button):
+        """Deselect all playbooks"""
+        self.main_window.selected_playbooks.clear()
+        self.update_playbook_list()
+        self.update_selected_display()
+        
+    def update_selected_display(self):
+        """Update the selected items display"""
+        self.main_window.selected_store.clear()
+        
+        for playbook_key in sorted(self.main_window.selected_playbooks):
+            category, name = playbook_key.split(":", 1)
+            self.main_window.selected_store.append([f"{category}: {name}"])
+            
+    def get_selected_playbooks(self) -> List[Dict]:
+        """Get list of selected playbooks with their details"""
+        selected = []
+        for playbook_key in self.main_window.selected_playbooks:
+            category, name = playbook_key.split(":", 1)
+            if category in self.main_window.config["categories"]:
+                for playbook in self.main_window.config["categories"][category]["playbooks"]:
+                    if playbook["name"] == name:
+                        selected.append({
+                            "category": category,
+                            "name": playbook["name"],
+                            "path": playbook["path"],
+                            "description": playbook.get("description", ""),
+                            "essential": playbook.get("essential", False)
+                        })
+                        break
+        return selected 

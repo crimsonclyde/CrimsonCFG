@@ -1,0 +1,86 @@
+# CrimsonCFG-Name: Timeshift
+# CrimsonCFG-Description: Setup Timeshift system backup
+# CrimsonCFG-Essential: true
+---
+- name: Install Timeshift and make first backup
+  hosts: all
+  become: true
+
+  tasks:    
+
+    #######################
+    # Timeshift
+    #######################
+    - name: Ensure Timeshift is installed
+      package:
+        name: timeshift
+        state: present
+
+    - name: Get root partition device
+      ansible.builtin.command: findmnt -n -o SOURCE /
+      register: root_partition
+
+    - name: Debug root partition device
+      ansible.builtin.debug:
+        var: root_partition.stdout
+
+    - name: Get UUID of root partition (LVM LV)
+      ansible.builtin.command: blkid -s UUID -o value {{ root_partition.stdout }}
+      register: root_partition_uuid
+
+    - name: Debug root partition UUID
+      ansible.builtin.debug:
+        var: root_partition_uuid.stdout
+
+    - name: Ensure Timeshift is configured to use main disk
+      ansible.builtin.copy:
+        dest: /etc/timeshift/timeshift.json
+        content: |
+          {
+              "backup_device_uuid" : "{{ root_partition_uuid.stdout }}",
+              "parent_device_uuid" : "{{ root_partition_uuid.stdout }}",
+              "do_first_run" : "false",
+              "btrfs_mode" : "false",
+              "include_btrfs_home" : "false",
+              "stop_cron_emails" : "false",
+              "schedule_monthly" : "false",
+              "schedule_weekly" : "false",
+              "schedule_daily" : "false",
+              "schedule_hourly" : "false",
+              "schedule_boot" : "false",
+              "count_monthly" : "2",
+              "count_weekly" : "3",
+              "count_daily" : "2",
+              "count_hourly" : "5",
+              "count_boot" : "5"
+          }
+      become: true
+
+    - name: Create initial snapshot
+      ansible.builtin.command: timeshift --create --comments "Pre-install snapshot before installation" --tags D
+      become: true
+      changed_when: true
+
+    - name: Enable Timeshift automatic schedules
+      ansible.builtin.copy:
+        dest: /etc/timeshift/timeshift.json
+        content: |
+          {
+              "backup_device_uuid" : "{{ root_partition_uuid.stdout }}",
+              "parent_device_uuid" : "{{ root_partition_uuid.stdout }}",
+              "do_first_run" : "false",
+              "btrfs_mode" : "false",
+              "include_btrfs_home" : "false",
+              "stop_cron_emails" : "false",
+              "schedule_monthly" : "true",
+              "schedule_weekly" : "true",
+              "schedule_daily" : "true",
+              "schedule_hourly" : "false",
+              "schedule_boot" : "false",
+              "count_monthly" : "2",
+              "count_weekly" : "3",
+              "count_daily" : "2",
+              "count_hourly" : "5",
+              "count_boot" : "5"
+          }
+      become: true

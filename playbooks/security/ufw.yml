@@ -1,0 +1,28 @@
+# CrimsonCFG-Name: Uncomplicated FireWall (UFW)
+# CrimsonCFG-Description: Ensures that UFW is installed and activates it
+# CrimsonCFG-Essential: false
+---
+- name: Install basic applications
+  hosts: all
+  become: true
+
+  tasks:
+
+    - name: Ensure UFW is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Set UFW default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set UFW default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Ensure UFW is enabled and will start on boot
+      community.general.ufw:
+        state: enabled

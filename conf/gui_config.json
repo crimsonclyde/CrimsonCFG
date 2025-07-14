@@ -1,0 +1,44 @@
+{
+  "categories": {
+    "Apps": {
+      "description": "Apps applications and configurations",
+      "playbooks": [
+        {
+          "name": "Chromium",
+          "description": "Install Chromium web browser",
+          "essential": false,
+          "path": "playbooks/apps/chromium.yml"
+        },
+        {
+          "name": "Test Playbook",
+          "description": "Install fortune-mod for testing (easily removable)",
+          "essential": false,
+          "path": "playbooks/apps/test_playbook.yml"
+        },
+        {
+          "name": "Git",
+          "description": "Install and configure Git version control",
+          "essential": false,
+          "path": "playbooks/apps/git.yml"
+        }
+      ]
+    },
+    "Basics": {
+      "description": "Basics applications and configurations",
+      "playbooks": [
+        {
+          "name": "Timeshift",
+          "description": "Setup Timeshift system backup",
+          "essential": true,
+          "path": "playbooks/basics/timeshift.yml"
+        },
+        {
+          "name": "Standard Apps",
+          "description": "Install basic system applications and utilities",
+          "essential": true,
+          "path": "playbooks/basics/standard_apps.yml"
+        }
+      ]
+    }
+  }
+}

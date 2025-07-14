@@ -1,0 +1,28 @@
+# CrimsonCFG-Name: Caffeine & Caffeine Indicator
+# CrimsonCFG-Description: Install caffeine and the indicator
+# CrimsonCFG-Essential: false
+---
+- name: Install caffeine, the indicator and add to startup aps
+  hosts: all
+  become: true
+
+  tasks:
+
+    - name: Install caffeine
+      ansible.builtin.apt:
+        name: caffeine
+        state: present
+
+    - name: Ensure autostart directory exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.config/autostart"
+        state: directory
+        mode: '0700'
+      tags: caffeine
+
+    - name: Ensure caffeine-indicator autostarts on login
+      ansible.builtin.copy:
+        src: /usr/share/applications/caffeine-indicator.desktop
+        dest: "{{ user_home }}/.config/autostart/caffeine-indicator.desktop"
+        mode: '0644'
+      tags: caffeine

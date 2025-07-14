@@ -1,0 +1,66 @@
+{
+    // === LOGIN ===
+    "DeviceShowUserNamesOnSignin": false, // Do not show user names on sign-in screen
+
+    // === HOMEPAGE ===
+    "ShowHomeButton": true, // Show Home button
+    "HomepageIsNewTabPage": false, // Homepage is not new tab
+    "HomepageLocation": "{{ chromium_homepage_url | default('https://startpage.com') }}", // Custom homepage URL
+
+    // === SESSION RESTORE ===
+    "RestoreOnStartup": 1,
+
+    // === SINGLE SIGN-ON ===
+    "ExtensibleEnterpriseSSOBlocklist": [
+        "microsoft" // Block Microsoft SSO
+    ],
+
+    // === REMOTE ACCESS ===
+    "RemoteAccessHostEnabled": false, // Fully disable Chrome Remote Desktop
+
+    // === PASSWORDS ===
+    "PasswordLeakDetectionEnabled": true, // Enable password leak detection
+    "PasswordManagerEnabled": false, // Fully disable built-in password manager
+    "PasswordManagerAllowShowPasswords": false, // Block showing passwords
+    "PasswordDismissCompromisedAlertEnabled": false, // Block dismissing compromised password alerts
+    "PasswordManagerPasskeysEnabled": false, // Disable passkeys
+
+    // === GOOGLE ASSISTANT ===
+    "VoiceInteractionEnabled": false, // Fully disable Google Assistant
+    "AssistantVoiceMatchEnabledDuringOobe": false, // Disable Voice Match during setup
+
+    // === EXTENSIONS ===
+    "ExtensionInstallForcelist": [
+        "nngceckbapebfimnlniiiahkandclblb", // Bitwarden
+        "pkehgijcmpdhfbdbbnkijodmdjhbjlgp", // Privacy Badger
+        "ddkjiahejlhfcafbddmgiahcphecmpfh", // uBlock Origin Lite
+        "edibdbjcniadpccecjdfdjjppcpchdlm"  // I still don't care about cookies
+    ],
+    "ExtensionInstallAllowlist": [
+        "nngceckbapebfimnlniiiahkandclblb", // Bitwarden
+        "pkehgijcmpdhfbdbbnkijodmdjhbjlgp", // Privacy Badger
+        "ddkjiahejlhfcafbddmgiahcphecmpfh", // uBlock Origin Lite
+        "edibdbjcniadpccecjdfdjjppcpchdlm"  // I still don't care about cookies
+    ],
+    "ExtensionInstallBlocklist": [
+        "*" // Block all other extensions
+    ],
+
+    // === SEARCH ENGINE ===
+    "DefaultSearchProviderEnabled": true, // Enable custom search engine
+    "DefaultSearchProviderName": "Startpage", // Name in UI
+    "DefaultSearchProviderSearchURL": "https://www.startpage.com/search?q={searchTerms}", // Search URL
+    "DefaultSearchProviderSuggestURL": "", // No suggestion endpoint
+
+    // === TELEMETRY ===
+    "MetricsReportingEnabled": false, // Disable usage & crash reporting
+    "UrlKeyedAnonymizedDataCollectionEnabled": false, // Disable URL-keyed telemetry
+
+    // === EXTRA PRIVACY ===
+    "SSLVersionMin": "tls1.2", // Enforce minimum TLS 1.2
+    "BlockThirdPartyCookies": true, // Block third-party cookies
+    "SafeBrowsingEnabled": false, // Disable Google Safe Browsing (privacy trade-off)
+    "EnableDoNotTrack": true, // Send Do Not Track header
+    "WebRtcLocalIpsAllowedUrls": [], // Prevent WebRTC local IP leaks
+    "SyncDisabled": true, // Disable Chrome Sync sign-in
+}

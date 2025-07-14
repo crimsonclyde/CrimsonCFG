@@ -1,0 +1,12 @@
+# This template is for reference only.
+# The actual desktop file is created by install.sh with the correct path.
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CrimsonCFG
+Comment=App & Customization Selector
+Exec=python3 /path/to/crimson.cfg.main.py
+Icon=com.crimson.cfg
+Categories=System;Settings;
+Terminal=false
+StartupNotify=true 

@@ -1,0 +1,16 @@
+{
+  "homepage": "about:blank",
+  "distribution": {
+    "skip_first_run_ui": true
+  },
+  "browser": {
+    "check_default_browser": false
+  },
+  "extensions": {
+    "install_forcelist": [
+      "nngceckbapebfimnlniiiahkandclblb",  // Bitwarden
+      "ppognpghocgddpnlfjmnngcbdafchdnh",  // uBlock Origin Lite
+      "pkehgijcmpdhfbdbbnkijodmdjhbjlgp"   // Privacy Badger
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+# CrimsonCFG-Name: Standard Apps
+# CrimsonCFG-Description: Install basic system applications and utilities
+# CrimsonCFG-Essential: true
+---
+- name: Install basic applications
+  hosts: all
+  become: true
+
+  tasks:
+
+    #######################
+    # Update / Upgrade
+    #######################
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoclean: true
+        autoremove: true
+
+    #######################
+    # Install all apt packages
+    #######################
+
+    - name: Install common APT packages
+      ansible.builtin.apt:
+        name: "{{ apt_packages }}"
+        state: present
+
+    #######################
+    # Install all Snap packages
+    #######################
+
+    - name: Install Snap packages
+      community.general.snap:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ snap_packages }}"
