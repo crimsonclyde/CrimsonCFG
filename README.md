@@ -14,7 +14,7 @@ CrimsonCFG is a configuration manager designed for both mobile device management
 To install CrimsonCFG, download and run the installer with this one-liner:
 
 ```sh
-curl -L https://github.com/crimsonclyde/CrimsonCFG/raw/main/install.sh -o install.sh && chmod +x install.sh && bash install.sh
+wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/install.sh -O install.sh && chmod +x install.sh && bash install.sh
 ```
 
 This will set up all required dependencies and launch the application.
