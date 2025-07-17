@@ -1,80 +1,64 @@
----
-# Common variables for all playbooks
-user: "{{ lookup('env', 'CRIMSON_USER', default='user') }}"
-user_home: "/home/{{ user }}"
-desktop_dotfile_folder: "{{ user_home }}/.local/share/applications"
-
-# GUI Application Configuration
-debug: 1
-inventory_file: "{{ ansible_folder }}/hosts.ini"
-log_directory: "{{ ansible_folder }}/log"
-
-# Additional commonly used variables
-user_group: "{{ user }}"
-user_shell: "/bin/bash"
-
-# Git configuration (can be overridden in specific playbooks)
-git_username: "{{ lookup('env', 'GIT_USERNAME', default=git_username_local | default(user)) }}"
-git_email: "{{ lookup('env', 'GIT_EMAIL', default=git_email_local | default('user@example.com')) }}"
-
-# Orca-Slicer configuration
-orca_appimage_dir: "{{ user_home }}/AppImage/OrcaSlicer"
-orca_appimage_url: "https://github.com/SoftFever/OrcaSlicer/releases/download/v2.3.0/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.3.0.AppImage"
-orca_appimage_filename: "OrcaSlicer.AppImage"
-orca_desktop_file: "/usr/share/applications/orca-slicer.desktop"
-
-# Cursor configuration
-cursor_appimage_dir: "{{ user_home }}/AppImage/Cursor"
-cursor_appimage_url: "https://downloads.cursor.com/production/faa03b17cce93e8a80b7d62d57f5eda6bb6ab9fa/linux/x64/Cursor-1.2.2-x86_64.AppImage"
-cursor_appimage_filename: "Cursor.AppImage"
-
-# Chromium configuration
-chromium_profile1_name: "downloads"
-
-# Prism Launcher configuration
-prism_appimage_dir: "{{ user_home }}/AppImage/PrismLauncher"
-prism_appimage_filename: "PrismLauncher.AppImage"
-
-# Standard applications packages
+admin_password: 3HeaddedMonkey # Please change right away!
+ansible_folder: '{{ user_home }}/CrimsonCFG'
+app_logo: files/com.crimson.cfg.logo.png
+app_name: CrimsonCFG
+app_subtitle: Yet another Configuration Manager
 apt_packages:
-  - btop
-  - mc
-  - python3-venv
-  - python3-tk
-  - python3-psutil
-  - libfuse2
-  - gnome-tweaks
-  - vlc
-  - gufw
-  - syncthing
-  - syncthingtray
-  - krita
-  - filezilla
-  - fuse3
-  - nautilus
-  - software-properties-common
-
-snap_packages:
-  - bitwarden
-  - spotify
-
-# GNOME Dock configuration
-pinned_apps:
-  - 'chromium_chromium.desktop'
-  - 'codium_codium.desktop'
-  - 'nautilus.desktop'
-  - 'gnome-terminal.desktop'
-  - 'bitwarden_bitwarden.desktop'
-  - 'signal-desktop.desktop'
-  - 'gnome-boxes.desktop'
-
-# Terminal/ZSH configuration
+- btop
+- mc
+- python3-venv
+- python3-tk
+- python3-psutil
+- libfuse2
+- gnome-tweaks
+- vlc
+- gufw
+- syncthing
+- syncthingtray
+- krita
+- filezilla
+- fuse3
+- nautilus
+- software-properties-common
+chromium_profile1_name: downloads
+cursor_appimage_dir: '{{ user_home }}/AppImage/Cursor'
+cursor_appimage_filename: Cursor.AppImage
+cursor_appimage_url: https://downloads.cursor.com/production/faa03b17cce93e8a80b7d62d57f5eda6bb6ab9fa/linux/x64/Cursor-1.2.2-x86_64.AppImage
+debug: 1
+desktop_dotfile_folder: '{{ user_home }}/.local/share/applications'
+git_email: '{{ lookup(''env'', ''GIT_EMAIL'', default=git_email_local | default(''user@example.com''))
+  }}'
+git_username: '{{ lookup(''env'', ''GIT_USERNAME'', default=git_username_local | default(user))
+  }}'
+inventory_file: '{{ ansible_folder }}/hosts.ini'
+log_directory: '{{ ansible_folder }}/log'
 oh_my_zsh_install_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+orca_appimage_dir: '{{ user_home }}/AppImage/OrcaSlicer'
+orca_appimage_filename: OrcaSlicer.AppImage
+orca_appimage_url: https://github.com/SoftFever/OrcaSlicer/releases/download/v2.3.0/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.3.0.AppImage
+orca_desktop_file: /usr/share/applications/orca-slicer.desktop
+pinned_apps:
+- chromium_chromium.desktop
+- nautilus.desktop
+- Cursor.desktop
+- gnome-terminal.desktop
+- bitwarden_bitwarden.desktop
+- signal-desktop.desktop
+- gnome-boxes.desktop
 powerlevel10k_repo: https://github.com/romkatv/powerlevel10k.git
+prism_appimage_dir: '{{ user_home }}/AppImage/PrismLauncher'
+prism_appimage_filename: PrismLauncher.AppImage
+snap_packages:
+- bitwarden
+- spotify
+user: '{{ lookup(''env'', ''CRIMSON_USER'', default=''user'') }}'
+user_group: '{{ user }}'
+user_home: /home/{{ user }}
+user_shell: /bin/bash
 zsh_plugins:
-  - name: zsh-autosuggestions
-    repo: https://github.com/zsh-users/zsh-autosuggestions.git
-  - name: zsh-syntax-highlighting
-    repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
-  - name: zsh-completions
-    repo: https://github.com/zsh-users/zsh-completions.git 
+- name: zsh-autosuggestions
+  repo: https://github.com/zsh-users/zsh-autosuggestions.git
+- name: zsh-syntax-highlighting
+  repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+- name: zsh-completions
+  repo: https://github.com/zsh-users/zsh-completions.git
