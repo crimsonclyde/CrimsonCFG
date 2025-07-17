@@ -1,6 +1,7 @@
-# CrimsonCFG-Name: Standard Apps
-# CrimsonCFG-Description: Install basic system applications and utilities
+# CrimsonCFG-Name: Basic Applications
+# CrimsonCFG-Description: Install basic system applications and utilities specified in all.yml variables.
 # CrimsonCFG-Essential: true
+# CrimsonCFG-Essential-Order: 3
 ---
 - name: Install basic applications
   hosts: all
@@ -9,21 +10,7 @@
   tasks:
 
     #######################
-    # Update / Upgrade
-    #######################
-
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-
-    - name: Upgrade all packages
-      ansible.builtin.apt:
-        upgrade: dist
-        autoclean: true
-        autoremove: true
-
-    #######################
-    # Install all apt packages
+    # Install basic apt pkgs
     #######################
 
     - name: Install common APT packages
@@ -32,7 +19,7 @@
         state: present
 
     #######################
-    # Install all Snap packages
+    # Install basic snap pkgs
     #######################
 
     - name: Install Snap packages

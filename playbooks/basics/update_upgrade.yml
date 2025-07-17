@@ -1,0 +1,29 @@
+# CrimsonCFG-Name: Update / Upgrade
+# CrimsonCFG-Description: Runs update/upgrade
+# CrimsonCFG-Essential: true
+# CrimsonCFG-Essential-Order: 1
+
+---
+- name: Update & Upgrade the system
+  hosts: all
+  become: true
+
+  tasks:
+
+    #######################
+    # Update / Upgrade
+    #######################
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoclean: true
+        autoremove: true
+
+    - name: Update all snap packages
+      ansible.builtin.command: snap refresh
+      changed_when: false

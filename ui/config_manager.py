@@ -14,7 +14,7 @@ from typing import Dict
 try:
     import sys
     sys.path.append('functions')
-    from playbook_scanner import PlaybookScanner
+    from playbook_scanner import PlaybookScanner  # type: ignore
     print("PlaybookScanner imported successfully")
 except ImportError as e:
     # Fallback if scanner module is not available
@@ -52,7 +52,7 @@ class ConfigManager:
             "categories": self.load_categories_from_yaml(),
             "settings": {
                 "default_user": system_user,
-                "ansible_folder": f"/home/{system_user}/Ansible",
+                "ansible_folder": merged_config.get("ansible_folder", f"/home/{system_user}/Ansible"),
                 "inventory_file": f"/home/{system_user}/Ansible/hosts.ini",
                 "log_directory": f"/home/{system_user}/Ansible/log",
                 "debug": merged_config.get("debug", 0),

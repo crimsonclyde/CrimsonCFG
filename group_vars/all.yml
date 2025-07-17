@@ -2,7 +2,6 @@
 # Common variables for all playbooks
 user: "{{ lookup('env', 'CRIMSON_USER', default='user') }}"
 user_home: "/home/{{ user }}"
-ansible_folder: "{{ user_home }}/Ansible"
 desktop_dotfile_folder: "{{ user_home }}/.local/share/applications"
 
 # GUI Application Configuration

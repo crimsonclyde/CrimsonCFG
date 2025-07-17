@@ -1,0 +1,62 @@
+# macOS system files
+.DS_Store
+
+# OS trash
+*.swp
+*.swo
+*~
+
+# Log files in general
+*.log
+
+# Python cache (if you use Python)
+__pycache__/
+*.py[cod]
+
+# Node modules (if Node project)
+node_modules/
+
+# Virtualenvs
+venv/
+.env
+
+# Editor backups
+*.bak
+*.tmp
+
+# VSCode
+.vscode/
+
+# Terraform state files (if using Terraform)
+*.tfstate
+*.tfstate.backup
+
+# Ansible facts cache (if you ever use it)
+.ansible/
+
+# Any local secrets
+*.env
+*.secret
+secrets.yml
+vault_pass.txt
+
+# Ignore private key template(s)
+templates/*.priv.j2
+templates/*.pem
+templates/*.key
+
+# Ignore personal configuration files
+group_vars/local.yml
+hosts.local.ini
+*.local.yml
+*.local.ini
+
+# Environment files
+.env
+.secrets
+
+# Ignore archive folder (contains old/legacy files)
+archive/
+
+# Ignore the docs folder
+docs/

@@ -5,9 +5,10 @@ Handles main interface construction and styling
 """
 
 import gi
+import os
+import getpass
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk  # type: ignore
-import os
 
 class GUIBuilder:
     def __init__(self, main_window):
@@ -17,142 +18,136 @@ class GUIBuilder:
     def apply_css(self):
         """Apply custom CSS styling"""
         try:
-            css_data = """
-            window {
-                background-image: url('files/com.crimson.cfg.background.png');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
+            import yaml
+            from pathlib import Path
+            # Load user config for background image and color
+            local_file = Path("group_vars/local.yml")
+            background_image = None
+            background_color = "#181a20"
+            if local_file.exists():
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+                    background_image = local_config.get("background_image", None)
+                    background_color = local_config.get("background_color", "#181a20")
+            if background_image:
+                css_data = f"""
+                window, .main-window {{
+                    background-image: url('{background_image}');
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    color: #ffffff;
+                }}
+                """
+            else:
+                css_data = f"""
+                window, .main-window {{
+                    background-color: {background_color};
+                    color: #ffffff;
+                }}
+                """
+            css_data += """
+            .main-window label {
                 color: #ffffff;
             }
-        
-            .main-window {
-                background-image: url('files/com.crimson.cfg.background.png');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
+            .main-window button {
+                background: linear-gradient(135deg, #3c3c3c 0%, #4a4a4a 100%);
                 color: #ffffff;
+                border: 1px solid #555555;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-weight: bold;
             }
-        
-        .main-window label {
-            color: #ffffff;
-        }
-        
-        .main-window button {
-            background: linear-gradient(135deg, #3c3c3c 0%, #4a4a4a 100%);
-            color: #ffffff;
-            border: 1px solid #555555;
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-weight: bold;
-        }
-        
-        .main-window button:hover {
-            background: linear-gradient(135deg, #4a4a4a 0%, #555555 100%);
-            border-color: #666666;
-        }
-        
-        .main-window button:active {
-            background: linear-gradient(135deg, #555555 0%, #666666 100%);
-        }
-        
-        .main-window treeview {
-            background-color: rgba(60, 60, 60, 0.8);
-            color: #ffffff;
-            border-radius: 4px;
-        }
-        
-        .main-window treeview:selected {
-            background-color: #4a9eff;
-        }
-        
-        .main-window frame {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            background-color: transparent;
-        }
-        
-        .main-window frame > label {
-            color: #ffffff;
-            font-weight: bold;
-        }
-        
-        .main-window .header-box {
-            background-color: rgba(60, 60, 60, 0.4);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 15px;
-            margin-left: 15px;
-            margin-right: 15px;
-        }
-        
-        .main-window progressbar {
-            background-color: rgba(60, 60, 60, 0.8);
-            color: #4a9eff;
-            border-radius: 4px;
-        }
-        
-        .main-window progressbar progress {
-            background: linear-gradient(90deg, #4a9eff 0%, #5bb0ff 100%);
-            border-radius: 4px;
-        }
-        
-        .main-window listbox {
-            background-color: rgba(60, 60, 60, 0.8);
-            color: #ffffff;
-            border-radius: 4px;
-        }
-        
-        .main-window listbox row:selected {
-            background-color: #4a9eff;
-        }
-        
-        .main-window scrolledwindow {
-            background-color: transparent;
-        }
-        
-        .main-window scrolledwindow viewport {
-            background-color: transparent;
-        }
-        
-        .main-window notebook {
-            background-color: rgba(0.2, 0.2, 0.2, 0.9);
-        }
-        
-        .main-window notebook tab {
-            background-color: rgba(0.2, 0.2, 0.2, 0.9);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            padding: 8px 16px;
-        }
-        
-        .main-window notebook tab:active {
-            background-color: rgba(0.3, 0.3, 0.3, 0.95);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .main-window notebook tab label {
-            color: #ffffff;
-            font-weight: bold;
-        }
-        
-        .rounded-background {
-            background-color: rgba(60, 60, 60, 0.8);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        """
-        
+            .main-window button:hover {
+                background: linear-gradient(135deg, #4a4a4a 0%, #555555 100%);
+                border-color: #666666;
+            }
+            .main-window button:active {
+                background: linear-gradient(135deg, #555555 0%, #666666 100%);
+            }
+            .main-window treeview {
+                background-color: rgba(60, 60, 60, 0.8);
+                color: #ffffff;
+                border-radius: 4px;
+            }
+            .main-window treeview:selected {
+                background-color: #4a9eff;
+            }
+            .main-window frame {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                background-color: transparent;
+            }
+            .main-window frame > label {
+                color: #ffffff;
+                font-weight: bold;
+            }
+            .main-window .header-box {
+                background-color: rgba(60, 60, 60, 0.4);
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                padding: 15px;
+                margin-left: 15px;
+                margin-right: 15px;
+            }
+            .main-window progressbar {
+                background-color: rgba(60, 60, 60, 0.8);
+                color: #4a9eff;
+                border-radius: 4px;
+            }
+            .main-window progressbar progress {
+                background: linear-gradient(90deg, #4a9eff 0%, #5bb0ff 100%);
+                border-radius: 4px;
+            }
+            .main-window listbox {
+                background-color: rgba(60, 60, 60, 0.8);
+                color: #ffffff;
+                border-radius: 4px;
+            }
+            .main-window listbox row:selected {
+                background-color: #4a9eff;
+            }
+            .main-window scrolledwindow {
+                background-color: transparent;
+            }
+            .main-window scrolledwindow viewport {
+                background-color: transparent;
+            }
+            .main-window notebook {
+                background-color: rgba(0.2, 0.2, 0.2, 0.9);
+            }
+            .main-window notebook tab {
+                background-color: rgba(0.2, 0.2, 0.2, 0.9);
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 4px;
+                padding: 8px 16px;
+            }
+            .main-window notebook tab:active {
+                background-color: rgba(0.3, 0.3, 0.3, 0.95);
+                border-color: rgba(255, 255, 255, 0.5);
+            }
+            .main-window notebook tab label {
+                color: #ffffff;
+                font-weight: bold;
+            }
+            .rounded-background {
+                background-color: rgba(60, 60, 60, 0.8);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            """
+            style_context = self.main_window.window.get_style_context()
+            # Remove previous provider if present
+            if hasattr(self, '_css_provider') and self._css_provider is not None:
+                style_context.remove_provider(self._css_provider)
             css_provider = Gtk.CssProvider()
             css_provider.load_from_data(css_data.encode())
-            
-            # Apply CSS only to our window, not the entire screen
-            style_context = self.main_window.window.get_style_context()
             style_context.add_provider(
                 css_provider,
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
             )
+            self._css_provider = css_provider
         except Exception as e:
             print(f"CSS loading failed: {e}")
             # Continue without CSS styling
@@ -215,15 +210,31 @@ class GUIBuilder:
         title_box.set_valign(Gtk.Align.CENTER)
         
         # Main title - CrimsonCFG
+        app_name = self.main_window.config.get('settings', {}).get('app_name')
+        if not app_name:
+            import yaml
+            try:
+                with open('group_vars/all.yml', 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+                app_name = all_config.get('app_name', 'CrimsonCFG')
+            except Exception:
+                app_name = 'CrimsonCFG'
         title_label = Gtk.Label()
-        title_label.set_markup("<span size='x-large' weight='bold'>CrimsonCFG</span>")
+        title_label.set_markup(f"<span size='x-large' weight='bold'>{app_name}</span>")
         title_label.set_halign(Gtk.Align.START)
         title_label.set_valign(Gtk.Align.CENTER)
         title_box.pack_start(title_label, False, False, 0)
-        
-        # Subtitle - App & Customization Selector
+        app_subtitle = self.main_window.config.get('settings', {}).get('app_subtitle')
+        if not app_subtitle:
+            import yaml
+            try:
+                with open('group_vars/all.yml', 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+                app_subtitle = all_config.get('app_subtitle', 'App & Customization Selector')
+            except Exception:
+                app_subtitle = 'App & Customization Selector'
         subtitle_label = Gtk.Label()
-        subtitle_label.set_markup("<span size='medium'>App &amp; Customization Selector</span>")
+        subtitle_label.set_markup(f"<span size='medium'>{app_subtitle}</span>")
         subtitle_label.set_halign(Gtk.Align.START)
         subtitle_label.set_valign(Gtk.Align.CENTER)
         title_box.pack_start(subtitle_label, False, False, 0)
@@ -237,7 +248,13 @@ class GUIBuilder:
         logo_box.set_halign(Gtk.Align.CENTER)
         
         # Try to load logo
-        logo_path = os.path.join("files", "com.crimson.cfg.logo.png")
+        import yaml
+        try:
+            with open('group_vars/all.yml', 'r') as f:
+                all_config = yaml.safe_load(f) or {}
+            logo_path = all_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
+        except Exception:
+            logo_path = os.path.join("files", "com.crimson.cfg.logo.png")
         if os.path.exists(logo_path):
             try:
                 # Resize logo to a smaller size (150px max width)
@@ -553,6 +570,17 @@ class GUIBuilder:
         clear_logs_btn = Gtk.Button(label="Clear Logs")
         clear_logs_btn.connect("clicked", self.main_window.clear_logs)
         debug_box.pack_start(clear_logs_btn, False, False, 0)
+
+        # Copy logs button
+        copy_logs_btn = Gtk.Button(label="Copy Logs")
+        def on_copy_logs_clicked(btn):
+            clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            start_iter = self.main_window.logs_buffer.get_start_iter()
+            end_iter = self.main_window.logs_buffer.get_end_iter()
+            text = self.main_window.logs_buffer.get_text(start_iter, end_iter, True)
+            clipboard.set_text(text, -1)
+        copy_logs_btn.connect("clicked", on_copy_logs_clicked)
+        debug_box.pack_start(copy_logs_btn, False, False, 0)
         
         # Logs text view
         logs_frame = Gtk.Frame(label="Application Logs")
@@ -585,6 +613,16 @@ class GUIBuilder:
         
         # Add solid background to logs text view (no transparency)
         self.main_window.logs_textview.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 1.0))
+        # Improve selection color for visibility
+        css = b"""
+        textview text selection {
+            background-color: #4a9eff;
+            color: #181a20;
+        }
+        """
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(css)
+        self.main_window.logs_textview.get_style_context().add_provider(css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         
         logs_scrolled.add(self.main_window.logs_textview)
         
@@ -646,23 +684,630 @@ class GUIBuilder:
         config_controls_box.pack_start(refresh_config_btn, False, False, 0)
         
         # Configuration scrolled window
-        config_scrolled = Gtk.ScrolledWindow()
-        config_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        config_box.pack_start(config_scrolled, True, True, 0)
+        # config_scrolled = Gtk.ScrolledWindow()
+        # config_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        # config_box.pack_start(config_scrolled, True, True, 0)
         
-        # Configuration text buffer
-        self.main_window.config_buffer = Gtk.TextBuffer()
-        self.main_window.config_textview = Gtk.TextView(buffer=self.main_window.config_buffer)
-        self.main_window.config_textview.set_editable(False)
-        self.main_window.config_textview.set_monospace(True)
+        # # Configuration text buffer
+        # self.main_window.config_buffer = Gtk.TextBuffer()
+        # self.main_window.config_textview = Gtk.TextView(buffer=self.main_window.config_buffer)
+        # self.main_window.config_textview.set_editable(False)
+        # self.main_window.config_textview.set_monospace(True)
         
-        # Add solid background to config text view
-        self.main_window.config_textview.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 1.0))
+        # # Add solid background to config text view
+        # self.main_window.config_textview.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 1.0))
         
-        config_scrolled.add(self.main_window.config_textview)
+        # config_scrolled.add(self.main_window.config_textview)
         
-        # Populate configuration display
-        self.update_config_display()
+        # # Populate configuration display
+        # self.update_config_display()
+
+        # --- BEGIN: Editable Configuration Form ---
+        import yaml
+        import subprocess
+        from pathlib import Path
+        
+        # Load current config from local.yml
+        local_file = Path("group_vars/local.yml")
+        if local_file.exists():
+            with open(local_file, 'r') as f:
+                local_config = yaml.safe_load(f) or {}
+        else:
+            local_config = {}
+
+        # Ensure user and user_home are set in local_config
+        system_user = getpass.getuser()
+        updated = False
+        if "user" not in local_config:
+            local_config["user"] = system_user
+            updated = True
+        if "user_home" not in local_config:
+            local_config["user_home"] = f"/home/{system_user}"
+            updated = True
+        if updated:
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+        
+        def get_git_config(key):
+            try:
+                return subprocess.check_output(["git", "config", "--global", key], text=True).strip()
+            except Exception:
+                return ""
+        
+        def get_val(key, default=""):
+            val = local_config.get(key, None)
+            if val is not None:
+                return val
+            # For git_username and git_email, try system git config
+            if key == "git_username":
+                return get_git_config("user.name") or default
+            if key == "git_email":
+                return get_git_config("user.email") or default
+            return default
+        
+        # Create a scrolled window for the config notebook
+        config_form_scrolled = Gtk.ScrolledWindow()
+        config_form_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        config_form_scrolled.set_min_content_height(400)
+        config_form_scrolled.set_min_content_width(600)
+        config_box.pack_start(config_form_scrolled, True, True, 0)
+        
+        # Create the notebook (tabs)
+        config_notebook = Gtk.Notebook()
+        config_form_scrolled.add(config_notebook)
+        
+        # --- Git Tab ---
+        git_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        git_box.set_margin_start(10)
+        git_box.set_margin_end(10)
+        git_box.set_margin_top(10)
+        git_box.set_margin_bottom(10)
+        
+        git_username_label = Gtk.Label(label="Git Username:")
+        git_username_entry = Gtk.Entry()
+        git_username_entry.set_text(get_val("git_username"))
+        git_box.pack_start(git_username_label, False, False, 0)
+        git_box.pack_start(git_username_entry, False, False, 0)
+        
+        git_email_label = Gtk.Label(label="Git Email:")
+        git_email_entry = Gtk.Entry()
+        git_email_entry.set_text(get_val("git_email"))
+        git_box.pack_start(git_email_label, False, False, 0)
+        git_box.pack_start(git_email_entry, False, False, 0)
+        
+        config_notebook.append_page(git_box, Gtk.Label(label="Git"))
+        
+        # --- SSH Tab ---
+        ssh_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        ssh_box.set_margin_start(10)
+        ssh_box.set_margin_end(10)
+        ssh_box.set_margin_top(10)
+        ssh_box.set_margin_bottom(10)
+
+        # Private Key Name
+        priv_key_name_label = Gtk.Label(label="Private Key Name:")
+        priv_key_name_label.set_xalign(0)
+        ssh_box.pack_start(priv_key_name_label, False, False, 0)
+        priv_key_name_entry = Gtk.Entry()
+        priv_key_name_entry.set_text(get_val("ssh_private_key_name", "id_rsa"))
+        ssh_box.pack_start(priv_key_name_entry, False, False, 0)
+
+        # SSH Private Key Frame
+        ssh_priv_frame = Gtk.Frame(label="SSH Private Key")
+        ssh_priv_frame.set_margin_bottom(8)
+        ssh_priv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        ssh_priv_box.set_margin_start(8)
+        ssh_priv_box.set_margin_end(8)
+        ssh_priv_box.set_margin_top(8)
+        ssh_priv_box.set_margin_bottom(8)
+        ssh_priv_buffer = Gtk.TextBuffer()
+        ssh_priv_buffer.set_text(get_val("ssh_private_key_content"))
+        ssh_priv_view = Gtk.TextView(buffer=ssh_priv_buffer)
+        ssh_priv_view.set_monospace(True)
+        ssh_priv_view.set_wrap_mode(Gtk.WrapMode.WORD)
+        ssh_priv_view.set_hexpand(True)
+        ssh_priv_view.set_vexpand(True)
+        ssh_priv_view.set_size_request(-1, 80)
+        ssh_priv_box.pack_start(ssh_priv_view, True, True, 0)
+        ssh_priv_frame.add(ssh_priv_box)
+        ssh_box.pack_start(ssh_priv_frame, False, False, 0)
+
+        # Public Key Name
+        pub_key_name_label = Gtk.Label(label="Public Key Name:")
+        pub_key_name_label.set_xalign(0)
+        ssh_box.pack_start(pub_key_name_label, False, False, 0)
+        pub_key_name_entry = Gtk.Entry()
+        pub_key_name_entry.set_text(get_val("ssh_public_key_name", "id_rsa.pub"))
+        ssh_box.pack_start(pub_key_name_entry, False, False, 0)
+
+        # SSH Public Key Frame
+        ssh_pub_frame = Gtk.Frame(label="SSH Public Key")
+        ssh_pub_frame.set_margin_bottom(8)
+        ssh_pub_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        ssh_pub_box.set_margin_start(8)
+        ssh_pub_box.set_margin_end(8)
+        ssh_pub_box.set_margin_top(8)
+        ssh_pub_box.set_margin_bottom(8)
+        ssh_pub_buffer = Gtk.TextBuffer()
+        ssh_pub_buffer.set_text(get_val("ssh_public_key_content"))
+        ssh_pub_view = Gtk.TextView(buffer=ssh_pub_buffer)
+        ssh_pub_view.set_monospace(True)
+        ssh_pub_view.set_wrap_mode(Gtk.WrapMode.WORD)
+        ssh_pub_view.set_hexpand(True)
+        ssh_pub_view.set_vexpand(True)
+        ssh_pub_view.set_size_request(-1, 40)
+        ssh_pub_box.pack_start(ssh_pub_view, True, True, 0)
+        ssh_pub_frame.add(ssh_pub_box)
+        ssh_box.pack_start(ssh_pub_frame, False, False, 0)
+
+        # SSH Config File Frame
+        ssh_cfg_frame = Gtk.Frame(label="SSH Config File (~/.ssh/config)")
+        ssh_cfg_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        ssh_cfg_box.set_margin_start(8)
+        ssh_cfg_box.set_margin_end(8)
+        ssh_cfg_box.set_margin_top(8)
+        ssh_cfg_box.set_margin_bottom(8)
+        ssh_cfg_buffer = Gtk.TextBuffer()
+        # Load from local_config if present
+        ssh_cfg_buffer.set_text(local_config.get("ssh_config_content", ""))
+        ssh_cfg_view = Gtk.TextView(buffer=ssh_cfg_buffer)
+        ssh_cfg_view.set_monospace(True)
+        ssh_cfg_view.set_wrap_mode(Gtk.WrapMode.WORD)
+        ssh_cfg_view.set_hexpand(True)
+        ssh_cfg_view.set_vexpand(True)
+        ssh_cfg_view.set_size_request(-1, 80)
+        ssh_cfg_box.pack_start(ssh_cfg_view, True, True, 0)
+        ssh_cfg_frame.add(ssh_cfg_box)
+        ssh_box.pack_start(ssh_cfg_frame, False, False, 0)
+
+        ssh_scrolled = Gtk.ScrolledWindow()
+        ssh_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        ssh_scrolled.set_min_content_height(300)
+        ssh_scrolled.set_min_content_width(500)
+        ssh_scrolled.add(ssh_box)
+        config_notebook.append_page(ssh_scrolled, Gtk.Label(label="SSH"))
+        
+        # --- Browser Tab ---
+        browser_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        browser_box.set_margin_start(10)
+        browser_box.set_margin_end(10)
+        browser_box.set_margin_top(10)
+        browser_box.set_margin_bottom(10)
+        
+        chromium_label = Gtk.Label(label="Chromium Homepage URL:")
+        chromium_entry = Gtk.Entry()
+        chromium_entry.set_text(get_val("chromium_homepage_url"))
+        browser_box.pack_start(chromium_label, False, False, 0)
+        browser_box.pack_start(chromium_entry, False, False, 0)
+        
+        config_notebook.append_page(browser_box, Gtk.Label(label="Browser"))
+        
+        # --- User Info Tab ---
+        userinfo_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        userinfo_box.set_margin_start(10)
+        userinfo_box.set_margin_end(10)
+        userinfo_box.set_margin_top(10)
+        userinfo_box.set_margin_bottom(10)
+
+        user_label = Gtk.Label(label="System User:")
+        user_label.set_xalign(0)
+        userinfo_box.pack_start(user_label, False, False, 0)
+        user_entry = Gtk.Entry()
+        user_entry.set_text(get_val("user", getpass.getuser() or ""))
+        userinfo_box.pack_start(user_entry, False, False, 0)
+
+        user_home_label = Gtk.Label(label="User Home Directory:")
+        user_home_label.set_xalign(0)
+        userinfo_box.pack_start(user_home_label, False, False, 0)
+        user_home_entry = Gtk.Entry()
+        user_home_entry.set_text(get_val("user_home", os.path.expanduser("~")))
+        userinfo_box.pack_start(user_home_entry, False, False, 0)
+
+        ansible_folder_label = Gtk.Label(label="Ansible Folder:")
+        ansible_folder_label.set_xalign(0)
+        userinfo_box.pack_start(ansible_folder_label, False, False, 0)
+        ansible_folder_entry = Gtk.Entry()
+        ansible_folder_entry.set_text(get_val("ansible_folder", "{{ user_home }}/Test/CrimsonCFG"))
+        userinfo_box.pack_start(ansible_folder_entry, False, False, 0)
+
+        config_notebook.append_page(userinfo_box, Gtk.Label(label="User Info"))
+
+        # --- Background Tab ---
+        background_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        background_box.set_margin_start(10)
+        background_box.set_margin_end(10)
+        background_box.set_margin_top(10)
+        background_box.set_margin_bottom(10)
+
+        bg_label = Gtk.Label(label="Background Image (optional):")
+        bg_label.set_xalign(0)
+        background_box.pack_start(bg_label, False, False, 0)
+        bg_file_chooser = Gtk.FileChooserButton(title="Select Background Image", action=Gtk.FileChooserAction.OPEN)
+        bg_file_chooser.set_width_chars(40)
+        bg_file_chooser.set_filename(local_config.get("background_image", "") or "")
+        background_box.pack_start(bg_file_chooser, False, False, 0)
+        bg_clear_btn = Gtk.Button(label="Clear Background Image")
+        background_box.pack_start(bg_clear_btn, False, False, 0)
+
+        # Color Picker
+        color_label = Gtk.Label(label="Background Color (used if no image):")
+        color_label.set_xalign(0)
+        background_box.pack_start(color_label, False, False, 0)
+        default_color = local_config.get("background_color", "#181a20")
+        color_btn = Gtk.ColorButton()
+        try:
+            gdk_rgba = Gdk.RGBA()
+            gdk_rgba.parse(default_color)
+            color_btn.set_rgba(gdk_rgba)
+        except Exception:
+            pass
+        background_box.pack_start(color_btn, False, False, 0)
+        color_reset_btn = Gtk.Button(label="Reset Color to Default")
+        background_box.pack_start(color_reset_btn, False, False, 0)
+
+        config_notebook.append_page(background_box, Gtk.Label(label="Background"))
+        
+        # --- Save Button (global) ---
+        save_btn = Gtk.Button(label="Save Configuration")
+        def on_save_clicked(btn):
+            # Update local_config dict
+            local_config["git_username"] = git_username_entry.get_text()
+            local_config["git_email"] = git_email_entry.get_text()
+            local_config["chromium_homepage_url"] = chromium_entry.get_text()
+            # User info
+            local_config["user"] = user_entry.get_text()
+            local_config["user_home"] = user_home_entry.get_text()
+            local_config["ansible_folder"] = ansible_folder_entry.get_text()
+            # SSH key names
+            local_config["ssh_private_key_name"] = priv_key_name_entry.get_text()
+            local_config["ssh_public_key_name"] = pub_key_name_entry.get_text()
+            # SSH private key
+            start, end = ssh_priv_buffer.get_bounds()
+            local_config["ssh_private_key_content"] = ssh_priv_buffer.get_text(start, end, True)
+            # SSH public key
+            start, end = ssh_pub_buffer.get_bounds()
+            local_config["ssh_public_key_content"] = ssh_pub_buffer.get_text(start, end, True)
+            # SSH config content (store in local.yml)
+            start, end = ssh_cfg_buffer.get_bounds()
+            local_config["ssh_config_content"] = ssh_cfg_buffer.get_text(start, end, True)
+            # Background image
+            bg_path = bg_file_chooser.get_filename()
+            if bg_path:
+                local_config["background_image"] = bg_path
+            else:
+                local_config.pop("background_image", None)
+            # Background color
+            rgba = color_btn.get_rgba()
+            hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
+            local_config["background_color"] = hex_color
+            # Only keep relevant keys
+            allowed_keys = [
+                "git_username", "git_email", "chromium_homepage_url", "user", "user_home", "ansible_folder",
+                "ssh_private_key_name", "ssh_public_key_name", "ssh_private_key_content", "ssh_public_key_content",
+                "ssh_config_content", "background_image", "background_color"
+            ]
+            for k in list(local_config.keys()):
+                if k not in allowed_keys:
+                    del local_config[k]
+            # Write to local.yml
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+            # Reload config and update main_window variables
+            self.main_window.config = self.main_window.config_manager.load_config()
+            self.main_window.user = self.main_window.config.get("settings", {}).get("default_user", "user")
+            self.main_window.user_home = f"/home/{self.main_window.user}"
+            self.main_window.ansible_folder = self.main_window.config.get("settings", {}).get("ansible_folder", f"{self.main_window.user_home}/Ansible")
+            if "{{ user_home }}" in self.main_window.ansible_folder:
+                self.main_window.ansible_folder = self.main_window.ansible_folder.replace("{{ user_home }}", self.main_window.user_home)
+            self.main_window.inventory_file = f"{self.main_window.ansible_folder}/hosts.ini"
+            # Optionally, show a dialog or status update
+            dialog = Gtk.MessageDialog(parent=self.main_window.window, flags=0, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text="Configuration saved!")
+            dialog.run()
+            dialog.destroy()
+        save_btn.connect("clicked", on_save_clicked)
+        def on_clear_bg(btn):
+            bg_file_chooser.unselect_all()
+            local_config.pop("background_image", None)
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+            self.apply_css()
+        bg_clear_btn.connect("clicked", on_clear_bg)
+        def on_reset_color(btn):
+            gdk_rgba = Gdk.RGBA()
+            gdk_rgba.parse("#181a20")
+            color_btn.set_rgba(gdk_rgba)
+            local_config["background_color"] = "#181a20"
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+            self.apply_css()
+        color_reset_btn.connect("clicked", on_reset_color)
+        def on_color_set(btn):
+            # Use the color from the event, not from config
+            rgba = btn.get_rgba()
+            hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
+            local_config["background_color"] = hex_color
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+            self.apply_css()
+        color_btn.connect("color-set", on_color_set)
+        def on_bg_file_set(btn):
+            # Use the filename from the event, not from config
+            bg_path = btn.get_filename()
+            if bg_path:
+                local_config["background_image"] = bg_path
+            else:
+                local_config.pop("background_image", None)
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+            self.apply_css()
+        bg_file_chooser.connect("file-set", on_bg_file_set)
+        config_box.pack_start(save_btn, False, False, 10)
+        # --- END: Editable Configuration Form ---
+        
+        # --- Administration Tab (with password protection) ---
+        admin_tab = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+        admin_tab.set_margin_top(15)
+        admin_tab.set_margin_bottom(15)
+        admin_tab.set_margin_start(15)
+        admin_tab.set_margin_end(15)
+
+        # Password protection state
+        self._admin_authenticated = getattr(self, '_admin_authenticated', False)
+        def show_admin_content():
+            # Clear admin_tab
+            for child in admin_tab.get_children():
+                admin_tab.remove(child)
+            # Load from all.yml for global admin tabs
+            import yaml
+            with open('group_vars/all.yml', 'r') as f:
+                all_config = yaml.safe_load(f) or {}
+            # Admin notebook
+            admin_notebook = Gtk.Notebook()
+            admin_tab.pack_start(admin_notebook, True, True, 0)
+            # --- Default Apps Tab (APT) ---
+            default_apps_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            default_apps_box.set_margin_start(10)
+            default_apps_box.set_margin_end(10)
+            default_apps_box.set_margin_top(10)
+            default_apps_box.set_margin_bottom(10)
+            apt_label = Gtk.Label(label="APT Packages:")
+            default_apps_box.pack_start(apt_label, False, False, 0)
+            apt_store = Gtk.ListStore(str)
+            for pkg in all_config.get('apt_packages', []):
+                apt_store.append([pkg])
+            apt_view = Gtk.TreeView(model=apt_store)
+            renderer = Gtk.CellRendererText()
+            renderer.set_property('editable', True)
+            def on_apt_edited(cell, path, new_text):
+                apt_store[path][0] = new_text
+            renderer.connect('edited', on_apt_edited)
+            col = Gtk.TreeViewColumn("Package", renderer, text=0)
+            apt_view.append_column(col)
+            default_apps_box.pack_start(apt_view, True, True, 0)
+            apt_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+            add_apt_btn = Gtk.Button(label="Add")
+            def on_add_apt(btn):
+                apt_store.append([""])
+            add_apt_btn.connect("clicked", on_add_apt)
+            remove_apt_btn = Gtk.Button(label="Remove Selected")
+            def on_remove_apt(btn):
+                selection = apt_view.get_selection()
+                model, treeiter = selection.get_selected()
+                if treeiter:
+                    model.remove(treeiter)
+            remove_apt_btn.connect("clicked", on_remove_apt)
+            apt_btn_box.pack_start(add_apt_btn, False, False, 0)
+            apt_btn_box.pack_start(remove_apt_btn, False, False, 0)
+            default_apps_box.pack_start(apt_btn_box, False, False, 0)
+            admin_notebook.append_page(default_apps_box, Gtk.Label(label="APT Packages"))
+            # --- Snap Packages Tab ---
+            snap_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            snap_box.set_margin_start(10)
+            snap_box.set_margin_end(10)
+            snap_box.set_margin_top(10)
+            snap_box.set_margin_bottom(10)
+            snap_label = Gtk.Label(label="Snap Packages:")
+            snap_box.pack_start(snap_label, False, False, 0)
+            snap_store = Gtk.ListStore(str)
+            for pkg in all_config.get('snap_packages', []):
+                snap_store.append([pkg])
+            snap_view = Gtk.TreeView(model=snap_store)
+            snap_renderer = Gtk.CellRendererText()
+            snap_renderer.set_property('editable', True)
+            def on_snap_edited(cell, path, new_text):
+                snap_store[path][0] = new_text
+            snap_renderer.connect('edited', on_snap_edited)
+            snap_col = Gtk.TreeViewColumn("Package", snap_renderer, text=0)
+            snap_view.append_column(snap_col)
+            snap_box.pack_start(snap_view, True, True, 0)
+            snap_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+            add_snap_btn = Gtk.Button(label="Add")
+            def on_add_snap(btn):
+                snap_store.append([""])
+            add_snap_btn.connect("clicked", on_add_snap)
+            remove_snap_btn = Gtk.Button(label="Remove Selected")
+            def on_remove_snap(btn):
+                selection = snap_view.get_selection()
+                model, treeiter = selection.get_selected()
+                if treeiter:
+                    model.remove(treeiter)
+            remove_snap_btn.connect("clicked", on_remove_snap)
+            snap_btn_box.pack_start(add_snap_btn, False, False, 0)
+            snap_btn_box.pack_start(remove_snap_btn, False, False, 0)
+            snap_box.pack_start(snap_btn_box, False, False, 0)
+            admin_notebook.append_page(snap_box, Gtk.Label(label="Snap Packages"))
+            # --- Pinned Apps Tab ---
+            pinned_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            pinned_box.set_margin_start(10)
+            pinned_box.set_margin_end(10)
+            pinned_box.set_margin_top(10)
+            pinned_box.set_margin_bottom(10)
+            pinned_label = Gtk.Label(label="Pinned Apps:")
+            pinned_box.pack_start(pinned_label, False, False, 0)
+            pinned_store = Gtk.ListStore(str)
+            for app in all_config.get('pinned_apps', []):
+                pinned_store.append([app])
+            pinned_view = Gtk.TreeView(model=pinned_store)
+            pinned_renderer = Gtk.CellRendererText()
+            pinned_renderer.set_property('editable', True)
+            def on_pinned_edited(cell, path, new_text):
+                pinned_store[path][0] = new_text
+            pinned_renderer.connect('edited', on_pinned_edited)
+            pinned_col = Gtk.TreeViewColumn("App", pinned_renderer, text=0)
+            pinned_view.append_column(pinned_col)
+            pinned_box.pack_start(pinned_view, True, True, 0)
+            pinned_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+            add_pinned_btn = Gtk.Button(label="Add")
+            def on_add_pinned(btn):
+                pinned_store.append([""])
+            add_pinned_btn.connect("clicked", on_add_pinned)
+            remove_pinned_btn = Gtk.Button(label="Remove Selected")
+            def on_remove_pinned(btn):
+                selection = pinned_view.get_selection()
+                model, treeiter = selection.get_selected()
+                if treeiter:
+                    model.remove(treeiter)
+            remove_pinned_btn.connect("clicked", on_remove_pinned)
+            # Up/Down buttons for sorting
+            up_pinned_btn = Gtk.Button(label="Up")
+            down_pinned_btn = Gtk.Button(label="Down")
+            def on_up_pinned(btn):
+                selection = pinned_view.get_selection()
+                model, treeiter = selection.get_selected()
+                if treeiter:
+                    path = model.get_path(treeiter)[0]
+                    if path > 0:
+                        above_iter = model.get_iter(path - 1)
+                        value = model[treeiter][0]
+                        above_value = model[above_iter][0]
+                        model[treeiter][0], model[above_iter][0] = above_value, value
+                        pinned_view.get_selection().select_path(path - 1)
+            up_pinned_btn.connect("clicked", on_up_pinned)
+            def on_down_pinned(btn):
+                selection = pinned_view.get_selection()
+                model, treeiter = selection.get_selected()
+                if treeiter:
+                    path = model.get_path(treeiter)[0]
+                    if path < len(model) - 1:
+                        below_iter = model.get_iter(path + 1)
+                        value = model[treeiter][0]
+                        below_value = model[below_iter][0]
+                        model[treeiter][0], model[below_iter][0] = below_value, value
+                        pinned_view.get_selection().select_path(path + 1)
+            down_pinned_btn.connect("clicked", on_down_pinned)
+            pinned_btn_box.pack_start(up_pinned_btn, False, False, 0)
+            pinned_btn_box.pack_start(down_pinned_btn, False, False, 0)
+            pinned_btn_box.pack_start(add_pinned_btn, False, False, 0)
+            pinned_btn_box.pack_start(remove_pinned_btn, False, False, 0)
+            pinned_box.pack_start(pinned_btn_box, False, False, 0)
+            admin_notebook.append_page(pinned_box, Gtk.Label(label="Pinned Apps"))
+            # --- Corporate Identity (CI) Tab ---
+            ci_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            ci_box.set_margin_start(10)
+            ci_box.set_margin_end(10)
+            ci_box.set_margin_top(10)
+            ci_box.set_margin_bottom(10)
+            ci_label = Gtk.Label(label="Corporate Identity (CI):")
+            ci_box.pack_start(ci_label, False, False, 0)
+            # App Name
+            app_name_label = Gtk.Label(label="Application Name:")
+            app_name_entry = Gtk.Entry()
+            app_name_entry.set_text(all_config.get('app_name', 'CrimsonCFG'))
+            ci_box.pack_start(app_name_label, False, False, 0)
+            ci_box.pack_start(app_name_entry, False, False, 0)
+            # App Subtitle
+            app_subtitle_label = Gtk.Label(label="Application Subtitle:")
+            app_subtitle_entry = Gtk.Entry()
+            app_subtitle_entry.set_text(all_config.get('app_subtitle', 'App & Customization Selector'))
+            ci_box.pack_start(app_subtitle_label, False, False, 0)
+            ci_box.pack_start(app_subtitle_entry, False, False, 0)
+            # App Logo
+            app_logo_label = Gtk.Label(label="Logo Path (PNG):")
+            app_logo_entry = Gtk.Entry()
+            app_logo_entry.set_text(all_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
+            ci_box.pack_start(app_logo_label, False, False, 0)
+            ci_box.pack_start(app_logo_entry, False, False, 0)
+            admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))
+            # Save button for admin changes (update to save CI as well)
+            def on_save_admin(btn):
+                # Save all three lists and CI to all.yml
+                with open('group_vars/all.yml', 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+                all_config['apt_packages'] = [row[0] for row in apt_store]
+                all_config['snap_packages'] = [row[0] for row in snap_store]
+                all_config['pinned_apps'] = [row[0] for row in pinned_store]
+                all_config['app_name'] = app_name_entry.get_text()
+                all_config['app_subtitle'] = app_subtitle_entry.get_text()
+                all_config['app_logo'] = app_logo_entry.get_text()
+                with open('group_vars/all.yml', 'w') as f:
+                    yaml.safe_dump(all_config, f, default_flow_style=False, allow_unicode=True)
+                # Update header in UI immediately
+                self.main_window.config = self.main_window.config_manager.load_config()
+                self.apply_css()
+                self.show_main_interface()
+                dialog = Gtk.MessageDialog(parent=self.main_window.window, flags=0, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text="Admin settings saved!")
+                dialog.run()
+                dialog.destroy()
+            save_admin_btn = Gtk.Button(label="Save Changes")
+            save_admin_btn.connect("clicked", on_save_admin)
+            admin_tab.pack_start(save_admin_btn, False, False, 10)
+            admin_tab.show_all()
+        def show_admin_password_prompt():
+            # Clear admin_tab
+            for child in admin_tab.get_children():
+                admin_tab.remove(child)
+            # TODO: This is insecure and just a proof of concept. Do not use plaintext admin passwords in production.
+            import yaml
+            try:
+                with open('group_vars/all.yml', 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+                admin_password = all_config['admin_password']
+                password_missing = False
+            except Exception:
+                admin_password = None
+                password_missing = True
+            pw_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            pw_box.set_margin_top(30)
+            pw_label = Gtk.Label(label="Enter admin password to access administration features:")
+            pw_box.pack_start(pw_label, False, False, 0)
+            mask_btn = Gtk.Button(label="Show")
+            pw_entry = Gtk.Entry()
+            pw_entry.set_visibility(False)
+            def on_mask_toggle(btn):
+                if pw_entry.get_visibility():
+                    pw_entry.set_visibility(False)
+                    mask_btn.set_label("Show")
+                else:
+                    pw_entry.set_visibility(True)
+                    mask_btn.set_label("Hide")
+            mask_btn.connect("clicked", on_mask_toggle)
+            mask_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+            mask_box.pack_start(pw_entry, True, True, 0)
+            mask_box.pack_start(mask_btn, False, False, 0)
+            pw_box.pack_start(mask_box, False, False, 0)
+            status_label = Gtk.Label()
+            pw_box.pack_start(status_label, False, False, 0)
+            def on_pw_submit(entry):
+                if password_missing or admin_password is None:
+                    status_label.set_text("Admin password is not set in all.yml. Access denied.")
+                    return
+                if pw_entry.get_text() == admin_password:
+                    self._admin_authenticated = True
+                    show_admin_content()
+                    admin_tab.show_all()
+                    return
+                status_label.set_text("Incorrect password.")
+            pw_entry.connect("activate", on_pw_submit)
+            if password_missing or admin_password is None:
+                status_label.set_text("Admin password is not set in all.yml. Access denied.")
+                pw_entry.set_sensitive(False)
+                mask_btn.set_sensitive(False)
+            admin_tab.pack_start(pw_box, True, True, 0)
+        if self._admin_authenticated:
+            show_admin_content()
+        else:
+            show_admin_password_prompt()
+        self.main_window.notebook.append_page(admin_tab, Gtk.Label(label="Administration"))
         
         if self.debug:
             print("setup_gui: Initializing playbook list...")
@@ -678,7 +1323,7 @@ class GUIBuilder:
         # Connect window close event
         self.main_window.window.connect("destroy", Gtk.main_quit)
         
-    def update_config_display(self):
+    def update_config_display(self, button):
         """Update the configuration display with current settings"""
         import json
         from pathlib import Path
@@ -745,7 +1390,7 @@ class GUIBuilder:
         config_text += "```\n\n"
         
         # File Locations
-        config_text += "📂 FILE LOCATIONS:\n"
+        config_text += "�� FILE LOCATIONS:\n"
         config_text += f"  • Working Directory: {Path.cwd()}\n"
         config_text += f"  • Ansible Directory: {self.main_window.ansible_folder}\n"
         config_text += f"  • Inventory File: {self.main_window.inventory_file}\n"
@@ -766,7 +1411,7 @@ class GUIBuilder:
         self.main_window.debug = self.main_window.config.get("settings", {}).get("debug", 0) == 1
         
         # Update the display
-        self.update_config_display()
+        self.update_config_display(button)
         
         # Log the refresh
         self.main_window.logger.log_message("Configuration display refreshed")

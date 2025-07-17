@@ -8,7 +8,7 @@ import os
 import subprocess
 import threading
 from typing import Dict, List
-from gi.repository import GLib
+from gi.repository import GLib  # type: ignore
 
 class Installer:
     def __init__(self, main_window):
@@ -67,35 +67,62 @@ localhost
                 
             # Check if playbook file exists (in original location)
             playbook_path = playbook['path']
+            # If the playbook path is not absolute, prepend ansible_folder/playbooks
+            if not os.path.isabs(playbook_path):
+                # Remove leading 'playbooks/' if present
+                if playbook_path.startswith('playbooks/'):
+                    playbook_path = playbook_path[len('playbooks/'):]
+                playbook_path = os.path.join(self.main_window.ansible_folder, 'playbooks', playbook_path)
+            # Expand Jinja2 variables if present
+            if "{{ ansible_folder }}" in playbook_path:
+                playbook_path = playbook_path.replace("{{ ansible_folder }}", self.main_window.ansible_folder)
             if not os.path.exists(playbook_path):
                 GLib.idle_add(self.main_window.logger.log_message, f"Error: Playbook file not found at {playbook_path}")
                 return False
                 
             cmd = [
                 "ansible-playbook",
+                "-b",  # Add become for privilege escalation
                 "-i", self.main_window.inventory_file,
-                playbook_path,
-                "--extra-vars", f"user={self.main_window.user} user_home={self.main_window.user_home} ansible_folder={self.main_window.ansible_folder}"
+                playbook_path
             ]
-            
-            # Add additional variables for specific playbooks
-            if playbook['name'] == 'Git':
-                cmd.extend(["--extra-vars", f"git_username={self.main_window.user} git_email={self.main_window.config.get('settings', {}).get('git_email', 'user@example.com')}"])
-            
-            env = os.environ.copy()
-            if self.main_window.sudo_password:
-                env["ANSIBLE_BECOME_PASS"] = self.main_window.sudo_password
-            env["ANSIBLE_BECOME"] = "true"
             
             GLib.idle_add(self.main_window.logger.log_message, f"Running command: {' '.join(cmd)}")
             
-            result = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True)
-            GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} completed successfully")
-            return True
+            # Determine the project root (directory containing the playbook)
+            playbook_dir = os.path.dirname(os.path.abspath(playbook_path))
+
+            if self.main_window.sudo_password:
+                try:
+                    # Remove pexpect logic, use subprocess with ANSIBLE_BECOME_PASS
+                    env = os.environ.copy()
+                    env["ANSIBLE_BECOME"] = "true"
+                    env["ANSIBLE_BECOME_PASS"] = self.main_window.sudo_password
+                    proc = subprocess.run(cmd, env=env, capture_output=True, text=True, cwd=playbook_dir)
+                    GLib.idle_add(self.main_window.logger.log_message, f"Subprocess stdout for {playbook['name']}:\n{proc.stdout}")
+                    GLib.idle_add(self.main_window.logger.log_message, f"Subprocess stderr for {playbook['name']}:\n{proc.stderr}")
+                    if proc.returncode == 0:
+                        GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} completed successfully (env password)")
+                        return True
+                    else:
+                        GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} failed with return code: {proc.returncode}")
+                        return False
+                except Exception as e:
+                    GLib.idle_add(self.main_window.logger.log_message, f"Subprocess error: {e}")
+                    return False
+            else:
+                # Fallback to subprocess if no sudo password is provided
+                env = os.environ.copy()
+                env["ANSIBLE_BECOME"] = "true"
+                result = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True, cwd=playbook_dir)
+                GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} completed successfully")
+                return True
             
         except subprocess.CalledProcessError as e:
             GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} failed with error: {e}")
-            GLib.idle_add(self.main_window.logger.log_message, f"Error output: {e.stderr}")
+            GLib.idle_add(self.main_window.logger.log_message, f"Return code: {e.returncode}")
+            GLib.idle_add(self.main_window.logger.log_message, f"Error output (stderr): {e.stderr}")
+            GLib.idle_add(self.main_window.logger.log_message, f"Output (stdout): {e.stdout}")
             return False
             
     def run_installation(self, selected_playbooks):

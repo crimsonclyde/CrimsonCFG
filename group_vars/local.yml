@@ -3,8 +3,8 @@
 # This file contains personal settings that should be kept private
 
 # Git Configuration
-git_username: "your_username"
-git_email: "your_email@example.com"
+# git_username: ""
+# git_email: ""
 
 # SSH Configuration
 ssh_hosts:
@@ -18,13 +18,10 @@ ssh_hosts:
     port: 22
 
 # SSH Key Content (set via environment variables or direct content)
-ssh_private_key_content: |
-  -----BEGIN OPENSSH PRIVATE KEY-----
-  # Your private key content here
-  -----END OPENSSH PRIVATE KEY-----
+# ssh_private_key_content: ""
+# ssh_public_key_content: ""
 
-ssh_public_key_content: |
-  ssh-rsa AAAAB3NzaC1yc2E... your_email@example.com
+ansible_folder: "{{ user_home }}/Ansible/CrimsonCFG"
 
 # Git Repositories
 git_repositories:
@@ -34,7 +31,7 @@ git_repositories:
     dest: "{{ user_home }}/Documents/git/another-repo"
 
 # Browser Configuration
-chromium_homepage_url: "https://startpage.com"
+# chromium_homepage_url: ""
 
 # iCloud Calendar Configuration (optional)
 icloud_pid: "your_icloud_pid"

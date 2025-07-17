@@ -36,7 +36,22 @@ class CrimsonCFGGUI:
         print("Window created successfully")
         
         # Set application icon
-        self.window.set_icon_name("com.crimson.cfg")
+        import yaml
+        try:
+            with open('group_vars/all.yml', 'r') as f:
+                all_config = yaml.safe_load(f) or {}
+            app_name = all_config.get('app_name', 'CrimsonCFG')
+            app_subtitle = all_config.get('app_subtitle', 'App & Customization Selector')
+            app_logo = all_config.get('app_logo', None)
+        except Exception:
+            app_name = 'CrimsonCFG'
+            app_subtitle = 'App & Customization Selector'
+            app_logo = None
+        self.window.set_title(f"{app_name} - {app_subtitle}")
+        if app_logo and os.path.exists(app_logo):
+            self.window.set_icon_from_file(app_logo)
+        else:
+            self.window.set_icon_name("com.crimson.cfg")
         
         # Apply CSS class for styling
         style_context = self.window.get_style_context()
@@ -65,7 +80,9 @@ class CrimsonCFGGUI:
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
-        self.ansible_folder = f"{self.user_home}/Ansible"
+        self.ansible_folder = self.config.get("settings", {}).get("ansible_folder", f"{self.user_home}/Ansible")
+        if "{{ user_home }}" in self.ansible_folder:
+            self.ansible_folder = self.ansible_folder.replace("{{ user_home }}", self.user_home)
         self.inventory_file = f"{self.ansible_folder}/hosts.ini"
         self.selected_playbooks = set()
         self.installation_running = False
@@ -153,8 +170,8 @@ class CrimsonCFGGUI:
             return
             
         # Check if confirmation checkbox is checked
-        if not self.confirm_checkbox.get_active():
-            warning_dialog = Gtk.MessageDialog(
+        if not self.confirm_checkbox.get_active():  # type: ignore
+            warning_dialog = Gtk.MessageDialog(  # type: ignore
                 transient_for=self.window,
                 modal=True,
                 message_type=Gtk.MessageType.WARNING,
@@ -179,7 +196,7 @@ class CrimsonCFGGUI:
             return
             
         # Switch to logs tab to show installation progress
-        self.notebook.set_current_page(1)  # Switch to logs tab (index 1)
+        self.notebook.set_current_page(1)  # type: ignore  # Switch to logs tab (index 1)
         
         # Log the selected playbooks
         self.logger.log_message("=== INSTALLATION STARTED ===")
@@ -191,7 +208,7 @@ class CrimsonCFGGUI:
         
         # Start installation in a separate thread
         self.installation_running = True
-        self.install_btn.set_sensitive(False)
+        self.install_btn.set_sensitive(False)  # type: ignore
         thread = threading.Thread(target=self.installer.run_installation, args=(selected,))
         thread.daemon = True
         thread.start()

@@ -27,7 +27,8 @@ class PlaybookScanner:
             "essential": False,
             "path": str(filepath.relative_to(self.base_dir))
         }
-        
+        # Only set for essential playbooks
+        essential_order = None
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 for i, line in enumerate(f):
@@ -35,7 +36,6 @@ class PlaybookScanner:
                         break
                     if not line.startswith('#'):
                         break
-                        
                     line = line.strip()
                     if "CrimsonCFG-Name:" in line:
                         meta["name"] = line.split(":", 1)[1].strip()
@@ -44,11 +44,16 @@ class PlaybookScanner:
                     elif "CrimsonCFG-Essential:" in line:
                         value = line.split(":", 1)[1].strip().lower()
                         meta["essential"] = value == "true"
-                        
+                    elif "CrimsonCFG-Essential-Order:" in line:
+                        try:
+                            essential_order = int(line.split(":", 1)[1].strip())
+                        except Exception:
+                            essential_order = None
+            if meta["essential"] and essential_order is not None:
+                meta["essential_order"] = essential_order
         except Exception as e:
             print(f"Error reading {filepath}: {e}")
             return None
-            
         # Only return if we have at least a name
         return meta if meta["name"] else None
         

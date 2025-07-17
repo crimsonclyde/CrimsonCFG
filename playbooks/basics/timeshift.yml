@@ -1,24 +1,27 @@
 # CrimsonCFG-Name: Timeshift
 # CrimsonCFG-Description: Setup Timeshift system backup
 # CrimsonCFG-Essential: true
+# CrimsonCFG-Essential-Order: 2
+
 ---
 - name: Install Timeshift and make first backup
   hosts: all
   become: true
 
-  tasks:    
+  tasks:
 
     #######################
     # Timeshift
     #######################
     - name: Ensure Timeshift is installed
-      package:
+      ansible.builtin.package:
         name: timeshift
         state: present
 
     - name: Get root partition device
       ansible.builtin.command: findmnt -n -o SOURCE /
       register: root_partition
+      changed_when: false
 
     - name: Debug root partition device
       ansible.builtin.debug:
@@ -27,6 +30,7 @@
     - name: Get UUID of root partition (LVM LV)
       ansible.builtin.command: blkid -s UUID -o value {{ root_partition.stdout }}
       register: root_partition_uuid
+      changed_when: false
 
     - name: Debug root partition UUID
       ansible.builtin.debug:
@@ -35,6 +39,7 @@
     - name: Ensure Timeshift is configured to use main disk
       ansible.builtin.copy:
         dest: /etc/timeshift/timeshift.json
+        mode: '0600'
         content: |
           {
               "backup_device_uuid" : "{{ root_partition_uuid.stdout }}",
@@ -54,16 +59,15 @@
               "count_hourly" : "5",
               "count_boot" : "5"
           }
-      become: true
 
     - name: Create initial snapshot
       ansible.builtin.command: timeshift --create --comments "Pre-install snapshot before installation" --tags D
-      become: true
       changed_when: true
 
     - name: Enable Timeshift automatic schedules
       ansible.builtin.copy:
         dest: /etc/timeshift/timeshift.json
+        mode: '0600'
         content: |
           {
               "backup_device_uuid" : "{{ root_partition_uuid.stdout }}",
@@ -83,4 +87,3 @@
               "count_hourly" : "5",
               "count_boot" : "5"
           }
-      become: true
