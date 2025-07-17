@@ -10,14 +10,14 @@ CrimsonCFG is a configuration manager designed for both mobile device management
 - Corporate Identity (CI) branding and customization
 - Designed for extensibility and future integration with custom script repositories
 
-## Installation
-To install CrimsonCFG, download and run the installer with this one-liner:
+## Installation (Setup)
+To setup CrimsonCFG, download and run the setup with this one-liner:
 
 ```sh
-wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/install.sh -O install.sh && chmod +x install.sh && bash install.sh
+wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/setup.sh -O install.sh && chmod +x setup.sh && bash setup.sh
 ```
 
-This will set up all required dependencies and launch the application.
+This will set up all required dependencies and launch the application and starts the installation of CrimsonCFG.
 
 **GitHub Repository:** [https://github.com/crimsonclyde/CrimsonCFG](https://github.com/crimsonclyde/CrimsonCFG)
 
