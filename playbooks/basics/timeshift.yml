@@ -10,11 +10,6 @@
 
   tasks:
 
-    - name: Ensure Timeshift is installed
-      ansible.builtin.package:
-        name: timeshift
-        state: present
-
     - name: Get root partition device
       ansible.builtin.command: findmnt -n -o SOURCE /
       register: root_partition
@@ -25,40 +20,30 @@
       register: root_fstype
       changed_when: false
 
+    - name: Fail if root filesystem is ZFS (Timeshift not supported)
+      ansible.builtin.fail:
+        msg: "Timeshift does not support ZFS. Skipping Timeshift setup."
+      when: root_fstype.stdout == "zfs"
+    - name: Ensure Timeshift is installed
+      ansible.builtin.package:
+        name: timeshift
+        state: present
+
     - name: Get UUID of root partition (block device)
       ansible.builtin.command: blkid -s UUID -o value {{ root_partition.stdout }}
       register: root_partition_uuid
       changed_when: false
       when: root_fstype.stdout != "zfs"
 
-    - name: Get ZFS dataset name for root
-      ansible.builtin.shell: zfs list -H -o name,mountpoint | awk '$2=="/"{print $1}'
-      register: zfs_root_dataset
-      changed_when: false
-      when: root_fstype.stdout == "zfs"
-
-    - name: Get ZFS dataset GUID
-      ansible.builtin.command: >
-        zfs get -H -o value guid {{ zfs_root_dataset.stdout_lines[0] | trim }}
-      register: root_partition_uuid
-      changed_when: false
-      when: root_fstype.stdout == "zfs"
-
-    - name: Sanity check ZFS GUID
-      ansible.builtin.assert:
-        that:
-          - root_partition_uuid.stdout is match("^[0-9]+$")
-        fail_msg: "ZFS GUID appears malformed: {{ root_partition_uuid.stdout }}"
-      when: root_fstype.stdout == "zfs"
-
-    - name: Debug root partition UUID or GUID
+    - name: Debug root partition UUID
       ansible.builtin.debug:
         var: root_partition_uuid.stdout
+      when: root_fstype.stdout != "zfs"
 
     - name: Fail if root partition UUID could not be determined
       ansible.builtin.fail:
-        msg: "Could not determine root partition UUID or GUID. Timeshift may not work as expected."
-      when: root_partition_uuid is not defined or not root_partition_uuid.stdout
+        msg: "Could not determine root partition UUID. Timeshift may not work as expected."
+      when: (root_fstype.stdout != "zfs") and (root_partition_uuid is not defined or not root_partition_uuid.stdout)
 
     - name: Ensure Timeshift is configured to use main disk
       ansible.builtin.copy:
@@ -83,16 +68,19 @@
               "count_hourly" : "5",
               "count_boot" : "5"
           }
+      when: root_fstype.stdout != "zfs"
 
     - name: Validate timeshift.json
       ansible.builtin.command: jq empty /etc/timeshift/timeshift.json
       register: json_check
       failed_when: json_check.rc != 0
       changed_when: false
+      when: root_fstype.stdout != "zfs"
 
     - name: Create initial snapshot
-      ansible.builtin.command: timeshift --create --comments "Pre-install snapshot before installation" --tags D
+      ansible.builtin.command: "timeshift --create --scripted --verbose --comments \"Pre-install snapshot before installation\" --tags D"
       changed_when: true
+      when: root_fstype.stdout != "zfs"
 
     - name: Enable Timeshift schedules
       ansible.builtin.copy:
@@ -117,9 +105,11 @@
               "count_hourly" : "5",
               "count_boot" : "5"
           }
+      when: root_fstype.stdout != "zfs"
 
     - name: Validate timeshift.json
       ansible.builtin.command: jq empty /etc/timeshift/timeshift.json
       register: json_check
       failed_when: json_check.rc != 0
       changed_when: false
+      when: root_fstype.stdout != "zfs"
