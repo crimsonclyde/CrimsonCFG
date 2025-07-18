@@ -94,7 +94,8 @@ else
     cd ..
 fi
 
-cd "$REPO_NAME"
+cd "$INSTALL_DIR/$REPO_NAME"
+print_status "Current directory: $(pwd)"
 
 # Determine ansible_folder from YAML config (local overrides global)
 ANSIBLE_FOLDER=$(python3 -c '
