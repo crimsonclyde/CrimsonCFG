@@ -157,4 +157,4 @@ if command -v gsettings &> /dev/null; then
 fi
 
 print_success "Installation completed successfully!"
-print_status "--------------------------------------------------------------------------------------\nOptions:\n  - Launch CrimsonCFG from the Applications menu\n  - Find it in your favorites/dock\n  - Run it directly with: python3 $SCRIPT_DIR/crimson.cfg.main.py\n--------------------------------------------------------------------------------------"
+print_status "\n --------------------------------------------------------------------------------------\n Options:\n  - Launch CrimsonCFG from the Applications menu\n  - Find it in your favorites/dock\n  - Run it directly with: python3 $SCRIPT_DIR/crimson.cfg.main.py\n --------------------------------------------------------------------------------------"
