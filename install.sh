@@ -61,7 +61,7 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 # Print ASCII art
-print_status "$(figlet CrimsonCFG)"
+print_status "\n$(figlet CrimsonCFG)\n"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
