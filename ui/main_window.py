@@ -198,14 +198,26 @@ class CrimsonCFGGUI:
             warning_dialog.run()
             warning_dialog.destroy()
             return
-            
+
+        # --- ENFORCE BASICS ORDER ---
+        def playbook_sort_key(pb):
+            # Basics essential playbooks: sort by essential_order (as int, fallback to 999)
+            if pb["category"].lower() == "basics" and pb.get("essential", False):
+                try:
+                    return (0, int(pb.get("essential_order", 999)))
+                except Exception:
+                    return (0, 999)
+            # All others after
+            return (1, 0)
+        selected_sorted = sorted(selected, key=playbook_sort_key)
+
         # Switch to logs tab to show installation progress
-        self.notebook.set_current_page(1)  # type: ignore  # Switch to logs tab (index 1)
+        self.notebook.set_current_page(1)
         
         # Log the selected playbooks
         self.logger.log_message("=== INSTALLATION STARTED ===")
-        self.logger.log_message(f"Selected playbooks ({len(selected)}):")
-        for playbook in selected:
+        self.logger.log_message(f"Selected playbooks ({len(selected_sorted)}):")
+        for playbook in selected_sorted:
             essential_mark = " (Essential)" if playbook["essential"] else ""
             self.logger.log_message(f"  • {playbook['category']}: {playbook['name']}{essential_mark}")
         self.logger.log_message("=== BEGINNING INSTALLATION ===")
@@ -213,7 +225,7 @@ class CrimsonCFGGUI:
         # Start installation in a separate thread
         self.installation_running = True
         self.install_btn.set_sensitive(False)  # type: ignore
-        thread = threading.Thread(target=self.installer.run_installation, args=(selected,))
+        thread = threading.Thread(target=self.installer.run_installation, args=(selected_sorted,))
         thread.daemon = True
         thread.start()
         

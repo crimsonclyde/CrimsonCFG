@@ -145,19 +145,26 @@ class PlaybookManager:
             self.main_window.selected_store.append([f"{category}: {name}"])
             
     def get_selected_playbooks(self) -> List[Dict]:
-        """Get list of selected playbooks with their details"""
+        """Get list of selected playbooks with their details, including essential_order if present"""
         selected = []
         for playbook_key in self.main_window.selected_playbooks:
             category, name = playbook_key.split(":", 1)
             if category in self.main_window.config["categories"]:
                 for playbook in self.main_window.config["categories"][category]["playbooks"]:
                     if playbook["name"] == name:
+                        # Try to get essential_order from playbook metadata, default to None
+                        essential_order = playbook.get("essential_order")
+                        # Also support YAML comment key if present
+                        if essential_order is None:
+                            # Try alternate keys for compatibility
+                            essential_order = playbook.get("essential-order") or playbook.get("order")
                         selected.append({
                             "category": category,
                             "name": playbook["name"],
                             "path": playbook["path"],
                             "description": playbook.get("description", ""),
-                            "essential": playbook.get("essential", False)
+                            "essential": playbook.get("essential", False),
+                            "essential_order": essential_order
                         })
                         break
         return selected 

@@ -32,3 +32,10 @@ After installation, launch the application and follow the on-screen instructions
 
 ## License
 See [LICENSE](LICENSE) for details. 
+
+## Ansible Playbook Directory (ansible_folder)
+
+- The canonical location for the Ansible playbook directory is set in `group_vars/all.yml` under the `ansible_folder` key.
+- To override this for a specific user, set `ansible_folder` in `group_vars/local.yml`.
+- All scripts and the UI will use the value from `local.yml` if present, otherwise from `all.yml`.
+- This ensures you only need to change the playbook directory in one place. 

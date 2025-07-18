@@ -1,5 +1,7 @@
+# ansible_folder: Set here for global default. To override per user, set in group_vars/local.yml.
+# This is the canonical playbook directory for all scripts and the UI.
 admin_password: 3HeaddedMonkey # Please change right away!
-ansible_folder: '{{ user_home }}/CrimsonCFG'
+ansible_folder: '/opt/CrimsonCFG'
 app_logo: files/com.crimson.cfg.logo.png
 app_name: CrimsonCFG
 app_subtitle: Yet another Configuration Manager

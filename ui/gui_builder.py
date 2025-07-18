@@ -903,11 +903,13 @@ class GUIBuilder:
         user_home_entry.set_text(get_val("user_home", os.path.expanduser("~")))
         userinfo_box.pack_start(user_home_entry, False, False, 0)
 
-        ansible_folder_label = Gtk.Label(label="Ansible Folder:")
+        ansible_folder_label = Gtk.Label(label="Ansible Folder (user override, see docs):")
+        ansible_folder_label.set_tooltip_text("This value is loaded from group_vars/local.yml if present, otherwise from group_vars/all.yml. Editing here only affects your user.")
         ansible_folder_label.set_xalign(0)
         userinfo_box.pack_start(ansible_folder_label, False, False, 0)
         ansible_folder_entry = Gtk.Entry()
-        ansible_folder_entry.set_text(get_val("ansible_folder", "{{ user_home }}/Test/CrimsonCFG"))
+        # Always show the effective value (local overrides global)
+        ansible_folder_entry.set_text(get_val("ansible_folder", "{{ user_home }}/CrimsonCFG"))
         userinfo_box.pack_start(ansible_folder_entry, False, False, 0)
 
         config_notebook.append_page(userinfo_box, Gtk.Label(label="User Info"))
@@ -996,7 +998,7 @@ class GUIBuilder:
             self.main_window.config = self.main_window.config_manager.load_config()
             self.main_window.user = self.main_window.config.get("settings", {}).get("default_user", "user")
             self.main_window.user_home = f"/home/{self.main_window.user}"
-            self.main_window.ansible_folder = self.main_window.config.get("settings", {}).get("ansible_folder", f"{self.main_window.user_home}/Ansible")
+            self.main_window.ansible_folder = self.main_window.config.get("settings", {}).get("ansible_folder", f"{self.main_window.user_home}/CrimsonCFG")
             if "{{ user_home }}" in self.main_window.ansible_folder:
                 self.main_window.ansible_folder = self.main_window.ansible_folder.replace("{{ user_home }}", self.main_window.user_home)
             self.main_window.inventory_file = f"{self.main_window.ansible_folder}/hosts.ini"
