@@ -101,7 +101,9 @@ print_status "Current directory: $(pwd)"
 ANSIBLE_FOLDER=$(python3 -c '
 import yaml
 from pathlib import Path
-local = Path("group_vars/local.yml")
+import os
+config_dir = os.path.expanduser("~/.config/com.crimson.cfg")
+local = Path(config_dir) / "local.yml"
 allf = Path("group_vars/all.yml")
 if local.exists():
     with open(local) as f:
@@ -113,7 +115,7 @@ if allf.exists():
         cfg = yaml.safe_load(f) or {}
         if "ansible_folder" in cfg:
             print(cfg["ansible_folder"]); exit()
-print("$HOME/CrimsonCFG")  # fallback
+print(os.path.expanduser("~/CrimsonCFG"))  # fallback
 ')
 
 # Use $ANSIBLE_FOLDER for any playbook directory setup below

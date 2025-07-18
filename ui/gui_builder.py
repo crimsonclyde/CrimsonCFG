@@ -21,7 +21,13 @@ class GUIBuilder:
             import yaml
             from pathlib import Path
             # Load user config for background image and color
-            local_file = Path("group_vars/local.yml")
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            local_file = config_dir / "local.yml"
+            if not config_dir.exists():
+                config_dir.mkdir(parents=True, exist_ok=True)
+            if not local_file.exists():
+                with open(local_file, 'w') as f:
+                    yaml.safe_dump({}, f)
             background_image = None
             background_color = "#181a20"
             if local_file.exists():
@@ -708,12 +714,16 @@ class GUIBuilder:
         from pathlib import Path
         
         # Load current config from local.yml
-        local_file = Path("group_vars/local.yml")
-        if local_file.exists():
-            with open(local_file, 'r') as f:
-                local_config = yaml.safe_load(f) or {}
-        else:
-            local_config = {}
+        config_dir = Path.home() / ".config/com.crimson.cfg"
+        local_file = config_dir / "local.yml"
+        if not config_dir.exists():
+            config_dir.mkdir(parents=True, exist_ok=True)
+        if not local_file.exists():
+            with open(local_file, 'w') as f:
+                yaml.safe_dump({}, f)
+        # Load local_config from file
+        with open(local_file, 'r') as f:
+            local_config = yaml.safe_load(f) or {}
 
         # Ensure user and user_home are set in local_config
         system_user = getpass.getuser()
@@ -904,7 +914,7 @@ class GUIBuilder:
         userinfo_box.pack_start(user_home_entry, False, False, 0)
 
         ansible_folder_label = Gtk.Label(label="Ansible Folder (user override, see docs):")
-        ansible_folder_label.set_tooltip_text("This value is loaded from group_vars/local.yml if present, otherwise from group_vars/all.yml. Editing here only affects your user.")
+        ansible_folder_label.set_tooltip_text("This value is loaded from ~/.config/com.crimson.cfg/local.yml if present, otherwise from group_vars/all.yml. Editing here only affects your user.")
         ansible_folder_label.set_xalign(0)
         userinfo_box.pack_start(ansible_folder_label, False, False, 0)
         ansible_folder_entry = Gtk.Entry()
@@ -1343,7 +1353,7 @@ class GUIBuilder:
         # Configuration Files
         config_text += "📁 CONFIGURATION FILES:\n"
         all_file = Path("group_vars/all.yml")
-        local_file = Path("group_vars/local.yml")
+        local_file = Path.home() / ".config/com.crimson.cfg/local.yml"
         gui_config_file = Path("conf/gui_config.json")
         
         config_text += f"  • Global Config: {'✅ Found' if all_file.exists() else '❌ Not found'} ({all_file})\n"
@@ -1378,12 +1388,12 @@ class GUIBuilder:
         # Configuration Instructions
         config_text += "📝 HOW TO CONFIGURE:\n"
         config_text += "  1. Edit group_vars/all.yml for global settings\n"
-        config_text += "  2. Edit group_vars/local.yml for user-specific settings\n"
+        config_text += "  2. Edit ~/.config/com.crimson.cfg/local.yml for user-specific settings\n"
         config_text += "  3. Local settings override global settings\n"
         config_text += "  4. Restart CrimsonCFG after making changes\n\n"
         
         # Example Configuration
-        config_text += "💡 EXAMPLE CONFIGURATION (group_vars/local.yml):\n"
+        config_text += "\ud83d\udca1 EXAMPLE CONFIGURATION (~/.config/com.crimson.cfg/local.yml):\n"
         config_text += "```yaml\n"
         config_text += "# User-specific configuration\n"
         config_text += "git_username: your_github_username\n"
