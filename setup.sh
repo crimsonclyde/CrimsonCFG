@@ -118,7 +118,7 @@ print("$HOME/CrimsonCFG")  # fallback
 # Use $ANSIBLE_FOLDER for any playbook directory setup below
 
 print_status "Making installer executable..."
-chmod +x install.sh
+sudo chmod +x install.sh
 
 print_status "Running installer..."
 bash install.sh
