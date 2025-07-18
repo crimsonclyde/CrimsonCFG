@@ -80,7 +80,13 @@ cd "$INSTALL_DIR"
 
 if [ ! -d "$REPO_NAME" ]; then
     print_status "Cloning repository..."
-    git clone "$REPO_URL"
+    # Clone the repository
+    sudo git clone "$REPO_URL" "$INSTALL_DIR"
+
+    # Set permissions so all users can run the app
+    print_status "Setting permissions on $INSTALL_DIR/$REPO_NAME..."
+    sudo chown -R root:root "$INSTALL_DIR/$REPO_NAME"
+    sudo chmod -R a+rX "$INSTALL_DIR/$REPO_NAME"
 else
     print_status "Repository already exists, pulling latest changes..."
     cd "$REPO_NAME"
