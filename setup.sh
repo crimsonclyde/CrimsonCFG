@@ -19,7 +19,7 @@ set -e
 ##################
 REPO_URL="https://github.com/crimsonclyde/CrimsonCFG.git"
 REPO_NAME="CrimsonCFG"
-INSTALL_DIR="$HOME/CrimsonCFG"
+INSTALL_DIR="/opt"
 
 ##################
 # Functions

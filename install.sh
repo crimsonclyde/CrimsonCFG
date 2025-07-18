@@ -113,7 +113,7 @@ Version=1.0
 Type=Application
 Name=CrimsonCFG
 Comment=App & Customization Selector
-Exec=python3 $SCRIPT_DIR/crimson.cfg.main.py
+Exec=python3 /opt/CrimsonCFG/crimson.cfg.main.py
 Icon=com.crimson.cfg
 Categories=System;Settings;
 Terminal=false
@@ -155,6 +155,11 @@ if command -v gsettings &> /dev/null; then
         print_status "CrimsonCFG is already in favorites"
     fi
 fi
+
+# Set permissions so all users can run the app
+print_status "Setting permissions on /opt/CrimsonCFG..."
+sudo chown -R root:root /opt/CrimsonCFG
+sudo chmod -R a+rX /opt/CrimsonCFG
 
 print_success "Installation completed successfully!"
 print_status "\n --------------------------------------------------------------------------------------\n Options:\n  - Launch CrimsonCFG from the Applications menu\n  - Find it in your favorites/dock\n  - Run it directly with: python3 $SCRIPT_DIR/crimson.cfg.main.py\n --------------------------------------------------------------------------------------"
