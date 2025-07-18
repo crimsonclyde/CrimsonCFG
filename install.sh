@@ -15,6 +15,12 @@
 set -e
 
 ##################
+# Variables
+##################
+REPO_NAME="CrimsonCFG"
+INSTALL_DIR="/opt"
+
+##################
 # Functions
 ##################
 
@@ -156,10 +162,13 @@ if command -v gsettings &> /dev/null; then
     fi
 fi
 
+# Clone the repository
+sudo git clone <repo-url> "$INSTALL_DIR"
+
 # Set permissions so all users can run the app
-print_status "Setting permissions on /opt/CrimsonCFG..."
-sudo chown -R root:root /opt/CrimsonCFG
-sudo chmod -R a+rX /opt/CrimsonCFG
+print_status "Setting permissions on $INSTALL_DIR/$REPO_NAME..."
+sudo chown -R root:root "$INSTALL_DIR/$REPO_NAME"
+sudo chmod -R a+rX "$INSTALL_DIR/$REPO_NAME"
 
 print_success "Installation completed successfully!"
 print_status "\n --------------------------------------------------------------------------------------\n Options:\n  - Launch CrimsonCFG from the Applications menu\n  - Find it in your favorites/dock\n  - Run it directly with: python3 $SCRIPT_DIR/crimson.cfg.main.py\n --------------------------------------------------------------------------------------"
