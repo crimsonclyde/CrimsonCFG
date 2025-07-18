@@ -17,6 +17,7 @@ set -e
 ##################
 # Variables
 ##################
+REPO_URL="https://github.com/crimsonclyde/CrimsonCFG.git"
 REPO_NAME="CrimsonCFG"
 INSTALL_DIR="/opt"
 
@@ -163,7 +164,7 @@ if command -v gsettings &> /dev/null; then
 fi
 
 # Clone the repository
-sudo git clone <repo-url> "$INSTALL_DIR"
+sudo git clone "$REPO_URL" "$INSTALL_DIR"
 
 # Set permissions so all users can run the app
 print_status "Setting permissions on $INSTALL_DIR/$REPO_NAME..."
