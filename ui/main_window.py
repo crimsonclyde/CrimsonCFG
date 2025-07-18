@@ -212,7 +212,8 @@ class CrimsonCFGGUI:
         selected_sorted = sorted(selected, key=playbook_sort_key)
 
         # Switch to logs tab to show installation progress
-        self.notebook.set_current_page(1)
+        if self.gui_builder.notebook is not None:
+            self.gui_builder.notebook.set_current_page(1)
         
         # Log the selected playbooks
         self.logger.log_message("=== INSTALLATION STARTED ===")

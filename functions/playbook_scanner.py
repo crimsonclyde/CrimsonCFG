@@ -86,21 +86,26 @@ class PlaybookScanner:
                 
         return {"categories": all_playbooks}
         
-    def generate_config(self, output_path: str = "conf/gui_config.json") -> bool:
+    def generate_config(self, output_path: str = "") -> bool:
         """Generate gui_config.json from scanned playbooks."""
         try:
-            # Ensure conf directory exists
             import os
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            
+            import json
+            from pathlib import Path
+            if not output_path:
+                config_dir = Path.home() / ".config/com.crimson.cfg"
+                if not config_dir.exists():
+                    config_dir.mkdir(parents=True, exist_ok=True)
+                output_path = str(config_dir / "gui_config.json")
+            else:
+                # If output_path is in conf/, ensure conf/ exists
+                if output_path.startswith("conf/"):
+                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
             config = self.scan_playbooks()
-            
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
-                
             print(f"Generated {output_path} with {len(config['categories'])} categories")
             return True
-            
         except Exception as e:
             print(f"Error generating config: {e}")
             return False

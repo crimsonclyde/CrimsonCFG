@@ -14,6 +14,7 @@ class GUIBuilder:
     def __init__(self, main_window):
         self.main_window = main_window
         self.debug = main_window.debug
+        self.notebook = None
         
     def apply_css(self):
         """Apply custom CSS styling"""
@@ -292,15 +293,15 @@ class GUIBuilder:
         main_box.pack_start(content_container, True, True, 0)
         
         # Create notebook for tabs
-        self.main_window.notebook = Gtk.Notebook()
+        self.notebook = Gtk.Notebook()
         
         # Style the notebook tab area to have a background
-        self.main_window.notebook.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 0.9))
+        self.notebook.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 0.9))
         
-        content_container.pack_start(self.main_window.notebook, True, True, 0)
+        content_container.pack_start(self.notebook, True, True, 0)
         
         # Add spacing between tab headers and content
-        self.main_window.notebook.set_margin_top(45)
+        self.notebook.set_margin_top(45)
         
         # Main tab
         main_tab = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
@@ -309,7 +310,7 @@ class GUIBuilder:
         # Add Material Design background to main tab
         main_tab.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.1, 0.1, 0.1, 0.3))
         
-        self.main_window.notebook.append_page(main_tab, Gtk.Label(label="Main"))
+        self.notebook.append_page(main_tab, Gtk.Label(label="Main"))
         
         # Main content area
         content_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
@@ -546,7 +547,7 @@ class GUIBuilder:
         logs_tab.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.1, 0.1, 0.1, 0.3))
         logs_tab.set_margin_top(15)
         
-        self.main_window.notebook.append_page(logs_tab, Gtk.Label(label="Logs"))
+        self.notebook.append_page(logs_tab, Gtk.Label(label="Logs"))
         
         # Debug controls
         debug_frame = Gtk.Frame(label="Debug Controls")
@@ -646,7 +647,7 @@ class GUIBuilder:
         config_tab.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.1, 0.1, 0.1, 0.3))
         config_tab.set_margin_top(15)
         
-        self.main_window.notebook.append_page(config_tab, Gtk.Label(label="Configuration"))
+        self.notebook.append_page(config_tab, Gtk.Label(label="Configuration"))
         
         # Configuration frame
         config_frame = Gtk.Frame(label="Current Configuration")
@@ -1319,7 +1320,7 @@ class GUIBuilder:
             show_admin_content()
         else:
             show_admin_password_prompt()
-        self.main_window.notebook.append_page(admin_tab, Gtk.Label(label="Administration"))
+        self.notebook.append_page(admin_tab, Gtk.Label(label="Administration"))
         
         if self.debug:
             print("setup_gui: Initializing playbook list...")
@@ -1354,7 +1355,7 @@ class GUIBuilder:
         config_text += "📁 CONFIGURATION FILES:\n"
         all_file = Path("group_vars/all.yml")
         local_file = Path.home() / ".config/com.crimson.cfg/local.yml"
-        gui_config_file = Path("conf/gui_config.json")
+        gui_config_file = Path.home() / ".config/com.crimson.cfg/gui_config.json"
         
         config_text += f"  • Global Config: {'✅ Found' if all_file.exists() else '❌ Not found'} ({all_file})\n"
         config_text += f"  • Local Config: {'✅ Found' if local_file.exists() else '❌ Not found'} ({local_file})\n"

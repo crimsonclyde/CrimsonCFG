@@ -9,6 +9,7 @@ import yaml
 import getpass
 from pathlib import Path
 from typing import Dict
+import shutil
 
 # Import the playbook scanner
 try:
@@ -71,11 +72,13 @@ class ConfigManager:
         """Regenerate gui_config.json from playbook metadata"""
         if self.debug:
             print("Regenerating GUI config from playbooks...")
-            
         try:
             if PlaybookScanner is not None:
-                scanner = PlaybookScanner()
-                success = scanner.generate_config("conf/gui_config.json")
+                config_dir = Path.home() / ".config/com.crimson.cfg"
+                user_gui_config = config_dir / "gui_config.json"
+                if not config_dir.exists():
+                    config_dir.mkdir(parents=True, exist_ok=True)
+                success = PlaybookScanner().generate_config(str(user_gui_config))
                 if success:
                     if self.debug:
                         print("GUI config regenerated successfully")
@@ -94,9 +97,16 @@ class ConfigManager:
             
     def load_categories_from_yaml(self) -> Dict:
         """Load categories from gui_config.json (keeping the GUI structure separate)"""
-        config_file = Path("conf/gui_config.json")
-        if config_file.exists():
-            with open(config_file, 'r') as f:
+        import shutil
+        config_dir = Path.home() / ".config/com.crimson.cfg"
+        user_gui_config = config_dir / "gui_config.json"
+        default_gui_config = Path("conf/gui_config.json")
+        if not config_dir.exists():
+            config_dir.mkdir(parents=True, exist_ok=True)
+        if not user_gui_config.exists() and default_gui_config.exists():
+            shutil.copy(default_gui_config, user_gui_config)
+        if user_gui_config.exists():
+            with open(user_gui_config, 'r') as f:
                 json_config = json.load(f)
                 return json_config.get("categories", {})
         else:
