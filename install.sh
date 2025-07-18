@@ -1,9 +1,22 @@
 #!/bin/bash
-
-# CrimsonCFG Installation Script
+# _________      _____                               __________________________
+# __  ____/_________(_)______ _________________________  ____/__  ____/_  ____/
+# _  /    __  ___/_  /__  __ `__ \_  ___/  __ \_  __ \  /    __  /_   _  / __  
+# / /___  _  /   _  / _  / / / / /(__  )/ /_/ /  / / / /___  _  __/   / /_/ /  
+# \____/  /_/    /_/  /_/ /_/ /_//____/ \____//_/ /_/\____/  /_/      \____/  
+#
+#
+# Installation Script
 # This script installs all dependencies and sets up CrimsonCFG
+#
+# ------------------------------------------------------------------------------------
 
-set -e  # Exit on any error
+# Exit on errors
+set -e
+
+##################
+# Functions
+##################
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,24 +50,25 @@ print_error() {
     echo -e "${RED}└───────────────────────────────────────────────┘${NC}"
 }
 
+##################
+# Main
+##################
+
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
     print_error "This script should not be run as root. Please run as a regular user."
     exit 1
 fi
 
-print_status "Starting CrimsonCFG installation..."
+# Print ASCII art
+print_status "$(figlet CrimsonCFG)"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Update package list
-print_status "Updating package list..."
-sudo apt-get update
-
 # Install system dependencies
-print_status "Installing system dependencies..."
+print_status "Installing dependencies..."
 sudo apt-get install -y \
     python3 \
     python3-pip \
@@ -84,6 +98,7 @@ if [ -f "files/com.crimson.cfg.dock.png" ]; then
     cp "files/com.crimson.cfg.dock.png" "$HOME/.local/share/icons/hicolor/256x256/apps/com.crimson.cfg.png"
     
     # Update icon cache
+    print_status "Updating icon cache..."
     gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 else
     print_warning "Icon file not found. Application will use default icon."
@@ -106,6 +121,7 @@ StartupNotify=true
 EOF
 
 # Update desktop database
+print_status "Updating desktop database..."
 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
 
 # Clear caches
@@ -141,8 +157,4 @@ if command -v gsettings &> /dev/null; then
 fi
 
 print_success "Installation completed successfully!"
-print_status "You can now:"
-print_status "  1. Launch CrimsonCFG from the Applications menu"
-print_status "  2. Find it in your favorites/dock"
-print_status "  3. Run it directly with: python3 crimson.cfg.main.py"
-print_status "CrimsonCFG is ready to use!" 
+print_status "--------------------------------------------------------------------------------------\nOptions:\n  - Launch CrimsonCFG from the Applications menu\n  - Find it in your favorites/dock\n  - Run it directly with: python3 $SCRIPT_DIR/crimson.cfg.main.py\n--------------------------------------------------------------------------------------"
