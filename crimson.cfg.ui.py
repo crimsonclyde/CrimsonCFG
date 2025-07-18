@@ -20,9 +20,7 @@ from typing import Dict, List, Optional
 
 # Import the playbook scanner
 try:
-    import sys
-    sys.path.append('functions')
-    from playbook_scanner import PlaybookScanner
+    from functions.playbook_scanner import PlaybookScanner
     print("PlaybookScanner imported successfully")
 except ImportError as e:
     # Fallback if scanner module is not available

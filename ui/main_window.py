@@ -20,6 +20,10 @@ from .playbook_manager import PlaybookManager
 
 class CrimsonCFGGUI:
     def __init__(self, application):
+        # Request dark theme for the application
+        settings = Gtk.Settings.get_default()
+        if settings is not None:
+            settings.set_property('gtk-application-prefer-dark-theme', True)
         print("Initializing CrimsonCFGGUI...")
         self.application = application
         self.sudo_password = None
