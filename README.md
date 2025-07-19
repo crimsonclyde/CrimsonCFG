@@ -1,6 +1,16 @@
 # CrimsonCFG - App & Customization Selector
 
+[TOC]
+
+## Exordium
+
 A modern, user-friendly GUI application for managing system configuration and application installation using Ansible playbooks.
+
+## Installation
+
+```bash
+wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/setup.sh -O setup.sh && chmod +x setup.sh && bash setup.sh
+```
 
 ## Features
 
@@ -16,14 +26,18 @@ A modern, user-friendly GUI application for managing system configuration and ap
 CrimsonCFG uses a two-tier configuration system:
 
 ### Global Configuration (`group_vars/all.yml`)
+
 Contains system-wide defaults and non-user-modifiable settings:
+
 - System paths and directories
 - Default application settings
 - Ansible configuration
 - System-wide package lists (read-only)
 
 ### Local Configuration (`~/.config/com.crimson.cfg/local.yml`)
+
 Contains user-modifiable settings that override global defaults:
+
 - **apt_packages**: List of APT packages to install
 - **snap_packages**: List of Snap packages to install  
 - **pinned_apps**: Applications to pin to the dock/launcher
@@ -34,24 +48,10 @@ Contains user-modifiable settings that override global defaults:
 - **working_directory**: Application root directory (default: /opt/CrimsonCFG)
 
 ### Configuration Priority
+
 1. Local settings (`~/.config/com.crimson.cfg/local.yml`) override global settings
 2. Changes made through the UI are saved to the user's local.yml
 3. The application can be installed in `/opt/` without permission issues
-
-## Installation
-
-### Development Setup
-```bash
-git clone <repository>
-cd CrimsonCFG
-python3 crimson.cfg.main.py
-```
-
-### System Installation
-```bash
-# Install to /opt/CrimsonCFG
-sudo ./install.sh
-```
 
 ## Usage
 
@@ -67,7 +67,7 @@ sudo ./install.sh
 
 ## File Structure
 
-```
+```text
 CrimsonCFG/
 ├── group_vars/
 │   └── all.yml          # System-wide defaults
@@ -99,15 +99,27 @@ User Configuration:
 ## Troubleshooting
 
 ### Permission Issues
+
 - User-modifiable settings are now in `~/.config/com.crimson.cfg/local.yml`
 - The UI can write to the user's local.yml without elevated privileges
 - System-wide settings remain in `group_vars/all.yml`
 
 ### Configuration Issues
+
 - Check both `all.yml` and `~/.config/com.crimson.cfg/local.yml` for variable definitions
 - Local settings override global settings
 - Restart the application after configuration changes
 
+## Uninstallation
+
+To completely remove CrimsonCFG from your system, run:
+
+```bash
+./uninstall/uninstall.sh
+```
+
+This will remove the application files, configuration, and desktop entry, but will not remove any dependencies installed by the application.
+
 ## License
 
-[License information] 
+CrimsonCFG is licensed under the GNU Affero General Public License v3.0 (AGPLv3). See the LICENSE file for details.
