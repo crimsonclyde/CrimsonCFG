@@ -9,6 +9,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk  # type: ignore
 import os
 import subprocess
+import yaml
+from pathlib import Path
 
 class AuthManager:
     def __init__(self, main_window):
@@ -56,13 +58,28 @@ class AuthManager:
         title_box.set_valign(Gtk.Align.CENTER)
         
         # Main title - CrimsonCFG
-        import yaml
         try:
-            with open('group_vars/all.yml', 'r') as f:
-                all_config = yaml.safe_load(f) or {}
-            app_name = all_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = all_config.get('app_subtitle', 'App & Customization Selector')
-            app_logo = all_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
+            # Load all.yml
+            all_config = {}
+            all_file = Path("group_vars/all.yml")
+            if all_file.exists():
+                with open(all_file, 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+            
+            # Load local.yml
+            local_config = {}
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            local_file = config_dir / "local.yml"
+            if local_file.exists():
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+            
+            # Merge configurations (local overrides all)
+            merged_config = {**all_config, **local_config}
+            
+            app_name = merged_config.get('app_name', 'CrimsonCFG')
+            app_subtitle = merged_config.get('app_subtitle', 'App & Customization Selector')
+            app_logo = merged_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
         except Exception:
             app_name = 'CrimsonCFG'
             app_subtitle = 'App & Customization Selector'

@@ -1,27 +1,7 @@
-# ansible_folder: Set here for global default. To override per user, set in group_vars/local.yml.
-# This is the canonical playbook directory for all scripts and the UI.
+# System-wide configuration defaults
+# User-modifiable variables have been moved to group_vars/local.yml
 admin_password: 3HeaddedMonkey # Please change right away!
 ansible_folder: '/opt/CrimsonCFG'
-app_logo: files/com.crimson.cfg.logo.png
-app_name: CrimsonCFG
-app_subtitle: Yet another Configuration Manager
-apt_packages:
-- btop
-- mc
-- python3-venv
-- python3-tk
-- python3-psutil
-- libfuse2
-- gnome-tweaks
-- vlc
-- gufw
-- syncthing
-- syncthingtray
-- krita
-- filezilla
-- fuse3
-- nautilus
-- software-properties-common
 chromium_profile1_name: downloads
 cursor_appimage_dir: '{{ user_home }}/AppImage/Cursor'
 cursor_appimage_filename: Cursor.AppImage
@@ -39,20 +19,9 @@ orca_appimage_dir: '{{ user_home }}/AppImage/OrcaSlicer'
 orca_appimage_filename: OrcaSlicer.AppImage
 orca_appimage_url: https://github.com/SoftFever/OrcaSlicer/releases/download/v2.3.0/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.3.0.AppImage
 orca_desktop_file: /usr/share/applications/orca-slicer.desktop
-pinned_apps:
-- chromium_chromium.desktop
-- nautilus.desktop
-- Cursor.desktop
-- gnome-terminal.desktop
-- bitwarden_bitwarden.desktop
-- signal-desktop.desktop
-- gnome-boxes.desktop
 powerlevel10k_repo: https://github.com/romkatv/powerlevel10k.git
 prism_appimage_dir: '{{ user_home }}/AppImage/PrismLauncher'
 prism_appimage_filename: PrismLauncher.AppImage
-snap_packages:
-- bitwarden
-- spotify
 user: '{{ lookup(''env'', ''CRIMSON_USER'', default=''user'') }}'
 user_group: '{{ user }}'
 user_home: /home/{{ user }}

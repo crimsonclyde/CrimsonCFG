@@ -33,16 +33,12 @@ class ConfigManager:
             with open(all_file, 'r') as f:
                 all_config = yaml.safe_load(f) or {}
         
-        # Load local configuration (user-specific)
+        # Load local configuration (user-specific overrides)
         local_config = {}
         config_dir = Path.home() / ".config/com.crimson.cfg"
         local_file = config_dir / "local.yml"
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
-        if not local_file.exists():
-            # Create an empty local.yml if it doesn't exist
-            with open(local_file, 'w') as f:
-                yaml.safe_dump({}, f)
         if local_file.exists():
             with open(local_file, 'r') as f:
                 local_config = yaml.safe_load(f) or {}

@@ -24,29 +24,48 @@ class CrimsonCFGGUI:
         settings = Gtk.Settings.get_default()
         if settings is not None:
             settings.set_property('gtk-application-prefer-dark-theme', True)
-        print("Initializing CrimsonCFGGUI...")
         self.application = application
         self.sudo_password = None
         
         # Set default debug value early
         self.debug = False
         
-        print("Creating window...")
+        if self.debug:
+            print("Initializing CrimsonCFGGUI...")
+            print("Creating window...")
         self.window = Gtk.ApplicationWindow(application=application)
         self.application.add_window(self.window)
         self.window.set_title("CrimsonCFG - App & Customization Selector")
         self.window.set_default_size(1400, 900)
         self.window.set_position(Gtk.WindowPosition.CENTER)
-        print("Window created successfully")
+        if self.debug:
+            print("Window created successfully")
         
         # Set application icon
         import yaml
+        from pathlib import Path
         try:
-            with open('group_vars/all.yml', 'r') as f:
-                all_config = yaml.safe_load(f) or {}
-            app_name = all_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = all_config.get('app_subtitle', 'App & Customization Selector')
-            app_logo = all_config.get('app_logo', None)
+            # Load all.yml
+            all_config = {}
+            all_file = Path("group_vars/all.yml")
+            if all_file.exists():
+                with open(all_file, 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+            
+            # Load local.yml
+            local_config = {}
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            local_file = config_dir / "local.yml"
+            if local_file.exists():
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+            
+            # Merge configurations (local overrides all)
+            merged_config = {**all_config, **local_config}
+            
+            app_name = merged_config.get('app_name', 'CrimsonCFG')
+            app_subtitle = merged_config.get('app_subtitle', 'App & Customization Selector')
+            app_logo = merged_config.get('app_logo', None)
         except Exception:
             app_name = 'CrimsonCFG'
             app_subtitle = 'App & Customization Selector'
@@ -66,10 +85,12 @@ class CrimsonCFGGUI:
         self.config_manager.debug = self.debug  # Set debug in config manager
         
         # Load config
-        print("Loading config...")
+        if self.debug:
+            print("Loading config...")
         self.config = self.config_manager.load_config()
-        print(f"Config loaded: {len(self.config.get('categories', {}))} categories")
-        print("Config loading completed")
+        if self.debug:
+            print(f"Config loaded: {len(self.config.get('categories', {}))} categories")
+            print("Config loading completed")
         
         # Initialize debug setting (override default)
         self.debug = self.config.get("settings", {}).get("debug", 0) == 1
@@ -99,9 +120,11 @@ class CrimsonCFGGUI:
         self.window.add(self.main_container)
         
         # Show the window
-        print("Showing window...")
+        if self.debug:
+            print("Showing window...")
         self.window.show_all()
-        print("Window shown successfully")
+        if self.debug:
+            print("Window shown successfully")
         
         # Connect to window close event
         self.window.connect("delete-event", self.on_window_delete_event)
@@ -115,7 +138,8 @@ class CrimsonCFGGUI:
         
     def on_window_delete_event(self, widget, event):
         """Handle window close event"""
-        print("Window close event received")
+        if self.debug:
+            print("Window close event received")
         # Release the application hold
         self.application.release()
         return False  # Allow the window to close

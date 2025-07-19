@@ -1,41 +1,113 @@
-# CrimsonCFG
+# CrimsonCFG - App & Customization Selector
 
-## Exordium
-CrimsonCFG is a configuration manager designed for both mobile device management (MDM) and general system automation. It can be used to run Ansible scripts, manage application and system configurations, and is fully customizable. Future editions will support advanced CI (Corporate Identity) changes and allow you to use your own repositories for scripts.
+A modern, user-friendly GUI application for managing system configuration and application installation using Ansible playbooks.
 
 ## Features
-- Mobile device management (MDM) capabilities
-- Run and manage Ansible playbooks with a graphical interface
-- Fully customizable configuration and UI
-- Corporate Identity (CI) branding and customization
-- Designed for extensibility and future integration with custom script repositories
 
-## Installation (Setup)
-To setup CrimsonCFG, download and run the setup with this one-liner:
+- **Modern GTK3 Interface**: Clean, dark-themed UI with Material Design elements
+- **Ansible Integration**: Uses Ansible playbooks for reliable system configuration
+- **Package Management**: Install APT and Snap packages through the GUI
+- **Customization**: Configure SSH, pinned applications, and corporate identity
+- **User-Specific Configuration**: Local overrides for user-modifiable settings
+- **Real-time Logging**: Live installation progress and debugging information
 
-```sh
-wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/setup.sh -O setup.sh && chmod +x setup.sh && bash setup.sh
+## Configuration Structure
+
+CrimsonCFG uses a two-tier configuration system:
+
+### Global Configuration (`group_vars/all.yml`)
+Contains system-wide defaults and non-user-modifiable settings:
+- System paths and directories
+- Default application settings
+- Ansible configuration
+- System-wide package lists (read-only)
+
+### Local Configuration (`~/.config/com.crimson.cfg/local.yml`)
+Contains user-modifiable settings that override global defaults:
+- **apt_packages**: List of APT packages to install
+- **snap_packages**: List of Snap packages to install  
+- **pinned_apps**: Applications to pin to the dock/launcher
+- **app_name**: Application name for corporate branding
+- **app_subtitle**: Application subtitle
+- **app_logo**: Path to application logo
+- **user**: Current user
+- **ansible_folder**: User's Ansible directory
+
+### Configuration Priority
+1. Local settings (`~/.config/com.crimson.cfg/local.yml`) override global settings
+2. Changes made through the UI are saved to the user's local.yml
+3. The application can be installed in `/opt/` without permission issues
+
+## Installation
+
+### Development Setup
+```bash
+git clone <repository>
+cd CrimsonCFG
+python3 crimson.cfg.main.py
 ```
 
-This will set up all required dependencies and launch the application and starts the installation of CrimsonCFG.
+### System Installation
+```bash
+# Install to /opt/CrimsonCFG
+sudo ./install.sh
+```
 
-**GitHub Repository:** [https://github.com/crimsonclyde/CrimsonCFG](https://github.com/crimsonclyde/CrimsonCFG)
+## Usage
 
-## Getting Started
-After installation, launch the application and follow the on-screen instructions to configure your system or manage devices. You can customize settings, run playbooks, and adjust CI branding from the graphical interface.
+1. **Start the Application**: Run `python3 crimson.cfg.main.py`
+2. **Enter Sudo Password**: Required for package installation
+3. **Select Playbooks**: Choose from available categories
+4. **Configure Settings**: Use the Administration tab to modify:
+   - APT packages
+   - Snap packages  
+   - Pinned applications
+   - Corporate identity
+5. **Install**: Click "Install Selected" to run the playbooks
 
-## Requirements
-- Python 3.7+
-- GTK 3
-- Ansible
-- (Other dependencies are installed automatically by `install.sh`)
+## File Structure
+
+```
+CrimsonCFG/
+├── group_vars/
+│   └── all.yml          # System-wide defaults
+├── playbooks/           # Ansible playbooks
+├── ui/                  # GUI components
+├── functions/           # Utility functions
+└── templates/           # Jinja2 templates
+
+User Configuration:
+~/.config/com.crimson.cfg/
+├── local.yml            # User-modifiable overrides
+└── gui_config.json     # GUI configuration
+```
+
+## Development
+
+### Adding New Configuration Variables
+
+1. **System-wide defaults**: Add to `group_vars/all.yml`
+2. **User-modifiable**: Add to `~/.config/com.crimson.cfg/local.yml` and update UI save functions
+3. **UI integration**: Update `ui/gui_builder.py` to read/write the variable
+
+### Adding New Playbooks
+
+1. Create playbook in appropriate category directory
+2. Add metadata to `conf/gui_config.json`
+3. Include essential variables in `group_vars/all.yml` or `group_vars/local.yml`
+
+## Troubleshooting
+
+### Permission Issues
+- User-modifiable settings are now in `~/.config/com.crimson.cfg/local.yml`
+- The UI can write to the user's local.yml without elevated privileges
+- System-wide settings remain in `group_vars/all.yml`
+
+### Configuration Issues
+- Check both `all.yml` and `~/.config/com.crimson.cfg/local.yml` for variable definitions
+- Local settings override global settings
+- Restart the application after configuration changes
 
 ## License
-See [LICENSE](LICENSE) for details. 
 
-## Ansible Playbook Directory (ansible_folder)
-
-- The canonical location for the Ansible playbook directory is set in `group_vars/all.yml` under the `ansible_folder` key.
-- To override this for a specific user, set `ansible_folder` in `group_vars/local.yml`.
-- All scripts and the UI will use the value from `local.yml` if present, otherwise from `all.yml`.
-- This ensures you only need to change the playbook directory in one place. 
+[License information] 

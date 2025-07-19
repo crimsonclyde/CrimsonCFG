@@ -7,6 +7,8 @@ Handles main interface construction and styling
 import gi
 import os
 import getpass
+import yaml
+from pathlib import Path
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk  # type: ignore
 
@@ -19,8 +21,6 @@ class GUIBuilder:
     def apply_css(self):
         """Apply custom CSS styling"""
         try:
-            import yaml
-            from pathlib import Path
             # Load user config for background image and color
             config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
@@ -219,11 +219,25 @@ class GUIBuilder:
         # Main title - CrimsonCFG
         app_name = self.main_window.config.get('settings', {}).get('app_name')
         if not app_name:
-            import yaml
             try:
-                with open('group_vars/all.yml', 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-                app_name = all_config.get('app_name', 'CrimsonCFG')
+                # Load all.yml
+                all_config = {}
+                all_file = Path("group_vars/all.yml")
+                if all_file.exists():
+                    with open(all_file, 'r') as f:
+                        all_config = yaml.safe_load(f) or {}
+                
+                # Load local.yml
+                local_config = {}
+                config_dir = Path.home() / ".config/com.crimson.cfg"
+                local_file = config_dir / "local.yml"
+                if local_file.exists():
+                    with open(local_file, 'r') as f:
+                        local_config = yaml.safe_load(f) or {}
+                
+                # Merge configurations (local overrides all)
+                merged_config = {**all_config, **local_config}
+                app_name = merged_config.get('app_name', 'CrimsonCFG')
             except Exception:
                 app_name = 'CrimsonCFG'
         title_label = Gtk.Label()
@@ -233,11 +247,25 @@ class GUIBuilder:
         title_box.pack_start(title_label, False, False, 0)
         app_subtitle = self.main_window.config.get('settings', {}).get('app_subtitle')
         if not app_subtitle:
-            import yaml
             try:
-                with open('group_vars/all.yml', 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-                app_subtitle = all_config.get('app_subtitle', 'App & Customization Selector')
+                # Load all.yml
+                all_config = {}
+                all_file = Path("group_vars/all.yml")
+                if all_file.exists():
+                    with open(all_file, 'r') as f:
+                        all_config = yaml.safe_load(f) or {}
+                
+                # Load local.yml
+                local_config = {}
+                config_dir = Path.home() / ".config/com.crimson.cfg"
+                local_file = config_dir / "local.yml"
+                if local_file.exists():
+                    with open(local_file, 'r') as f:
+                        local_config = yaml.safe_load(f) or {}
+                
+                # Merge configurations (local overrides all)
+                merged_config = {**all_config, **local_config}
+                app_subtitle = merged_config.get('app_subtitle', 'App & Customization Selector')
             except Exception:
                 app_subtitle = 'App & Customization Selector'
         subtitle_label = Gtk.Label()
@@ -255,11 +283,25 @@ class GUIBuilder:
         logo_box.set_halign(Gtk.Align.CENTER)
         
         # Try to load logo
-        import yaml
         try:
-            with open('group_vars/all.yml', 'r') as f:
-                all_config = yaml.safe_load(f) or {}
-            logo_path = all_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
+            # Load all.yml
+            all_config = {}
+            all_file = Path("group_vars/all.yml")
+            if all_file.exists():
+                with open(all_file, 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+            
+            # Load local.yml
+            local_config = {}
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            local_file = config_dir / "local.yml"
+            if local_file.exists():
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+            
+            # Merge configurations (local overrides all)
+            merged_config = {**all_config, **local_config}
+            logo_path = merged_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
         except Exception:
             logo_path = os.path.join("files", "com.crimson.cfg.logo.png")
         if os.path.exists(logo_path):
@@ -710,9 +752,7 @@ class GUIBuilder:
         # self.update_config_display()
 
         # --- BEGIN: Editable Configuration Form ---
-        import yaml
         import subprocess
-        from pathlib import Path
         
         # Load current config from local.yml
         config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -1070,10 +1110,25 @@ class GUIBuilder:
             # Clear admin_tab
             for child in admin_tab.get_children():
                 admin_tab.remove(child)
-            # Load from all.yml for global admin tabs
-            import yaml
-            with open('group_vars/all.yml', 'r') as f:
-                all_config = yaml.safe_load(f) or {}
+            # Load merged configuration (all.yml + local.yml)
+            
+            # Load all.yml
+            all_config = {}
+            all_file = Path("group_vars/all.yml")
+            if all_file.exists():
+                with open(all_file, 'r') as f:
+                    all_config = yaml.safe_load(f) or {}
+            
+            # Load local.yml
+            local_config = {}
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            local_file = config_dir / "local.yml"
+            if local_file.exists():
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+            
+            # Merge configurations (local overrides all)
+            merged_config = {**all_config, **local_config}
             # Admin notebook
             admin_notebook = Gtk.Notebook()
             admin_tab.pack_start(admin_notebook, True, True, 0)
@@ -1086,7 +1141,7 @@ class GUIBuilder:
             apt_label = Gtk.Label(label="APT Packages:")
             default_apps_box.pack_start(apt_label, False, False, 0)
             apt_store = Gtk.ListStore(str)
-            for pkg in all_config.get('apt_packages', []):
+            for pkg in merged_config.get('apt_packages', []):
                 apt_store.append([pkg])
             apt_view = Gtk.TreeView(model=apt_store)
             renderer = Gtk.CellRendererText()
@@ -1122,7 +1177,7 @@ class GUIBuilder:
             snap_label = Gtk.Label(label="Snap Packages:")
             snap_box.pack_start(snap_label, False, False, 0)
             snap_store = Gtk.ListStore(str)
-            for pkg in all_config.get('snap_packages', []):
+            for pkg in merged_config.get('snap_packages', []):
                 snap_store.append([pkg])
             snap_view = Gtk.TreeView(model=snap_store)
             snap_renderer = Gtk.CellRendererText()
@@ -1158,7 +1213,7 @@ class GUIBuilder:
             pinned_label = Gtk.Label(label="Pinned Apps:")
             pinned_box.pack_start(pinned_label, False, False, 0)
             pinned_store = Gtk.ListStore(str)
-            for app in all_config.get('pinned_apps', []):
+            for app in merged_config.get('pinned_apps', []):
                 pinned_store.append([app])
             pinned_view = Gtk.TreeView(model=pinned_store)
             pinned_renderer = Gtk.CellRendererText()
@@ -1225,35 +1280,47 @@ class GUIBuilder:
             # App Name
             app_name_label = Gtk.Label(label="Application Name:")
             app_name_entry = Gtk.Entry()
-            app_name_entry.set_text(all_config.get('app_name', 'CrimsonCFG'))
+            app_name_entry.set_text(merged_config.get('app_name', 'CrimsonCFG'))
             ci_box.pack_start(app_name_label, False, False, 0)
             ci_box.pack_start(app_name_entry, False, False, 0)
             # App Subtitle
             app_subtitle_label = Gtk.Label(label="Application Subtitle:")
             app_subtitle_entry = Gtk.Entry()
-            app_subtitle_entry.set_text(all_config.get('app_subtitle', 'App & Customization Selector'))
+            app_subtitle_entry.set_text(merged_config.get('app_subtitle', 'App & Customization Selector'))
             ci_box.pack_start(app_subtitle_label, False, False, 0)
             ci_box.pack_start(app_subtitle_entry, False, False, 0)
             # App Logo
             app_logo_label = Gtk.Label(label="Logo Path (PNG):")
             app_logo_entry = Gtk.Entry()
-            app_logo_entry.set_text(all_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
+            app_logo_entry.set_text(merged_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
             ci_box.pack_start(app_logo_label, False, False, 0)
             ci_box.pack_start(app_logo_entry, False, False, 0)
             admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))
             # Save button for admin changes (update to save CI as well)
             def on_save_admin(btn):
-                # Save all three lists and CI to all.yml
-                with open('group_vars/all.yml', 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-                all_config['apt_packages'] = [row[0] for row in apt_store]
-                all_config['snap_packages'] = [row[0] for row in snap_store]
-                all_config['pinned_apps'] = [row[0] for row in pinned_store]
-                all_config['app_name'] = app_name_entry.get_text()
-                all_config['app_subtitle'] = app_subtitle_entry.get_text()
-                all_config['app_logo'] = app_logo_entry.get_text()
-                with open('group_vars/all.yml', 'w') as f:
-                    yaml.safe_dump(all_config, f, default_flow_style=False, allow_unicode=True)
+                # Save user-modifiable variables to user's local.yml
+                config_dir = Path.home() / ".config/com.crimson.cfg"
+                local_file = config_dir / "local.yml"
+                if not config_dir.exists():
+                    config_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Load existing local config
+                local_config = {}
+                if local_file.exists():
+                    with open(local_file, 'r') as f:
+                        local_config = yaml.safe_load(f) or {}
+                
+                # Update user-modifiable variables
+                local_config['apt_packages'] = [row[0] for row in apt_store]
+                local_config['snap_packages'] = [row[0] for row in snap_store]
+                local_config['pinned_apps'] = [row[0] for row in pinned_store]
+                local_config['app_name'] = app_name_entry.get_text()
+                local_config['app_subtitle'] = app_subtitle_entry.get_text()
+                local_config['app_logo'] = app_logo_entry.get_text()
+                
+                # Save to user's local.yml
+                with open(local_file, 'w') as f:
+                    yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
                 # Update header in UI immediately
                 self.main_window.config = self.main_window.config_manager.load_config()
                 self.apply_css()
@@ -1270,7 +1337,6 @@ class GUIBuilder:
             for child in admin_tab.get_children():
                 admin_tab.remove(child)
             # TODO: This is insecure and just a proof of concept. Do not use plaintext admin passwords in production.
-            import yaml
             try:
                 with open('group_vars/all.yml', 'r') as f:
                     all_config = yaml.safe_load(f) or {}
@@ -1339,7 +1405,6 @@ class GUIBuilder:
     def update_config_display(self, button):
         """Update the configuration display with current settings"""
         import json
-        from pathlib import Path
         
         config_text = "=== CRIMSONCFG CONFIGURATION ===\n\n"
         
@@ -1397,9 +1462,15 @@ class GUIBuilder:
         config_text += "\ud83d\udca1 EXAMPLE CONFIGURATION (~/.config/com.crimson.cfg/local.yml):\n"
         config_text += "```yaml\n"
         config_text += "# User-specific configuration\n"
-        config_text += "git_username: your_github_username\n"
-        config_text += "git_email: your.email@example.com\n"
-        config_text += "debug: 1  # Enable debug mode\n"
+        config_text += "apt_packages:\n"
+        config_text += "  - firefox\n"
+        config_text += "  - vlc\n"
+        config_text += "snap_packages:\n"
+        config_text += "  - spotify\n"
+        config_text += "pinned_apps:\n"
+        config_text += "  - firefox.desktop\n"
+        config_text += "app_name: MyCompanyCFG\n"
+        config_text += "app_subtitle: Custom Configuration Manager\n"
         config_text += "```\n\n"
         
         # File Locations
