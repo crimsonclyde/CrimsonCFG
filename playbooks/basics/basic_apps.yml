@@ -4,9 +4,11 @@
 # CrimsonCFG-Essential-Order: 3
 ---
 - name: Install basic applications
-  hosts: all
+  hosts: localhost
   become: true
-
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
   tasks:
 
     #######################
@@ -17,6 +19,7 @@
       ansible.builtin.apt:
         name: "{{ apt_packages }}"
         state: present
+      when: apt_packages is defined and apt_packages | length > 0
 
     #######################
     # Install basic snap pkgs
