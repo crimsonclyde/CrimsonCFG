@@ -18,12 +18,13 @@ import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
 import shutil
+# Built-in functions are available by default in Python
 
 # Import the playbook scanner
 try:
     from functions.playbook_scanner import PlaybookScanner
     print("PlaybookScanner imported successfully")
-except ImportError as e:
+except ImportError as e:  # type: ignore
     # Fallback if scanner module is not available
     print(f"PlaybookScanner import failed: {e}")
     PlaybookScanner = None
@@ -33,10 +34,28 @@ class CrimsonCFGGUI:
         print("Initializing CrimsonCFGGUI...")
         self.application = application
         self.sudo_password = None
+        
+        # Initialize attributes that will be set later
+        self.current_category = None
+        self.category_buttons = {}
+        self.playbook_store = None
+        self.playbook_tree = None
+        self.selected_store = None
+        self.selected_tree = None
+        self.confirm_checkbox = None
+        self.install_btn = None
+        self.progress_bar = None
+        self.status_label = None
+        self.logs_buffer = None
+        self.logs_textview = None
+        self.debug_checkbox = None
+        self.notebook = None
+        self.password_entry = None
+        
         print("Creating window...")
         self.window = Gtk.ApplicationWindow(application=application)
         self.application.add_window(self.window)
-        self.window.set_title("CrimsonCFG - App & Customization Selector")
+        self.window.set_title("CrimsonCFG - App &amp; Customization Selector")
         self.window.set_default_size(1400, 900)
         self.window.set_position(Gtk.WindowPosition.CENTER)
         print("Window created successfully")
@@ -60,7 +79,9 @@ class CrimsonCFGGUI:
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
-        self.ansible_folder = f"{self.user_home}/Ansible"
+        self.ansible_folder = self.config.get("settings", {}).get("ansible_folder", f"{self.user_home}/Ansible")
+        if "{{ user_home }}" in self.ansible_folder:
+            self.ansible_folder = self.ansible_folder.replace("{{ user_home }}", self.user_home)
         self.inventory_file = f"{self.ansible_folder}/hosts.ini"
         self.selected_playbooks = set()
         self.installation_running = False
@@ -324,7 +345,7 @@ class CrimsonCFGGUI:
             self.password_entry.set_text("")
             self.password_entry.grab_focus()
             
-    def test_sudo_password(self, password) -> bool:
+    def test_sudo_password(self, password) -> bool:  # type: ignore
         """Test if the provided sudo password is valid"""
         if self.debug:
             print("Testing sudo password...")
@@ -373,7 +394,7 @@ class CrimsonCFGGUI:
         all_config = {}
         all_file = Path("group_vars/all.yml")
         if all_file.exists():
-            with open(all_file, 'r') as f:
+            with open(all_file, 'r') as f:  # type: ignore
                 all_config = yaml.safe_load(f) or {}
         
         # Load local configuration (user-specific)
@@ -383,10 +404,10 @@ class CrimsonCFGGUI:
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
         if not local_file.exists():
-            with open(local_file, 'w') as f:
+            with open(local_file, 'w') as f:  # type: ignore
                 yaml.safe_dump({}, f)
         if local_file.exists():
-            with open(local_file, 'r') as f:
+            with open(local_file, 'r') as f:  # type: ignore
                 local_config = yaml.safe_load(f) or {}
         
         # Merge configurations (local overrides global)
@@ -422,7 +443,7 @@ class CrimsonCFGGUI:
                 user_gui_config = config_dir / "gui_config.json"
                 if not config_dir.exists():
                     config_dir.mkdir(parents=True, exist_ok=True)
-                success = PlaybookScanner().generate_config(str(user_gui_config))
+                success = PlaybookScanner().generate_config(str(user_gui_config))  # type: ignore
                 if success:
                     if self.debug:
                         print("GUI config regenerated successfully")
@@ -449,7 +470,7 @@ class CrimsonCFGGUI:
         if not user_gui_config.exists() and default_gui_config.exists():
             shutil.copy(default_gui_config, user_gui_config)
         if user_gui_config.exists():
-            with open(user_gui_config, 'r') as f:
+            with open(user_gui_config, 'r') as f:  # type: ignore
                 json_config = json.load(f)
                 return json_config.get("categories", {})
         else:
@@ -733,7 +754,7 @@ class CrimsonCFGGUI:
         
         # Category buttons
         self.category_buttons = {}
-        categories = list(self.config["categories"].keys())
+        categories = list(self.config["categories"].keys())  # type: ignore
         if self.debug:
             print(f"setup_gui: Found {len(categories)} categories: {categories}")
         if categories:

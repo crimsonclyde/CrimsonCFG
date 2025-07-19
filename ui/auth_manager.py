@@ -78,11 +78,11 @@ class AuthManager:
             merged_config = {**all_config, **local_config}
             
             app_name = merged_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = merged_config.get('app_subtitle', 'App & Customization Selector')
+            app_subtitle = merged_config.get('app_subtitle', 'App &amp; Customization Selector')
             app_logo = merged_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
         except Exception:
             app_name = 'CrimsonCFG'
-            app_subtitle = 'App & Customization Selector'
+            app_subtitle = 'App &amp; Customization Selector'
             app_logo = os.path.join("files", "com.crimson.cfg.logo.png")
         title_label = Gtk.Label()
         title_label.set_markup(f"<span size='x-large' weight='bold'>{app_name}</span>")

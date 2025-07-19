@@ -265,9 +265,9 @@ class GUIBuilder:
                 
                 # Merge configurations (local overrides all)
                 merged_config = {**all_config, **local_config}
-                app_subtitle = merged_config.get('app_subtitle', 'App & Customization Selector')
+                app_subtitle = merged_config.get('app_subtitle', 'App &amp; Customization Selector')
             except Exception:
-                app_subtitle = 'App & Customization Selector'
+                app_subtitle = 'App &amp; Customization Selector'
         subtitle_label = Gtk.Label()
         subtitle_label.set_markup(f"<span size='medium'>{app_subtitle}</span>")
         subtitle_label.set_halign(Gtk.Align.START)
@@ -769,12 +769,34 @@ class GUIBuilder:
         # Ensure user and user_home are set in local_config
         system_user = getpass.getuser()
         updated = False
-        if "user" not in local_config:
-            local_config["user"] = system_user
-            updated = True
-        if "user_home" not in local_config:
-            local_config["user_home"] = f"/home/{system_user}"
-            updated = True
+        
+        # Initialize all user-modifiable variables if they don't exist
+        default_vars = {
+            "user": system_user,
+            "user_home": f"/home/{system_user}",
+            "apt_packages": [],
+            "snap_packages": [],
+            "pinned_apps": [],
+            "app_name": "CrimsonCFG",
+            "app_subtitle": "App &amp; Customization Selector",
+            "background_color": "#181a20",
+            "debug": 0,
+            "git_username": "",
+            "git_email": "",
+            "ssh_private_key_name": "id_rsa",
+            "ssh_public_key_name": "id_rsa.pub",
+            "ssh_private_key_content": "",
+            "ssh_public_key_content": "",
+            "ssh_config_content": "",
+            "chromium_homepage_url": "",
+            "ansible_folder": f"/home/{system_user}/Ansible"
+        }
+        
+        for var_name, default_value in default_vars.items():
+            if var_name not in local_config:
+                local_config[var_name] = default_value
+                updated = True
+        
         if updated:
             with open(local_file, 'w') as f:
                 yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
@@ -1286,7 +1308,7 @@ class GUIBuilder:
             # App Subtitle
             app_subtitle_label = Gtk.Label(label="Application Subtitle:")
             app_subtitle_entry = Gtk.Entry()
-            app_subtitle_entry.set_text(merged_config.get('app_subtitle', 'App & Customization Selector'))
+            app_subtitle_entry.set_text(merged_config.get('app_subtitle', 'App &amp; Customization Selector'))
             ci_box.pack_start(app_subtitle_label, False, False, 0)
             ci_box.pack_start(app_subtitle_entry, False, False, 0)
             # App Logo

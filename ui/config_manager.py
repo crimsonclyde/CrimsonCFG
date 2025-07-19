@@ -39,6 +39,35 @@ class ConfigManager:
         local_file = config_dir / "local.yml"
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create initial local.yml if it doesn't exist
+        if not local_file.exists():
+            system_user = getpass.getuser()
+            initial_local_config = {
+                "user": system_user,
+                "user_home": f"/home/{system_user}",
+                "apt_packages": [],
+                "snap_packages": [],
+                "pinned_apps": [],
+                "app_name": "CrimsonCFG",
+                "app_subtitle": "App &amp; Customization Selector",
+                "background_color": "#181a20",
+                "debug": 0,
+                "git_username": "",
+                "git_email": "",
+                "ssh_private_key_name": "id_rsa",
+                "ssh_public_key_name": "id_rsa.pub",
+                "ssh_private_key_content": "",
+                "ssh_public_key_content": "",
+                "ssh_config_content": "",
+                "chromium_homepage_url": "",
+                "ansible_folder": f"/home/{system_user}/Ansible"
+            }
+            with open(local_file, 'w') as f:
+                yaml.safe_dump(initial_local_config, f, default_flow_style=False, allow_unicode=True)
+            if self.debug:
+                print(f"Created initial local.yml at {local_file}")
+        
         if local_file.exists():
             with open(local_file, 'r') as f:
                 local_config = yaml.safe_load(f) or {}

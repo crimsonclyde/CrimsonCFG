@@ -35,7 +35,7 @@ class CrimsonCFGGUI:
             print("Creating window...")
         self.window = Gtk.ApplicationWindow(application=application)
         self.application.add_window(self.window)
-        self.window.set_title("CrimsonCFG - App & Customization Selector")
+        self.window.set_title("CrimsonCFG - App &amp; Customization Selector")
         self.window.set_default_size(1400, 900)
         self.window.set_position(Gtk.WindowPosition.CENTER)
         if self.debug:
@@ -64,11 +64,11 @@ class CrimsonCFGGUI:
             merged_config = {**all_config, **local_config}
             
             app_name = merged_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = merged_config.get('app_subtitle', 'App & Customization Selector')
+            app_subtitle = merged_config.get('app_subtitle', 'App &amp; Customization Selector')
             app_logo = merged_config.get('app_logo', None)
         except Exception:
             app_name = 'CrimsonCFG'
-            app_subtitle = 'App & Customization Selector'
+            app_subtitle = 'App &amp; Customization Selector'
             app_logo = None
         self.window.set_title(f"{app_name} - {app_subtitle}")
         if app_logo and os.path.exists(app_logo):
