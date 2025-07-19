@@ -1,10 +1,29 @@
 # CrimsonCFG - App & Customization Selector
 
-[TOC]
+- [CrimsonCFG - App \& Customization Selector](#crimsoncfg---app--customization-selector)
+  - [Exordium](#exordium)
+  - [Installation](#installation)
+  - [Features](#features)
+  - [Configuration Structure](#configuration-structure)
+    - [Global Configuration (`group_vars/all.yml`)](#global-configuration-group_varsallyml)
+    - [Local Configuration (`~/.config/com.crimson.cfg/local.yml`)](#local-configuration-configcomcrimsoncfglocalyml)
+    - [Configuration Priority](#configuration-priority)
+  - [Usage](#usage)
+  - [File Structure](#file-structure)
+  - [Development](#development)
+    - [Adding New Configuration Variables](#adding-new-configuration-variables)
+    - [Adding New Playbooks](#adding-new-playbooks)
+  - [Troubleshooting](#troubleshooting)
+    - [Permission Issues](#permission-issues)
+    - [Configuration Issues](#configuration-issues)
+  - [Uninstallation](#uninstallation)
+  - [License](#license)
 
 ## Exordium
 
 A modern, user-friendly GUI application for managing system configuration and application installation using Ansible playbooks.
+
+![Main Window Screenshot](/files/com.crimson.cfg.screenshot_main.png)
 
 ## Installation
 
