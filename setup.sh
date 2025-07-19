@@ -68,7 +68,7 @@ sudo apt-get install -y git curl figlet
 print_status "Configuring git..."
 
 # Check for existing global git username
-gituser=$(git config --global user.name)
+gituser=$(git config --global user.name || true)
 if [ -z "$gituser" ]; then
     echo -en "${BLUE}│${NC} Enter your git username: "
     read gituser
@@ -78,7 +78,7 @@ else
 fi
 
 # Check for existing global git email
-gitemail=$(git config --global user.email)
+gitemail=$(git config --global user.email || true)
 if [ -z "$gitemail" ]; then
     echo -en "${BLUE}│${NC} Enter your git email: "
     read gitemail
