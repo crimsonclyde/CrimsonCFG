@@ -52,7 +52,7 @@ class ConfigManager:
                 "working_directory": "/opt/CrimsonCFG",
                 # Corporate Identity (CI)
                 "app_name": "CrimsonCFG",
-                "app_subtitle": "App &amp; Customization Selector",
+                "app_subtitle": "App & Customization Selector",
                 "background_color": "#181a20",
                 # Basics 
                 "apt_packages": [

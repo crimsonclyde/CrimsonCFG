@@ -1311,10 +1311,15 @@ class GUIBuilder:
             ci_box.pack_start(app_subtitle_label, False, False, 0)
             ci_box.pack_start(app_subtitle_entry, False, False, 0)
             # App Logo
-            app_logo_label = Gtk.Label(label="Logo Path (PNG):")
+            app_logo_label = Gtk.Label(label="Application Logo (base working dir):")
+            ci_box.pack_start(app_logo_label, False, False, 0)
+            # Show the current working directory for user reference
+            working_dir = str(self.main_window.working_directory) if hasattr(self.main_window, 'working_directory') else os.getcwd()
+            working_dir_label = Gtk.Label(label=f"Current working dir: {working_dir}")
+            working_dir_label.set_xalign(0)
+            ci_box.pack_start(working_dir_label, False, False, 0)
             app_logo_entry = Gtk.Entry()
             app_logo_entry.set_text(merged_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
-            ci_box.pack_start(app_logo_label, False, False, 0)
             ci_box.pack_start(app_logo_entry, False, False, 0)
             admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))
             # Save button for admin changes (update to save CI as well)
