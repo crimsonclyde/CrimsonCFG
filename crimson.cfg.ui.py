@@ -79,10 +79,10 @@ class CrimsonCFGGUI:
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
-        self.ansible_folder = self.config.get("settings", {}).get("ansible_folder", f"{self.user_home}/Ansible")
-        if "{{ user_home }}" in self.ansible_folder:
-            self.ansible_folder = self.ansible_folder.replace("{{ user_home }}", self.user_home)
-        self.inventory_file = f"{self.ansible_folder}/hosts.ini"
+        self.working_directory = self.config.get("settings", {}).get("working_directory", "/opt/CrimsonCFG")
+        if "{{ user_home }}" in self.working_directory:
+            self.working_directory = self.working_directory.replace("{{ user_home }}", self.user_home)
+        self.inventory_file = f"{self.working_directory}/hosts.ini"
         self.selected_playbooks = set()
         self.installation_running = False
         
@@ -422,7 +422,7 @@ class CrimsonCFGGUI:
             "categories": self.load_categories_from_yaml(),
             "settings": {
                 "default_user": system_user,
-                "ansible_folder": f"/home/{system_user}/Ansible",
+                "working_directory": f"/home/{system_user}/Ansible",
                 "inventory_file": f"/home/{system_user}/Ansible/hosts.ini",
                 "log_directory": f"/home/{system_user}/Ansible/log",
                 "debug": merged_config.get("debug", 0),
@@ -1357,7 +1357,7 @@ class CrimsonCFGGUI:
                 "ansible-playbook",
                 "-i", self.inventory_file,
                 playbook_path,
-                "--extra-vars", f"user={self.user} user_home={self.user_home} ansible_folder={self.ansible_folder}"
+                "--extra-vars", f"user={self.user} user_home={self.user_home} working_directory={self.working_directory}"
             ]
             
             # Add additional variables for specific playbooks
@@ -1384,10 +1384,10 @@ class CrimsonCFGGUI:
         """Setup Ansible directory and inventory file"""
         try:
             # Create Ansible directory if it doesn't exist
-            if not os.path.exists(self.ansible_folder):
-                os.makedirs(self.ansible_folder, exist_ok=True)
+            if not os.path.exists(self.working_directory):
+                os.makedirs(self.working_directory, exist_ok=True)
                 if self.debug:
-                    print(f"Created Ansible directory: {self.ansible_folder}")
+                    print(f"Created Working Directory: {self.working_directory}")
             
             # Create inventory file if it doesn't exist
             if not os.path.exists(self.inventory_file):

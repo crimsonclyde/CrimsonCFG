@@ -10,6 +10,7 @@ import getpass
 from pathlib import Path
 from typing import Dict
 import shutil
+import os
 
 # Import the playbook scanner
 try:
@@ -44,24 +45,58 @@ class ConfigManager:
         if not local_file.exists():
             system_user = getpass.getuser()
             initial_local_config = {
+                # User
                 "user": system_user,
                 "user_home": f"/home/{system_user}",
-                "apt_packages": [],
-                "snap_packages": [],
-                "pinned_apps": [],
+                "debug": 0,
+                "working_directory": "/opt/CrimsonCFG",
+                # Corporate Identity (CI)
                 "app_name": "CrimsonCFG",
                 "app_subtitle": "App &amp; Customization Selector",
                 "background_color": "#181a20",
-                "debug": 0,
-                "git_username": "",
-                "git_email": "",
+                # Basics 
+                "apt_packages": [
+                    "btop",
+                    "mc",
+                    "python3-venv",
+                    "python3-tk",
+                    "python3-psutil",
+                    "libfuse2",
+                    "gnome-tweaks",
+                    "vlc",
+                    "gufw",
+                    "syncthing",
+                    "syncthingtray",
+                    "krita",
+                    "filezilla",
+                    "fuse3",
+                    "nautilus",
+                    "software-properties-common",
+                    "flameshot"
+                ],
+                "snap_packages": [
+                    "bitwarden"
+                ],
+                "pinned_apps": [
+                    "chromium_chromium.desktop",
+                    "codium_codium.desktop",
+                    "nautilus.desktop",
+                    "gnome-terminal.desktop",
+                    "bitwarden_bitwarden.desktop",
+                    "signal-desktop.desktop",
+                    "gnome-boxes.desktop"
+                ],
+                # GIT
+                "git_email": os.environ.get("GIT_EMAIL", "user@example.com"),
+                "git_username": os.environ.get("GIT_USERNAME", system_user),
+                # SSH
                 "ssh_private_key_name": "id_rsa",
                 "ssh_public_key_name": "id_rsa.pub",
                 "ssh_private_key_content": "",
                 "ssh_public_key_content": "",
                 "ssh_config_content": "",
-                "chromium_homepage_url": "",
-                "ansible_folder": f"/home/{system_user}/Ansible"
+                # Browser
+                "chromium_homepage_url": ""
             }
             with open(local_file, 'w') as f:
                 yaml.safe_dump(initial_local_config, f, default_flow_style=False, allow_unicode=True)
@@ -83,9 +118,9 @@ class ConfigManager:
             "categories": self.load_categories_from_yaml(),
             "settings": {
                 "default_user": system_user,
-                "ansible_folder": merged_config.get("ansible_folder", f"/home/{system_user}/Ansible"),
-                "inventory_file": f"/home/{system_user}/Ansible/hosts.ini",
-                "log_directory": f"/home/{system_user}/Ansible/log",
+                "working_directory": merged_config.get("working_directory", "/opt/CrimsonCFG"),
+                "inventory_file": f"/opt/CrimsonCFG/hosts.ini",
+                "log_directory": f"/opt/CrimsonCFG/log",
                 "debug": merged_config.get("debug", 0),
                 "git_username": merged_config.get("git_username", system_user),
                 "git_email": merged_config.get("git_email", f"{system_user}@example.com")

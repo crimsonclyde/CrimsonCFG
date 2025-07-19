@@ -19,10 +19,10 @@ class Installer:
         """Setup Ansible directory and inventory file"""
         try:
             # Create Ansible directory if it doesn't exist
-            if not os.path.exists(self.main_window.ansible_folder):
-                os.makedirs(self.main_window.ansible_folder, exist_ok=True)
+            if not os.path.exists(self.main_window.working_directory):
+                os.makedirs(self.main_window.working_directory, exist_ok=True)
                 if self.debug:
-                    print(f"Created Ansible directory: {self.main_window.ansible_folder}")
+                    print(f"Created Working Directory: {self.main_window.working_directory}")
             
             # Create inventory file if it doesn't exist
             if not os.path.exists(self.main_window.inventory_file):
@@ -67,15 +67,15 @@ localhost
                 
             # Check if playbook file exists (in original location)
             playbook_path = playbook['path']
-            # If the playbook path is not absolute, prepend ansible_folder/playbooks
+            # If the playbook path is not absolute, prepend working_directory/playbooks
             if not os.path.isabs(playbook_path):
                 # Remove leading 'playbooks/' if present
                 if playbook_path.startswith('playbooks/'):
                     playbook_path = playbook_path[len('playbooks/'):]
-                playbook_path = os.path.join(self.main_window.ansible_folder, 'playbooks', playbook_path)
+                playbook_path = os.path.join(self.main_window.working_directory, 'playbooks', playbook_path)
             # Expand Jinja2 variables if present
-            if "{{ ansible_folder }}" in playbook_path:
-                playbook_path = playbook_path.replace("{{ ansible_folder }}", self.main_window.ansible_folder)
+            if "{{ working_directory }}" in playbook_path:
+                playbook_path = playbook_path.replace("{{ working_directory }}", self.main_window.working_directory)
             if not os.path.exists(playbook_path):
                 GLib.idle_add(self.main_window.logger.log_message, f"Error: Playbook file not found at {playbook_path}")
                 return False

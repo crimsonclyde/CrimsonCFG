@@ -105,10 +105,10 @@ class CrimsonCFGGUI:
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
-        self.ansible_folder = self.config.get("settings", {}).get("ansible_folder", f"{self.user_home}/Ansible")
-        if "{{ user_home }}" in self.ansible_folder:
-            self.ansible_folder = self.ansible_folder.replace("{{ user_home }}", self.user_home)
-        self.inventory_file = f"{self.ansible_folder}/hosts.ini"
+        self.working_directory = self.config.get("settings", {}).get("working_directory", "/opt/CrimsonCFG")
+        if "{{ user_home }}" in self.working_directory:
+            self.working_directory = self.working_directory.replace("{{ user_home }}", self.user_home)
+        self.inventory_file = f"{self.working_directory}/hosts.ini"
         self.selected_playbooks = set()
         self.installation_running = False
         

@@ -66,13 +66,26 @@ sudo apt-get update
 sudo apt-get install -y git curl figlet
 
 print_status "Configuring git..."
-echo -en "${BLUE}│${NC} Enter your git username: "
-read gituser
-git config --global user.name "$gituser"
 
-echo -en "${BLUE}│${NC} Enter your git email: "
-read gitemail
-git config --global user.email "$gitemail"
+# Check for existing global git username
+gituser=$(git config --global user.name)
+if [ -z "$gituser" ]; then
+    echo -en "${BLUE}│${NC} Enter your git username: "
+    read gituser
+    git config --global user.name "$gituser"
+else
+    echo -e "${BLUE}│${NC} Using existing git username: $gituser"
+fi
+
+# Check for existing global git email
+gitemail=$(git config --global user.email)
+if [ -z "$gitemail" ]; then
+    echo -en "${BLUE}│${NC} Enter your git email: "
+    read gitemail
+    git config --global user.email "$gitemail"
+else
+    echo -e "${BLUE}│${NC} Using existing git email: $gitemail"
+fi
 
 print_status "Creating $INSTALL_DIR directory..."
 mkdir -p "$INSTALL_DIR"
@@ -97,8 +110,8 @@ fi
 cd "$INSTALL_DIR/$REPO_NAME"
 print_status "Current directory: $(pwd)"
 
-# Determine ansible_folder from YAML config (local overrides global)
-ANSIBLE_FOLDER=$(python3 -c '
+# Determine working_directory from YAML config (local overrides global)
+WORKING_DIRECTORY=$(python3 -c '
 import yaml
 from pathlib import Path
 import os
@@ -108,17 +121,17 @@ allf = Path("group_vars/all.yml")
 if local.exists():
     with open(local) as f:
         cfg = yaml.safe_load(f) or {}
-        if "ansible_folder" in cfg:
-            print(cfg["ansible_folder"]); exit()
+        if "working_directory" in cfg:
+            print(cfg["working_directory"]); exit()
 if allf.exists():
     with open(allf) as f:
         cfg = yaml.safe_load(f) or {}
-        if "ansible_folder" in cfg:
-            print(cfg["ansible_folder"]); exit()
-print(os.path.expanduser("~/CrimsonCFG"))  # fallback
+        if "working_directory" in cfg:
+            print(cfg["working_directory"]); exit()
+print("/opt/CrimsonCFG")  # fallback
 ')
 
-# Use $ANSIBLE_FOLDER for any playbook directory setup below
+# Use $WORKING_DIRECTORY for any playbook directory setup below
 
 print_status "Making installer executable..."
 sudo chmod +x install.sh

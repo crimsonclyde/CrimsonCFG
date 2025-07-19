@@ -31,7 +31,7 @@ Contains user-modifiable settings that override global defaults:
 - **app_subtitle**: Application subtitle
 - **app_logo**: Path to application logo
 - **user**: Current user
-- **ansible_folder**: User's Ansible directory
+- **working_directory**: Application root directory (default: /opt/CrimsonCFG)
 
 ### Configuration Priority
 1. Local settings (`~/.config/com.crimson.cfg/local.yml`) override global settings

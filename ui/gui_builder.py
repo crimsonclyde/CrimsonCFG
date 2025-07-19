@@ -789,7 +789,7 @@ class GUIBuilder:
             "ssh_public_key_content": "",
             "ssh_config_content": "",
             "chromium_homepage_url": "",
-            "ansible_folder": f"/home/{system_user}/Ansible"
+            "working_directory": f"/home/{system_user}/Ansible"
         }
         
         for var_name, default_value in default_vars.items():
@@ -976,14 +976,13 @@ class GUIBuilder:
         user_home_entry.set_text(get_val("user_home", os.path.expanduser("~")))
         userinfo_box.pack_start(user_home_entry, False, False, 0)
 
-        ansible_folder_label = Gtk.Label(label="Ansible Folder (user override, see docs):")
-        ansible_folder_label.set_tooltip_text("This value is loaded from ~/.config/com.crimson.cfg/local.yml if present, otherwise from group_vars/all.yml. Editing here only affects your user.")
-        ansible_folder_label.set_xalign(0)
-        userinfo_box.pack_start(ansible_folder_label, False, False, 0)
-        ansible_folder_entry = Gtk.Entry()
-        # Always show the effective value (local overrides global)
-        ansible_folder_entry.set_text(get_val("ansible_folder", "{{ user_home }}/CrimsonCFG"))
-        userinfo_box.pack_start(ansible_folder_entry, False, False, 0)
+        working_directory_label = Gtk.Label(label="Working Directory (user override, see docs):")
+        working_directory_label.set_tooltip_text("This value is loaded from ~/.config/com.crimson.cfg/local.yml if present, otherwise from group_vars/all.yml. Editing here only affects your user.")
+        working_directory_label.set_xalign(0)
+        userinfo_box.pack_start(working_directory_label, False, False, 0)
+        working_directory_entry = Gtk.Entry()
+        working_directory_entry.set_text(get_val("working_directory", "{{ user_home }}/CrimsonCFG"))
+        userinfo_box.pack_start(working_directory_entry, False, False, 0)
 
         config_notebook.append_page(userinfo_box, Gtk.Label(label="User Info"))
 
@@ -1032,7 +1031,7 @@ class GUIBuilder:
             # User info
             local_config["user"] = user_entry.get_text()
             local_config["user_home"] = user_home_entry.get_text()
-            local_config["ansible_folder"] = ansible_folder_entry.get_text()
+            local_config["working_directory"] = working_directory_entry.get_text()
             # SSH key names
             local_config["ssh_private_key_name"] = priv_key_name_entry.get_text()
             local_config["ssh_public_key_name"] = pub_key_name_entry.get_text()
@@ -1057,7 +1056,7 @@ class GUIBuilder:
             local_config["background_color"] = hex_color
             # Only keep relevant keys
             allowed_keys = [
-                "git_username", "git_email", "chromium_homepage_url", "user", "user_home", "ansible_folder",
+                "git_username", "git_email", "chromium_homepage_url", "user", "user_home", "working_directory",
                 "ssh_private_key_name", "ssh_public_key_name", "ssh_private_key_content", "ssh_public_key_content",
                 "ssh_config_content", "background_image", "background_color"
             ]
@@ -1071,10 +1070,10 @@ class GUIBuilder:
             self.main_window.config = self.main_window.config_manager.load_config()
             self.main_window.user = self.main_window.config.get("settings", {}).get("default_user", "user")
             self.main_window.user_home = f"/home/{self.main_window.user}"
-            self.main_window.ansible_folder = self.main_window.config.get("settings", {}).get("ansible_folder", f"{self.main_window.user_home}/CrimsonCFG")
-            if "{{ user_home }}" in self.main_window.ansible_folder:
-                self.main_window.ansible_folder = self.main_window.ansible_folder.replace("{{ user_home }}", self.main_window.user_home)
-            self.main_window.inventory_file = f"{self.main_window.ansible_folder}/hosts.ini"
+            self.main_window.working_directory = self.main_window.config.get("settings", {}).get("working_directory", f"{self.main_window.user_home}/CrimsonCFG")
+            if "{{ user_home }}" in self.main_window.working_directory:
+                self.main_window.working_directory = self.main_window.working_directory.replace("{{ user_home }}", self.main_window.user_home)
+            self.main_window.inventory_file = f"{self.main_window.working_directory}/hosts.ini"
             # Optionally, show a dialog or status update
             dialog = Gtk.MessageDialog(parent=self.main_window.window, flags=0, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text="Configuration saved!")
             dialog.run()
@@ -1434,7 +1433,7 @@ class GUIBuilder:
         config_text += "🔧 SYSTEM INFORMATION:\n"
         config_text += f"  • Current User: {self.main_window.user}\n"
         config_text += f"  • User Home: {self.main_window.user_home}\n"
-        config_text += f"  • Ansible Folder: {self.main_window.ansible_folder}\n"
+        config_text += f"  • Working Directory: {self.main_window.working_directory}\n"
         config_text += f"  • Inventory File: {self.main_window.inventory_file}\n"
         config_text += f"  • Debug Mode: {'Enabled' if self.debug else 'Disabled'}\n\n"
         
@@ -1498,7 +1497,7 @@ class GUIBuilder:
         # File Locations
         config_text += "�� FILE LOCATIONS:\n"
         config_text += f"  • Working Directory: {Path.cwd()}\n"
-        config_text += f"  • Ansible Directory: {self.main_window.ansible_folder}\n"
+        config_text += f"  • Application Directory: {self.main_window.working_directory}\n"
         config_text += f"  • Inventory File: {self.main_window.inventory_file}\n"
         config_text += f"  • Log Directory: {settings.get('log_directory', 'Not set')}\n"
         
