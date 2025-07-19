@@ -99,6 +99,10 @@ User Configuration:
 ~/.config/com.crimson.cfg/
 ├── local.yml            # User-modifiable overrides
 └── gui_config.json     # GUI configuration
+
+Desktop .dotfile:
+~/.local/share/applications/
+├── com.crimson.cfg.desktop # Desktopfile
 ```
 
 ## Development
