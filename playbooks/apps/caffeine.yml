@@ -5,7 +5,9 @@
 - name: Install caffeine, the indicator and add to startup aps
   hosts: all
   become: true
-
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
   tasks:
 
     - name: Install caffeine
