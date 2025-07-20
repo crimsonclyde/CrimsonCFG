@@ -1,0 +1,63 @@
+# CrimsonCFG-Name: Virtualisation
+# CrimsonCFG-Description: Install GNOME Boxes, QEMU/KVM, and Virt-Manager
+# CrimsonCFG-Essential: false
+---
+- name: Install GNOME Boxes and QEMU/KVM and configure user permissions
+  hosts: all
+
+  tasks:
+
+    - name: Install GNOME Boxes, QEMU/KVM, and Virt-Manager
+      become: true
+      ansible.builtin.apt:
+        name:
+          - gnome-boxes
+          - qemu-kvm
+          - qemu-utils
+          - libvirt-daemon-system
+          - libvirt-clients
+          - bridge-utils
+          - virt-manager
+        state: present
+
+    - name: Ensure user is in libvirt group
+      become: true
+      ansible.builtin.user:
+        name: "{{ user }}"
+        groups: libvirt
+        append: true
+
+    - name: Ensure user is in kvm group
+      become: true
+      ansible.builtin.user:
+        name: "{{ user }}"
+        groups: kvm
+        append: true
+
+    - name: Ensure user has a libvirt config directory
+      become: false
+      ansible.builtin.file:
+        path: "/home/{{ user }}/.config/libvirt"
+        state: directory
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Enable and start libvirtd service
+      become: true
+      ansible.builtin.systemd:
+        name: libvirtd
+        enabled: true
+        state: started
+
+    - name: Verify libvirt socket access without sudo
+      become: false
+      ansible.builtin.command: "virsh list --all"
+      register: virsh_output
+      ignore_errors: true
+      changed_when: false
+
+    - name: Show test output
+      become: false
+      ansible.builtin.debug:
+        var: virsh_output.stdout
