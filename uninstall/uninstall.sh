@@ -17,22 +17,25 @@ set -e
 ##################
 # Variables
 ##################
-# Default install dir
-INSTALL_DIR="/opt/CrimsonCFG"
-
-# Try to read working_directory from local.yml if it exists
-LOCAL_YML="$HOME/.config/com.crimson.cfg/local.yml"
+# Load local.yml
+LOCAL_YML="$(dirname "$0")/../group_vars/local.yml"
+USER_HOME=""
+WORKING_DIRECTORY=""
 if [ -f "$LOCAL_YML" ]; then
-    # Extract working_directory using grep/sed/awk (YAML, so simple key: value)
-    WD_LINE=$(grep '^working_directory:' "$LOCAL_YML" | head -n1)
-    if [ -n "$WD_LINE" ]; then
-        # Remove key and possible quotes/spaces
-        WD_VALUE=$(echo "$WD_LINE" | sed "s/^working_directory:[ ]*//;s/[\"']//g")
-        if [ -n "$WD_VALUE" ]; then
-            INSTALL_DIR="$WD_VALUE"
-        fi
+    USER_HOME=$(grep -E '^user_home:' "$LOCAL_YML" | awk '{print $2}')
+    if [ -z "$USER_HOME" ]; then
+        print_warning "user_home not set in local.yml. Defaulting to /home/$(logname)"
+        USER_HOME="/home/$(logname)"
     fi
+    WORKING_DIRECTORY=$(grep -E '^working_directory:' "$LOCAL_YML" | awk '{print $2}')
+    if [ -z "$WORKING_DIRECTORY" ]; then
+        print_warning "working_directory not set in local.yml."
+    fi
+else
+    print_warning "local.yml not found. Defaulting to /home/$(logname)"
+    USER_HOME="/home/$(logname)"
 fi
+
 
 ##################
 # Functions
@@ -100,18 +103,20 @@ else
     print_error "Failed to remove $INSTALL_DIR/"
 fi
 
+
+
 # Remove config directory
-if sudo rm -rf ~/.config/com.crimson.cfg/; then
-    print_success "Removed ~/.config/com.crimson.cfg/"
+if sudo rm -r "$USER_HOME/.config/com.crimson.cfg/"; then
+    print_success "Removed $USER_HOME/.config/com.crimson.cfg/"
 else
-    print_error "Failed to remove ~/.config/com.crimson.cfg/"
+    print_error "Failed to remove $USER_HOME/.config/com.crimson.cfg/"
 fi
 
 # Remove desktop entry
-if sudo rm -f ~/.local/share/applications/com.crimson.cfg.desktop; then
-    print_success "Removed ~/.local/share/applications/com.crimson.cfg.desktop"
+if sudo rm -f "$USER_HOME/.local/share/applications/com.crimson.cfg.desktop"; then
+    print_success "Removed $USER_HOME/.local/share/applications/com.crimson.cfg.desktop"
 else
-    print_error "Failed to remove ~/.local/share/applications/com.crimson.cfg.desktop"
+    print_error "Failed to remove $USER_HOME/.local/share/applications/com.crimson.cfg.desktop"
 fi
 
 print_success "CrimsonCFG has been uninstalled"
