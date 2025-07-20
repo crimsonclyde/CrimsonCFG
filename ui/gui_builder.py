@@ -755,9 +755,8 @@ class GUIBuilder:
             "user_home": f"/home/{system_user}",
             "apt_packages": [],
             "snap_packages": [],
-            "pinned_apps": [],
             "app_name": "CrimsonCFG",
-            "app_subtitle": "App &amp; Customization Selector",
+            "app_subtitle": "App & Customization Selector",
             "background_color": "#181a20",
             "debug": 0,
             "git_username": "",
@@ -1194,71 +1193,6 @@ class GUIBuilder:
             snap_btn_box.pack_start(remove_snap_btn, False, False, 0)
             snap_box.pack_start(snap_btn_box, False, False, 0)
             admin_notebook.append_page(snap_box, Gtk.Label(label="Snap Packages"))
-            # --- Pinned Apps Tab ---
-            pinned_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-            pinned_box.set_margin_start(10)
-            pinned_box.set_margin_end(10)
-            pinned_box.set_margin_top(10)
-            pinned_box.set_margin_bottom(10)
-            pinned_label = Gtk.Label(label="Pinned Apps:")
-            pinned_box.pack_start(pinned_label, False, False, 0)
-            pinned_store = Gtk.ListStore(str)
-            for app in local_config.get('pinned_apps', []):
-                pinned_store.append([app])
-            pinned_view = Gtk.TreeView(model=pinned_store)
-            pinned_renderer = Gtk.CellRendererText()
-            pinned_renderer.set_property('editable', True)
-            def on_pinned_edited(cell, path, new_text):
-                pinned_store[path][0] = new_text
-            pinned_renderer.connect('edited', on_pinned_edited)
-            pinned_col = Gtk.TreeViewColumn("App", pinned_renderer, text=0)
-            pinned_view.append_column(pinned_col)
-            pinned_box.pack_start(pinned_view, True, True, 0)
-            pinned_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-            add_pinned_btn = Gtk.Button(label="Add")
-            def on_add_pinned(btn):
-                pinned_store.append([""])
-            add_pinned_btn.connect("clicked", on_add_pinned)
-            remove_pinned_btn = Gtk.Button(label="Remove Selected")
-            def on_remove_pinned(btn):
-                selection = pinned_view.get_selection()
-                model, treeiter = selection.get_selected()
-                if treeiter:
-                    model.remove(treeiter)
-            remove_pinned_btn.connect("clicked", on_remove_pinned)
-            # Up/Down buttons for sorting
-            up_pinned_btn = Gtk.Button(label="Up")
-            down_pinned_btn = Gtk.Button(label="Down")
-            def on_up_pinned(btn):
-                selection = pinned_view.get_selection()
-                model, treeiter = selection.get_selected()
-                if treeiter:
-                    path = model.get_path(treeiter)[0]
-                    if path > 0:
-                        above_iter = model.get_iter(path - 1)
-                        value = model[treeiter][0]
-                        above_value = model[above_iter][0]
-                        model[treeiter][0], model[above_iter][0] = above_value, value
-                        pinned_view.get_selection().select_path(path - 1)
-            up_pinned_btn.connect("clicked", on_up_pinned)
-            def on_down_pinned(btn):
-                selection = pinned_view.get_selection()
-                model, treeiter = selection.get_selected()
-                if treeiter:
-                    path = model.get_path(treeiter)[0]
-                    if path < len(model) - 1:
-                        below_iter = model.get_iter(path + 1)
-                        value = model[treeiter][0]
-                        below_value = model[below_iter][0]
-                        model[treeiter][0], model[below_iter][0] = below_value, value
-                        pinned_view.get_selection().select_path(path + 1)
-            down_pinned_btn.connect("clicked", on_down_pinned)
-            pinned_btn_box.pack_start(up_pinned_btn, False, False, 0)
-            pinned_btn_box.pack_start(down_pinned_btn, False, False, 0)
-            pinned_btn_box.pack_start(add_pinned_btn, False, False, 0)
-            pinned_btn_box.pack_start(remove_pinned_btn, False, False, 0)
-            pinned_box.pack_start(pinned_btn_box, False, False, 0)
-            admin_notebook.append_page(pinned_box, Gtk.Label(label="Pinned Apps"))
             # --- Corporate Identity (CI) Tab ---
             ci_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             ci_box.set_margin_start(10)
@@ -1308,7 +1242,6 @@ class GUIBuilder:
                 # Update user-modifiable variables
                 local_config['apt_packages'] = [row[0] for row in apt_store]
                 local_config['snap_packages'] = [row[0] for row in snap_store]
-                local_config['pinned_apps'] = [row[0] for row in pinned_store]
                 local_config['app_name'] = app_name_entry.get_text()
                 local_config['app_subtitle'] = app_subtitle_entry.get_text()
                 local_config['app_logo'] = app_logo_entry.get_text()
@@ -1461,8 +1394,6 @@ class GUIBuilder:
         config_text += "  - vlc\n"
         config_text += "snap_packages:\n"
         config_text += "  - spotify\n"
-        config_text += "pinned_apps:\n"
-        config_text += "  - firefox.desktop\n"
         config_text += "app_name: MyCompanyCFG\n"
         config_text += "app_subtitle: Custom Configuration Manager\n"
         config_text += "```\n\n"
