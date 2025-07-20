@@ -125,7 +125,7 @@ Desktop .dotfile:
 To completely remove CrimsonCFG from your system, run:
 
 ```bash
-./uninstall/uninstall.sh
+sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && bash /opt/CrimsonCFG/uninstall/uninstall.sh
 ```
 
 This will remove the application files, configuration, and desktop entry, but will not remove any dependencies installed by the application.
