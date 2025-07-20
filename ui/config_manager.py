@@ -51,7 +51,8 @@ class ConfigManager:
                     "system_user": getpass.getuser(),
                     "user_home": os.path.expanduser("~"),
                     "git_email": os.environ.get("GIT_EMAIL", "user@example.com"),
-                    "git_username": os.environ.get("GIT_USERNAME", getpass.getuser())
+                    "git_username": os.environ.get("GIT_USERNAME", getpass.getuser()),
+                    "working_directory": "/opt/CrimsonCFG"
                 }
                 
                 # Render template
