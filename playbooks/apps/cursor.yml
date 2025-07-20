@@ -1,0 +1,101 @@
+# CrimsonCFG-Name: Cursor
+# CrimsonCFG-Description: Install Cursor (AppImage)
+# CrimsonCFG-Essential: false
+---
+- name: Install Cursor (AppImage)
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Ensure AppImage folder exists
+    #######################
+    - name: Create AppImage folder for Cursor
+      ansible.builtin.file:
+        path: "{{ cursor_appimage_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0755'
+
+    #######################
+    # Download AppImage
+    #######################
+    - name: Download Cursor AppImage
+      ansible.builtin.get_url:
+        url: "{{ cursor_appimage_url }}"
+        dest: "{{ cursor_appimage_dir }}/{{ cursor_appimage_filename }}"
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    #######################
+    # Extract icon from AppImage
+    #######################
+    - name: Extract AppImage to get icon
+      ansible.builtin.shell: |
+        cd {{ cursor_appimage_dir }}
+        ./{{ cursor_appimage_filename }} --appimage-extract
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Copy icon to proper location
+      ansible.builtin.copy:
+        src: "{{ cursor_appimage_dir }}/squashfs-root/usr/share/icons/hicolor/256x256/apps/cursor.png"
+        dest: "{{ cursor_appimage_dir }}/Cursor.png"
+        remote_src: yes
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+      ignore_errors: true
+
+    - name: Clean up extracted AppImage
+      ansible.builtin.file:
+        path: "{{ cursor_appimage_dir }}/squashfs-root"
+        state: absent
+
+    #######################
+    # Create .desktop file for Cursor
+    #######################
+    - name: Create Cursor .desktop entry in user applications
+      ansible.builtin.copy:
+        dest: "{{desktop_dotfile_folder}}/Cursor.desktop"
+        content: |
+          [Desktop Entry]
+          Name=Cursor
+          Comment=The AI Code Editor.
+          GenericName=Text Editor
+          Exec={{ cursor_appimage_dir }}/{{cursor_appimage_filename}} --no-sandbox %F
+          Icon={{ cursor_appimage_dir }}/Cursor.png
+          Type=Application
+          StartupNotify=false
+          StartupWMClass=Cursor
+          Categories=TextEditor;Development;IDE;
+          MimeType=application/x-cursor-workspace;
+          Actions=new-empty-window;
+          Keywords=cursor;
+
+          X-AppImage-Version=1.2.2
+
+          [Desktop Action new-empty-window]
+          Name=New Empty Window
+          Name[cs]=Nové prázdné okno
+          Name[de]=Neues leeres Fenster
+          Name[es]=Nueva ventana vacía
+          Name[fr]=Nouvelle fenêtre vide
+          Name[it]=Nuova finestra vuota
+          Name[ja]=新しい空のウィンドウ
+          Name[ko]=새 빈 창
+          Name[ru]=Новое пустое окно
+          Name[zh_CN]=新建空窗口
+          Name[zh_TW]=開新空視窗
+          Exec={{ cursor_appimage_dir }}/Cursor.AppImage --no-sandbox %F
+          Icon={{ cursor_appimage_dir }}/Cursor.png
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
