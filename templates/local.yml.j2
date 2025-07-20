@@ -1,0 +1,64 @@
+# User Configuration
+user: "{{ system_user }}"
+user_home: "/home/{{ system_user }}"
+debug: 0
+working_directory: /opt/CrimsonCFG
+playbooks_directory: /opt/CrimsonCFG/playbooks
+basics_directory: /opt/CrimsonCFG/playbooks/basics
+security_directory: /opt/CrimsonCFG/playbooks/security
+apps_directory: /opt/CrimsonCFG/playbooks/apps
+templates_directory: /opt/CrimsonCFG/templates
+applications_directory: /opt/CrimsonCFG/applications
+user_config_directory: "/home/{{ system_user }}/.config/com.crimson.cfg"
+user_desktop_directory: "/home/{{ system_user }}/.local/share/applications"
+
+# Corporate Identity (CI)
+app_name: CrimsonCFG
+app_subtitle: App & Customization Selector
+background_color: "#181a20"
+
+# Basics 
+apt_packages:
+  - btop
+  - mc
+  - python3-venv
+  - python3-tk
+  - python3-psutil
+  - libfuse2
+  - gnome-tweaks
+  - vlc
+  - gufw
+  - syncthing
+  - syncthingtray
+  - krita
+  - filezilla
+  - fuse3
+  - nautilus
+  - software-properties-common
+  - flameshot
+
+snap_packages:
+  - bitwarden
+
+pinned_apps:
+  - chromium_chromium.desktop
+  - codium_codium.desktop
+  - nautilus.desktop
+  - gnome-terminal.desktop
+  - bitwarden_bitwarden.desktop
+  - signal-desktop.desktop
+  - gnome-boxes.desktop
+
+# GIT
+git_email: "{{ git_email }}"
+git_username: "{{ git_username }}"
+
+# SSH
+ssh_private_key_name: id_rsa
+ssh_public_key_name: id_rsa.pub
+ssh_private_key_content: ""
+ssh_public_key_content: ""
+ssh_config_content: ""
+
+# Browser
+chromium_homepage_url: "" 

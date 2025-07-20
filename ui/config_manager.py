@@ -5,7 +5,7 @@ Handles loading and managing configuration files
 """
 
 import json
-import yaml
+from ruamel.yaml import YAML
 import getpass
 from pathlib import Path
 from typing import Dict
@@ -24,6 +24,9 @@ except ImportError as e:
 class ConfigManager:
     def __init__(self):
         self.debug = False  # Will be set by main window
+        self.yaml = YAML()
+        self.yaml.preserve_quotes = True
+        self.yaml.indent(mapping=2, sequence=4, offset=2)
         
     def load_config(self) -> Dict:
         """Load configuration from YAML files"""
@@ -32,7 +35,7 @@ class ConfigManager:
         all_file = Path("group_vars/all.yml")
         if all_file.exists():
             with open(all_file, 'r') as f:
-                all_config = yaml.safe_load(f) or {}
+                all_config = self.yaml.load(f) or {}
         
         # Load local configuration (user-specific overrides)
         local_config = {}
@@ -44,76 +47,34 @@ class ConfigManager:
         # Create initial local.yml if it doesn't exist
         if not local_file.exists():
             system_user = getpass.getuser()
-            initial_local_config = {
-                # User
-                "user": system_user,
-                "user_home": f"/home/{system_user}",
-                "debug": 0,
-                "working_directory": "/opt/CrimsonCFG",
-                "playbooks_directory": "/opt/CrimsonCFG/playbooks",
-                "basics_directory": "/opt/CrimsonCFG/playbooks/basics",
-                "security_directory": "/opt/CrimsonCFG/playbooks/security",
-                "apps_directory": "/opt/CrimsonCFG/playbooks/apps",
-                "templates_directory": "/opt/CrimsonCFG/templates",
-                "applications_directory": "/opt/CrimsonCFG/applications",
-                "user_config_directory": f"/home/{system_user}/.config/com.crimson.cfg",
-                "user_desktop_directory": f"/home/{system_user}/.local/share/applications",
-                # Corporate Identity (CI)
-                "app_name": "CrimsonCFG",
-                "app_subtitle": "App & Customization Selector",
-                "background_color": "#181a20",
-                # Basics 
-                "apt_packages": [
-                    "btop",
-                    "mc",
-                    "python3-venv",
-                    "python3-tk",
-                    "python3-psutil",
-                    "libfuse2",
-                    "gnome-tweaks",
-                    "vlc",
-                    "gufw",
-                    "syncthing",
-                    "syncthingtray",
-                    "krita",
-                    "filezilla",
-                    "fuse3",
-                    "nautilus",
-                    "software-properties-common",
-                    "flameshot"
-                ],
-                "snap_packages": [
-                    "bitwarden"
-                ],
-                "pinned_apps": [
-                    "chromium_chromium.desktop",
-                    "codium_codium.desktop",
-                    "nautilus.desktop",
-                    "gnome-terminal.desktop",
-                    "bitwarden_bitwarden.desktop",
-                    "signal-desktop.desktop",
-                    "gnome-boxes.desktop"
-                ],
-                # GIT
-                "git_email": os.environ.get("GIT_EMAIL", "user@example.com"),
-                "git_username": os.environ.get("GIT_USERNAME", system_user),
-                # SSH
-                "ssh_private_key_name": "id_rsa",
-                "ssh_public_key_name": "id_rsa.pub",
-                "ssh_private_key_content": "",
-                "ssh_public_key_content": "",
-                "ssh_config_content": "",
-                # Browser
-                "chromium_homepage_url": ""
-            }
+            
+            # Load template and render with variables
+            template_file = Path("templates/local.yml.j2")
+            if template_file.exists():
+                with open(template_file, 'r') as f:
+                    template_content = f.read()
+                
+                # Replace template variables
+                template_content = template_content.replace("{{ system_user }}", system_user)
+                template_content = template_content.replace("{{ git_email }}", os.environ.get("GIT_EMAIL", "user@example.com"))
+                template_content = template_content.replace("{{ git_username }}", os.environ.get("GIT_USERNAME", system_user))
+                
+                # Parse the rendered template
+                initial_local_config = self.yaml.load(template_content)
+            else:
+                if self.debug:
+                    print(f"Template file not found: {template_file}")
+                # Fallback to empty config if template doesn't exist
+                initial_local_config = {}
+            
             with open(local_file, 'w') as f:
-                yaml.safe_dump(initial_local_config, f, default_flow_style=False, allow_unicode=True)
+                self.yaml.dump(initial_local_config, f)
             if self.debug:
                 print(f"Created initial local.yml at {local_file}")
         
         if local_file.exists():
             with open(local_file, 'r') as f:
-                local_config = yaml.safe_load(f) or {}
+                local_config = self.yaml.load(f) or {}
         
         # Merge configurations (local overrides global)
         merged_config = {**all_config, **local_config}
