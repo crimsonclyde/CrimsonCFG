@@ -997,7 +997,10 @@ class GUIBuilder:
         # --- Save Button (global) ---
         save_btn = Gtk.Button(label="Save Configuration")
         def on_save_clicked(btn):
-            # Update local_config dict
+            # Load the latest local_config from file to avoid overwriting concurrent changes
+            with open(local_file, 'r') as f:
+                local_config = yaml.safe_load(f) or {}
+            # Update only the keys for which there are UI fields
             local_config["git_username"] = git_username_entry.get_text()
             local_config["git_email"] = git_email_entry.get_text()
             local_config["chromium_homepage_url"] = chromium_entry.get_text()
@@ -1027,16 +1030,7 @@ class GUIBuilder:
             rgba = color_btn.get_rgba()
             hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
             local_config["background_color"] = hex_color
-            # Only keep relevant keys
-            allowed_keys = [
-                "git_username", "git_email", "chromium_homepage_url", "user", "user_home", "working_directory",
-                "ssh_private_key_name", "ssh_public_key_name", "ssh_private_key_content", "ssh_public_key_content",
-                "ssh_config_content", "background_image", "background_color"
-            ]
-            for k in list(local_config.keys()):
-                if k not in allowed_keys:
-                    del local_config[k]
-            # Write to local.yml
+            # Write the updated config back, preserving all other keys
             with open(local_file, 'w') as f:
                 yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
             # Reload config and update main_window variables
