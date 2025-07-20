@@ -24,6 +24,7 @@
       ansible.builtin.fail:
         msg: "Timeshift does not support ZFS. Skipping Timeshift setup."
       when: root_fstype.stdout == "zfs"
+    
     - name: Ensure Timeshift is installed
       ansible.builtin.package:
         name: timeshift
@@ -77,10 +78,24 @@
       changed_when: false
       when: root_fstype.stdout != "zfs"
 
-    - name: Create initial snapshot
-      ansible.builtin.command: "timeshift --create --scripted --verbose --comments \"Pre-install snapshot before installation\" --tags D"
-      changed_when: true
+    - name: List existing Timeshift snapshots
+      ansible.builtin.command: timeshift --list --scripted
+      register: timeshift_snapshots
+      changed_when: false
+      failed_when: false
       when: root_fstype.stdout != "zfs"
+
+    - name: Check if 'Init CrimsonCFG' snapshot exists
+      ansible.builtin.set_fact:
+        init_crimsoncfg_snapshot_exists: "{{ 'Init CrimsonCFG' in timeshift_snapshots.stdout }}"
+      when: root_fstype.stdout != "zfs"
+
+    - name: Create initial snapshot
+      ansible.builtin.command: "timeshift --create --scripted --verbose --comments \"Init CrimsonCFG\" --tags D"
+      changed_when: true
+      when:
+        - root_fstype.stdout != "zfs"
+        - not init_crimsoncfg_snapshot_exists
 
     - name: Enable Timeshift schedules
       ansible.builtin.copy:
