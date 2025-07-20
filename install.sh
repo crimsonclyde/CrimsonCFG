@@ -83,6 +83,7 @@ sudo apt-get install -y \
     python3-gi-cairo \
     gir1.2-gtk-3.0 \
     python3-yaml \
+    python3-ruamel.yaml \
     ansible \
     git \
     curl \
