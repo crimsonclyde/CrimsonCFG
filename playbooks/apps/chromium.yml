@@ -86,6 +86,7 @@
     ## Get Wayland Session environment
     - name: Find active session ID for user
       ansible.builtin.shell: |
+        set -o pipefail
         loginctl list-sessions --no-legend | grep '{{ user }}' | awk '{print $1}'
       register: user_session
       changed_when: false
@@ -120,7 +121,7 @@
       args:
         executable: /bin/bash
       changed_when: false
-      ignore_errors: true
+      failed_when: false
 
     - name: Wait for Default profile Preferences file to exist
       ansible.builtin.wait_for:
@@ -147,7 +148,7 @@
       args:
         executable: /bin/bash
       changed_when: false
-      ignore_errors: true
+      failed_when: false
 
     - name: Wait for Profile 1 Preferences file to exist
       ansible.builtin.wait_for:
@@ -167,6 +168,7 @@
     ## ----------------------------------------------------
     - name: Rename Default profile in Local State
       ansible.builtin.shell: |
+        set -o pipefail
         jq '
           .profile.info_cache.Default.name = "{{ user }}" |
           .profile.info_cache.Default.is_using_default_name = false |
@@ -180,6 +182,7 @@
 
     - name: Rename Profile 1 in Local State
       ansible.builtin.shell: |
+        set -o pipefail
         jq '
           .profile.info_cache["Profile 1"].name = "{{ chromium_profile1_name }}" |
           .profile.info_cache["Profile 1"].is_using_default_name = false |
@@ -196,6 +199,7 @@
     ## ----------------------------------------------------
     - name: Rename Default Preferences
       ansible.builtin.shell: |
+        set -o pipefail
         jq '.profile.name = "{{ user }}" |
             .profile.avatar_index = 31 |
             .profile.color_variant2 = 1 |
@@ -254,20 +258,49 @@
         recurse: true
 
     ## ----------------------------------------------------
-    ## 10) Pin Chromium to GNOME dock favorites
+    ## Pin App to GNOME dock
     ## ----------------------------------------------------
-    - name: Pin Chromium to GNOME dock favorites
-      ansible.builtin.shell: |
-        set -o pipefail
-        # Get current favorites
-        current_favorites=$(gsettings get org.gnome.shell favorite-apps)
+    - name: Ensure python3-psutil is installed for dconf module
+      ansible.builtin.apt:
+        name: python3-psutil
+        state: present
 
-        # Check if chromium-browser.desktop is already in favorites
-        if [[ $current_favorites != *"chromium-browser.desktop"* ]]; then
-          # Add chromium-browser.desktop to favorites
-          gsettings set org.gnome.shell favorite-apps "$(echo $current_favorites | sed 's/]/, "chromium-browser.desktop"]/')"
-        fi
+    - name: Get current GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        state: read
+      become: true
       become_user: "{{ user }}"
-      args:
-        executable: /bin/bash
-      changed_when: false
+      environment:
+        HOME: "{{ user_home }}"
+      register: current_favorites
+
+    - name: Normalize GNOME favorites value to a list
+      ansible.builtin.set_fact:
+        gnome_favorites_list: >-
+          {{
+            (current_favorites.value
+              | default([])
+              | from_yaml
+              if (current_favorites.value is string)
+              else (current_favorites.value | default([]) | list)
+            )
+          }}
+
+    - name: Pin app to GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        value: >-
+          {{
+            (gnome_favorites_list +
+              ([app_desktop_file] if app_desktop_file not in gnome_favorites_list else [])
+            ) | to_json
+          }}
+        state: present
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      vars:
+        app_desktop_file: "chromium_chromium.desktop"
+      when: app_desktop_file not in gnome_favorites_list
