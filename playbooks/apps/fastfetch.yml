@@ -87,7 +87,7 @@
 
     - name: Download Hack Nerd Font zip to /tmp
       ansible.builtin.get_url:
-        url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Hack.zip"
+        url: "{{ hack_nerd_font_url }}"
         dest: "/tmp/Hack.zip"
         mode: '0644'
         owner: "root"
