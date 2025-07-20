@@ -20,17 +20,17 @@
       ignore_errors: true
       changed_when: false
       loop: "{{ apt_packages }}"
-      loop_control:
-        loop_var: item
+
+    - name: Combine package names and install results
+      ansible.builtin.set_fact:
+        apt_pkg_status: "{{ apt_packages | zip(apt_installed.results) | list }}"
 
     - name: Install common APT packages
       ansible.builtin.apt:
-        name: "{{ item }}"
+        name: "{{ item.0 }}"
         state: present
-      when: apt_installed.results[loop.index0].rc != 0
-      loop: "{{ apt_packages }}"
-      loop_control:
-        loop_var: item
+      when: item.1.rc != 0
+      loop: "{{ apt_pkg_status }}"
 
     #######################
     # Install basic snap pkgs
@@ -42,17 +42,17 @@
       ignore_errors: true
       changed_when: false
       loop: "{{ snap_packages }}"
-      loop_control:
-        loop_var: item
+
+    - name: Combine snap package names and install results
+      ansible.builtin.set_fact:
+        snap_pkg_status: "{{ snap_packages | zip(snap_installed.results) | list }}"
 
     - name: Install Snap packages
       community.general.snap:
-        name: "{{ item }}"
+        name: "{{ item.0 }}"
         state: present
-      when: snap_installed.results[loop.index0].rc != 0
-      loop: "{{ snap_packages }}"
-      loop_control:
-        loop_var: item
+      when: item.1.rc != 0
+      loop: "{{ snap_pkg_status }}"
 
     ## ----------------------------------------------------
     ## Pin App to GNOME dock
@@ -101,4 +101,3 @@
       vars:
         app_desktop_file: "bitwarden_bitwarden.desktop"
       when: app_desktop_file not in gnome_favorites_list
-
