@@ -8,6 +8,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk  # type: ignore
 from typing import Dict, List
+import json
+from pathlib import Path
 
 class PlaybookManager:
     def __init__(self, main_window):
@@ -82,14 +84,27 @@ class PlaybookManager:
         self.update_playbook_list()
         self.update_selected_display()
         
+    def _get_installed_playbooks(self):
+        """Return a set of installed playbook names from installed_playbooks.json."""
+        config_dir = Path.home() / ".config/com.crimson.cfg"
+        state_file = config_dir / "installed_playbooks.json"
+        if state_file.exists():
+            try:
+                with open(state_file, 'r') as f:
+                    state = json.load(f)
+                return set(state.keys())
+            except Exception:
+                return set()
+        return set()
+
     def select_essential_playbooks(self):
-        """Automatically select all essential playbooks across all categories"""
+        """Automatically select all essential playbooks across all categories that are not already installed."""
+        installed = self._get_installed_playbooks()
         for category, cat_info in self.main_window.config["categories"].items():
             for playbook in cat_info["playbooks"]:
-                if playbook.get("essential", False):
+                if playbook.get("essential", False) and playbook["name"] not in installed:
                     playbook_key = f"{category}:{playbook['name']}"
                     self.main_window.selected_playbooks.add(playbook_key)
-                    
         self.update_playbook_list()
         self.update_selected_display()
         
@@ -120,13 +135,13 @@ class PlaybookManager:
             self.update_selected_display()
             
     def select_essential(self, button):
-        """Select all essential playbooks across all categories"""
+        """Select all essential playbooks across all categories that are not already installed."""
+        installed = self._get_installed_playbooks()
         for category, cat_info in self.main_window.config["categories"].items():
             for playbook in cat_info["playbooks"]:
-                if playbook.get("essential", False):
+                if playbook.get("essential", False) and playbook["name"] not in installed:
                     playbook_key = f"{category}:{playbook['name']}"
                     self.main_window.selected_playbooks.add(playbook_key)
-                    
         self.update_playbook_list()
         self.update_selected_display()
         

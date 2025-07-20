@@ -9,6 +9,9 @@ import subprocess
 import threading
 from typing import Dict, List
 from gi.repository import GLib  # type: ignore
+import json
+from pathlib import Path
+from datetime import datetime
 
 class Installer:
     def __init__(self, main_window):
@@ -57,6 +60,24 @@ localhost
             except subprocess.CalledProcessError:
                 return False
                 
+    def _mark_playbook_installed(self, playbook_name: str):
+        """Mark a playbook as installed in installed_playbooks.json with a timestamp."""
+        config_dir = Path.home() / ".config/com.crimson.cfg"
+        state_file = config_dir / "installed_playbooks.json"
+        if not config_dir.exists():
+            config_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            if state_file.exists():
+                with open(state_file, 'r') as f:
+                    state = json.load(f)
+            else:
+                state = {}
+        except Exception:
+            state = {}
+        state[playbook_name] = datetime.now().isoformat()
+        with open(state_file, 'w') as f:
+            json.dump(state, f, indent=2)
+
     def run_playbook(self, playbook: Dict) -> bool:
         """Run a single playbook"""
         try:
@@ -103,20 +124,24 @@ localhost
                     GLib.idle_add(self.main_window.logger.log_message, f"Subprocess stderr for {playbook['name']}:\n{proc.stderr}")
                     if proc.returncode == 0:
                         GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} completed successfully (env password)")
-                        return True
+                        result = True
                     else:
                         GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} failed with return code: {proc.returncode}")
-                        return False
+                        result = False
                 except Exception as e:
                     GLib.idle_add(self.main_window.logger.log_message, f"Subprocess error: {e}")
-                    return False
+                    result = False
             else:
                 # Fallback to subprocess if no sudo password is provided
                 env = os.environ.copy()
                 env["ANSIBLE_BECOME"] = "true"
                 result = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True, cwd=playbook_dir)
                 GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} completed successfully")
-                return True
+                result = True
+            
+            if result:  # Only mark as installed if successful
+                self._mark_playbook_installed(playbook['name'])
+            return result
             
         except subprocess.CalledProcessError as e:
             GLib.idle_add(self.main_window.logger.log_message, f"Playbook {playbook['name']} failed with error: {e}")

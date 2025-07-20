@@ -9,6 +9,7 @@ import os
 import getpass
 import yaml
 from pathlib import Path
+import json
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk  # type: ignore
 
@@ -1311,6 +1312,25 @@ class GUIBuilder:
         else:
             show_admin_password_prompt()
         self.notebook.append_page(admin_tab, Gtk.Label(label="Administration"))
+        
+        # Add to the admin or settings tab (after other controls)
+        def on_reset_installed_playbooks(btn):
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            state_file = config_dir / "installed_playbooks.json"
+            if state_file.exists():
+                state_file.unlink()
+            # Optionally, re-select essentials after reset
+            self.main_window.select_essential_playbooks()
+            self.main_window.show_success_dialog("Installed playbook state has been reset. Essentials will be pre-selected again.")
+        reset_btn = Gtk.Button(label="Reset Installed Playbooks State")
+        reset_btn.set_tooltip_text("Clear the record of installed playbooks so essentials will be pre-selected again.")
+        reset_btn.connect("clicked", on_reset_installed_playbooks)
+        # Add this button to the right panel or admin tab (choose appropriate location)
+        # For example, add to right_box if present:
+        if hasattr(self, 'right_box'):
+            self.right_box.pack_start(reset_btn, False, False, 0)
+        # Or add to admin_tab if present
+        # ... existing code ...
         
         if self.debug:
             print("setup_gui: Initializing playbook list...")
