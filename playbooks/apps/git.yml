@@ -1,0 +1,200 @@
+# CrimsonCFG-Name: Git
+# CrimsonCFG-Description: Install and configure Git version control
+# CrimsonCFG-Essential: false
+---
+- name: Git
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    #######################
+    # Install Git
+    #######################
+
+    - name: Install package -> git
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Install package -> git-gui
+      ansible.builtin.apt:
+        name: git-gui
+        state: present
+
+    #######################
+    # Set Git username and email (idempotent)
+    #######################
+
+    - name: Git-> Check current username
+      community.general.git_config:
+        name: user.name
+        scope: global
+      register: git_username_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set username
+      community.general.git_config:
+        name: user.name
+        value: "{{ git_username }}"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_username_check.value != git_username
+
+    - name: Git-> Check current email
+      community.general.git_config:
+        name: user.email
+        scope: global
+      register: git_email_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set email
+      community.general.git_config:
+        name: user.email
+        value: "{{ git_email }}"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_email_check.value != git_email
+
+    #######################
+    # Configure Git Settings (idempotent)
+    #######################
+
+    - name: Git-> Check credential helper
+      community.general.git_config:
+        name: credential.helper
+        scope: global
+      register: git_credential_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set credential cache
+      community.general.git_config:
+        name: credential.helper
+        value: cache
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_credential_check.value != "cache"
+
+    - name: Git-> Check core editor
+      community.general.git_config:
+        name: core.editor
+        scope: global
+      register: git_editor_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set core editor to nano
+      community.general.git_config:
+        name: core.editor
+        value: "nano"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_editor_check.value != "nano"
+
+    - name: Git-> Check color UI
+      community.general.git_config:
+        name: color.ui
+        scope: global
+      register: git_color_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Enable colorized Git output
+      community.general.git_config:
+        name: color.ui
+        value: "auto"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_color_check.value != "auto"
+
+    #######################
+    # Additional Git Settings
+    #######################
+
+    - name: Git-> Check pull rebase setting
+      community.general.git_config:
+        name: pull.rebase
+        scope: global
+      register: git_pull_rebase_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set pull rebase to false (merge strategy)
+      community.general.git_config:
+        name: pull.rebase
+        value: "false"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_pull_rebase_check.value != "false"
+
+    - name: Git-> Check init default branch
+      community.general.git_config:
+        name: init.defaultBranch
+        scope: global
+      register: git_init_branch_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set default branch to main
+      community.general.git_config:
+        name: init.defaultBranch
+        value: "main"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_init_branch_check.value != "main"
+
+    - name: Git-> Check push default
+      community.general.git_config:
+        name: push.default
+        scope: global
+      register: git_push_default_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set push default to simple
+      community.general.git_config:
+        name: push.default
+        value: "simple"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_push_default_check.value != "simple"
+
+    - name: Git-> Check core autocrlf
+      community.general.git_config:
+        name: core.autocrlf
+        scope: global
+      register: git_autocrlf_check
+      become: true
+      become_user: "{{ user }}"
+      failed_when: false
+
+    - name: Git-> Set core autocrlf to input
+      community.general.git_config:
+        name: core.autocrlf
+        value: "input"
+        scope: global
+      become: true
+      become_user: "{{ user }}"
+      when: git_autocrlf_check.value != "input"
+
