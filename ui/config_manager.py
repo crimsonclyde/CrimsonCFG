@@ -50,8 +50,8 @@ class ConfigManager:
                 context = {
                     "system_user": getpass.getuser(),
                     "user_home": os.path.expanduser("~"),
-                    "git_email": os.environ.get("GIT_EMAIL", "user@example.com"),
-                    "git_username": os.environ.get("GIT_USERNAME", getpass.getuser()),
+                    "git_username": self.get_git_config_value("user.name") or os.environ.get("GIT_USERNAME", getpass.getuser()),
+                    "git_email": self.get_git_config_value("user.email") or os.environ.get("GIT_EMAIL", "user@example.com"),
                     "working_directory": "/opt/CrimsonCFG"
                 }
                 
@@ -135,3 +135,14 @@ class ConfigManager:
                 return json_config.get("categories", {})
         else:
             return {} 
+
+    def get_git_config_value(self, key: str) -> str:
+        """Get a git config --global value for a given key, or None if not set."""
+        import subprocess
+        try:
+            value = subprocess.check_output([
+                "git", "config", "--global", key
+            ], stderr=subprocess.DEVNULL, text=True).strip()
+            return value if value else None
+        except Exception:
+            return None 
