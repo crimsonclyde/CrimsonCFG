@@ -77,6 +77,12 @@ print_error() {
 print_status "\n$(figlet CrimsonCFG)\n"
 print_status "Uninstall the entire application but doesn't touch the dependencies!"
 
+# Check for root, re-exec with sudo if not
+if [ "$EUID" -ne 0 ]; then
+    echo -e "\033[1;33m[INFO]\033[0m This script needs to run as root. Elevating with sudo..."
+    exec sudo bash "$0" "$@"
+fi
+
 # Ask for confirmation
 read -p "If you uninstall me, at least take me out to dinner first (y/n): " confirm
 if [ "$confirm" != "y" ]; then
