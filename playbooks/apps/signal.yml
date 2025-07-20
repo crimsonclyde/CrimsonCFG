@@ -1,0 +1,46 @@
+# CrimsonCFG-Name: Signal Desktop
+# CrimsonCFG-Description: Install Signal Desktop
+# CrimsonCFG-Essential: false
+---
+- name: Install Signal Desktop
+  hosts: all
+  become: true
+
+  tasks:
+
+    #######################
+    # Signal Desktop
+    #######################
+
+    - name: Signal-Desktop -> Download signing key
+      ansible.builtin.get_url:
+        url: https://updates.signal.org/desktop/apt/keys.asc
+        dest: /tmp/signal-desktop-key.asc
+        mode: '0644'
+
+    - name: Signal-Desktop -> Convert key to keyring
+      ansible.builtin.command:
+        cmd: "gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg /tmp/signal-desktop-key.asc"
+        creates: /usr/share/keyrings/signal-desktop-keyring.gpg
+      become: true
+
+    - name: Signal-Desktop -> Add APT repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/signal-xenial.list
+        content: |
+          deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
+        mode: '0644'
+
+    - name: Signal-Desktop -> Update APT cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Signal-Desktop -> Install package
+      ansible.builtin.apt:
+        name: signal-desktop
+        state: present
+
+    - name: Signal-Desktop -> Clean up temp key file
+      ansible.builtin.file:
+        path: /tmp/signal-desktop-key.asc
+        state: absent
