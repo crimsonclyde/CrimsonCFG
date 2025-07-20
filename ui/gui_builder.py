@@ -1000,36 +1000,39 @@ class GUIBuilder:
             # Load the latest local_config from file to avoid overwriting concurrent changes
             with open(local_file, 'r') as f:
                 local_config = yaml.safe_load(f) or {}
-            # Update only the keys for which there are UI fields
-            local_config["git_username"] = git_username_entry.get_text()
-            local_config["git_email"] = git_email_entry.get_text()
-            local_config["chromium_homepage_url"] = chromium_entry.get_text()
-            # User info
-            local_config["user"] = user_entry.get_text()
-            local_config["user_home"] = user_home_entry.get_text()
-            local_config["working_directory"] = working_directory_entry.get_text()
-            # SSH key names
-            local_config["ssh_private_key_name"] = priv_key_name_entry.get_text()
-            local_config["ssh_public_key_name"] = pub_key_name_entry.get_text()
+            # Only update the keys that are present in the form, preserve all others
+            updates = {
+                "git_username": git_username_entry.get_text(),
+                "git_email": git_email_entry.get_text(),
+                "chromium_homepage_url": chromium_entry.get_text(),
+                # User info
+                "user": user_entry.get_text(),
+                "user_home": user_home_entry.get_text(),
+                "working_directory": working_directory_entry.get_text(),
+                # SSH key names
+                "ssh_private_key_name": priv_key_name_entry.get_text(),
+                "ssh_public_key_name": pub_key_name_entry.get_text(),
+            }
             # SSH private key
             start, end = ssh_priv_buffer.get_bounds()
-            local_config["ssh_private_key_content"] = ssh_priv_buffer.get_text(start, end, True)
+            updates["ssh_private_key_content"] = ssh_priv_buffer.get_text(start, end, True)
             # SSH public key
             start, end = ssh_pub_buffer.get_bounds()
-            local_config["ssh_public_key_content"] = ssh_pub_buffer.get_text(start, end, True)
+            updates["ssh_public_key_content"] = ssh_pub_buffer.get_text(start, end, True)
             # SSH config content (store in local.yml)
             start, end = ssh_cfg_buffer.get_bounds()
-            local_config["ssh_config_content"] = ssh_cfg_buffer.get_text(start, end, True)
+            updates["ssh_config_content"] = ssh_cfg_buffer.get_text(start, end, True)
             # Background image
             bg_path = bg_file_chooser.get_filename()
             if bg_path:
-                local_config["background_image"] = bg_path
-            else:
-                local_config.pop("background_image", None)
+                updates["background_image"] = bg_path
             # Background color
             rgba = color_btn.get_rgba()
             hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
-            local_config["background_color"] = hex_color
+            updates["background_color"] = hex_color
+            # Update only the relevant keys in local_config
+            for k, v in updates.items():
+                local_config[k] = v
             # Write the updated config back, preserving all other keys
             with open(local_file, 'w') as f:
                 yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
