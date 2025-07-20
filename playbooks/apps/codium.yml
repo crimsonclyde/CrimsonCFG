@@ -5,6 +5,8 @@
 - name: Install and setup Codium
   hosts: all
   become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
 
   tasks:
 
@@ -35,7 +37,10 @@
 
     - name: Install VSCodium extensions
       become: true
-      become_user: "{{ ansible_user_id }}"
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+        PATH: "/snap/bin:{{ ansible_env.PATH }}"
       ansible.builtin.shell: |
         codium --install-extension {{ item }} --force
       loop:
