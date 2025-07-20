@@ -381,13 +381,7 @@ class GUIBuilder:
             left_box.pack_start(btn, False, False, 0)
             self.main_window.category_buttons[category] = btn
             
-            # Description
-            if "description" in cat_info:
-                desc_label = Gtk.Label(label=cat_info["description"])
-                desc_label.set_line_wrap(True)
-                desc_label.set_margin_start(25)
-                desc_label.set_margin_top(5)
-                left_box.pack_start(desc_label, False, False, 0)
+
                 
         if self.debug:
             print("setup_gui: Creating center panel...")
