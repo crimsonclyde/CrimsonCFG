@@ -66,6 +66,11 @@
         executable: /bin/bash
       changed_when: false
 
+    - name: Check if Prism Launcher icon exists
+      ansible.builtin.stat:
+        path: "{{ prism_appimage_dir }}/squashfs-root/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg"
+      register: prism_icon_stat
+
     - name: Copy icon to proper location
       ansible.builtin.copy:
         src: "{{ prism_appimage_dir }}/squashfs-root/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg"
@@ -74,9 +79,7 @@
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: '0644'
-      when: >
-        ansible_check_mode or
-        (prism_appimage_dir + '/squashfs-root/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg') | file_exists
+      when: prism_icon_stat.stat.exists
 
     - name: Clean up extracted AppImage
       ansible.builtin.file:
