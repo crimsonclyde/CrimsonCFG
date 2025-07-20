@@ -43,7 +43,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_username_check.value != git_username
+      when: (git_username_check.config_value | default('')) != git_username
 
     - name: Git-> Check current email
       community.general.git_config:
@@ -61,7 +61,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_email_check.value != git_email
+      when: (git_email_check.config_value | default('')) != git_email
 
     #######################
     # Configure Git Settings (idempotent)
@@ -83,7 +83,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_credential_check.value != "cache"
+      when: (git_credential_check.config_value | default('')) != "cache"
 
     - name: Git-> Check core editor
       community.general.git_config:
@@ -101,7 +101,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_editor_check.value != "nano"
+      when: (git_editor_check.config_value | default('')) != "nano"
 
     - name: Git-> Check color UI
       community.general.git_config:
@@ -119,7 +119,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_color_check.value != "auto"
+      when: (git_color_check.config_value | default('')) != "auto"
 
     #######################
     # Additional Git Settings
@@ -141,7 +141,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_pull_rebase_check.value != "false"
+      when: (git_pull_rebase_check.config_value | default('')) != "false"
 
     - name: Git-> Check init default branch
       community.general.git_config:
@@ -159,7 +159,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_init_branch_check.value != "main"
+      when: (git_init_branch_check.config_value | default('')) != "main"
 
     - name: Git-> Check push default
       community.general.git_config:
@@ -177,7 +177,7 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_push_default_check.value != "simple"
+      when: (git_push_default_check.config_value | default('')) != "simple"
 
     - name: Git-> Check core autocrlf
       community.general.git_config:
@@ -195,5 +195,4 @@
         scope: global
       become: true
       become_user: "{{ user }}"
-      when: git_autocrlf_check.value != "input"
-
+      when: (git_autocrlf_check.config_value | default('')) != "input"
