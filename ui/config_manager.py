@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict
 import shutil
 import os
+from jinja2 import Template
 
 # Import the playbook scanner
 try:
@@ -39,32 +40,35 @@ class ConfigManager:
         
         # Create initial local.yml if it doesn't exist
         if not local_file.exists():
-            system_user = getpass.getuser()
-            
             # Load template and render with variables
             template_file = Path("templates/local.yml.j2")
             if template_file.exists():
                 with open(template_file, 'r') as f:
                     template_content = f.read()
                 
-                # Replace template variables
-                template_content = template_content.replace("{{ system_user }}", system_user)
-                template_content = template_content.replace("{{ git_email }}", os.environ.get("GIT_EMAIL", "user@example.com"))
-                template_content = template_content.replace("{{ git_username }}", os.environ.get("GIT_USERNAME", system_user))
+                # Prepare context with resolved values
+                context = {
+                    "system_user": getpass.getuser(),
+                    "user_home": os.path.expanduser("~"),
+                    "git_email": os.environ.get("GIT_EMAIL", "user@example.com"),
+                    "git_username": os.environ.get("GIT_USERNAME", getpass.getuser())
+                }
                 
-                # Parse the rendered template
-                initial_local_config = self.yaml.load(template_content)
+                # Render template
+                template = Template(template_content)
+                rendered = template.render(**context)
+                
+                # Save as local.yml
+                with open(local_file, 'w') as f:
+                    f.write(rendered)
+                if self.debug:
+                    print(f"Created initial local.yml at {local_file}")
             else:
                 if self.debug:
                     print(f"Template file not found: {template_file}")
                 # Fallback to empty config if template doesn't exist
                 initial_local_config = {}
             
-            with open(local_file, 'w') as f:
-                self.yaml.dump(initial_local_config, f)
-            if self.debug:
-                print(f"Created initial local.yml at {local_file}")
-        
         if local_file.exists():
             with open(local_file, 'r') as f:
                 local_config = self.yaml.load(f) or {}

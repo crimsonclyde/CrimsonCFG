@@ -9,18 +9,21 @@ user_shell: /bin/bash
 
 # Application Directories
 working_directory: /opt/CrimsonCFG
-playbooks_directory: /opt/CrimsonCFG/playbooks
-basics_directory: /opt/CrimsonCFG/playbooks/basics
-security_directory: /opt/CrimsonCFG/playbooks/security
-apps_directory: /opt/CrimsonCFG/playbooks/apps
-templates_directory: /opt/CrimsonCFG/templates
-applications_directory: /opt/CrimsonCFG/applications
+playbooks_directory: "{{ working_directory }}/playbooks"
+basics_directory: "{{ working_directory }}/playbooks/basics"
+security_directory: "{{ working_directory }}/playbooks/security"
+apps_directory: "{{ working_directory }}/playbooks/apps"
+templates_directory: "{{ working_directory }}/templates"
+applications_directory: "{{ working_directory }}/applications"
+inventory_file: "{{ working_directory }}/hosts.ini"
+log_directory: "{{ working_directory }}/log"
+
+# User Directories
 user_config_directory: "{{ user_home }}/.config/com.crimson.cfg"
 user_desktop_directory: "{{ user_home }}/.local/share/applications"
 appimg_directory: "{{ user_home }}/AppImages"
-desktop_dotfile_folder: '{{ user_home }}/.local/share/applications'
-inventory_file: '{{ working_directory }}/hosts.ini'
-log_directory: '{{ working_directory }}/log'
+desktop_dotfile_folder: "{{ user_home }}/.local/share/applications"
+
 
 # Corporate Identity (CI)
 app_name: CrimsonCFG
@@ -83,7 +86,7 @@ orca_appimage_filename: OrcaSlicer.AppImage
 orca_appimage_url: https://github.com/SoftFever/OrcaSlicer/releases/download/v2.3.0/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.3.0.AppImage
 
 ## Prism-Launcher
-prism_appimage_dir: '{{ appimg_direcory }}/PrismLauncher'
+prism_appimage_dir: '{{ appimg_directory }}/PrismLauncher'
 prism_appimage_filename: PrismLauncher.AppImage
 prism_appimage_url: https://api.github.com/repos/PrismLauncher/PrismLauncher/releases/latest
 
