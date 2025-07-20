@@ -220,13 +220,6 @@ class GUIBuilder:
         app_name = self.main_window.config.get('settings', {}).get('app_name')
         if not app_name:
             try:
-                # Load all.yml
-                all_config = {}
-                all_file = Path("group_vars/all.yml")
-                if all_file.exists():
-                    with open(all_file, 'r') as f:
-                        all_config = yaml.safe_load(f) or {}
-                
                 # Load local.yml
                 local_config = {}
                 config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -236,7 +229,7 @@ class GUIBuilder:
                         local_config = yaml.safe_load(f) or {}
                 
                 # Merge configurations (local overrides all)
-                merged_config = {**all_config, **local_config}
+                merged_config = local_config
                 app_name = merged_config.get('app_name', 'CrimsonCFG')
             except Exception:
                 app_name = 'CrimsonCFG'
@@ -248,13 +241,6 @@ class GUIBuilder:
         app_subtitle = self.main_window.config.get('settings', {}).get('app_subtitle')
         if not app_subtitle:
             try:
-                # Load all.yml
-                all_config = {}
-                all_file = Path("group_vars/all.yml")
-                if all_file.exists():
-                    with open(all_file, 'r') as f:
-                        all_config = yaml.safe_load(f) or {}
-                
                 # Load local.yml
                 local_config = {}
                 config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -264,7 +250,7 @@ class GUIBuilder:
                         local_config = yaml.safe_load(f) or {}
                 
                 # Merge configurations (local overrides all)
-                merged_config = {**all_config, **local_config}
+                merged_config = local_config
                 app_subtitle = merged_config.get('app_subtitle', 'App &amp; Customization Selector')
             except Exception:
                 app_subtitle = 'App &amp; Customization Selector'
@@ -284,13 +270,6 @@ class GUIBuilder:
         
         # Try to load logo
         try:
-            # Load all.yml
-            all_config = {}
-            all_file = Path("group_vars/all.yml")
-            if all_file.exists():
-                with open(all_file, 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-            
             # Load local.yml
             local_config = {}
             config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -300,7 +279,7 @@ class GUIBuilder:
                     local_config = yaml.safe_load(f) or {}
             
             # Merge configurations (local overrides all)
-            merged_config = {**all_config, **local_config}
+            merged_config = local_config
             logo_path = merged_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
         except Exception:
             logo_path = os.path.join("files", "com.crimson.cfg.logo.png")
@@ -1133,13 +1112,6 @@ class GUIBuilder:
                 admin_tab.remove(child)
             # Load merged configuration (all.yml + local.yml)
             
-            # Load all.yml
-            all_config = {}
-            all_file = Path("group_vars/all.yml")
-            if all_file.exists():
-                with open(all_file, 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-            
             # Load local.yml
             local_config = {}
             config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -1149,7 +1121,7 @@ class GUIBuilder:
                     local_config = yaml.safe_load(f) or {}
             
             # Merge configurations (local overrides all)
-            merged_config = {**all_config, **local_config}
+            merged_config = local_config
             # Admin notebook
             admin_notebook = Gtk.Notebook()
             admin_tab.pack_start(admin_notebook, True, True, 0)
@@ -1444,11 +1416,9 @@ class GUIBuilder:
         
         # Configuration Files
         config_text += "📁 CONFIGURATION FILES:\n"
-        all_file = Path("group_vars/all.yml")
         local_file = Path.home() / ".config/com.crimson.cfg/local.yml"
         gui_config_file = Path.home() / ".config/com.crimson.cfg/gui_config.json"
         
-        config_text += f"  • Global Config: {'✅ Found' if all_file.exists() else '❌ Not found'} ({all_file})\n"
         config_text += f"  • Local Config: {'✅ Found' if local_file.exists() else '❌ Not found'} ({local_file})\n"
         config_text += f"  • GUI Config: {'✅ Found' if gui_config_file.exists() else '❌ Not found'} ({gui_config_file})\n\n"
         
@@ -1479,10 +1449,9 @@ class GUIBuilder:
         
         # Configuration Instructions
         config_text += "📝 HOW TO CONFIGURE:\n"
-        config_text += "  1. Edit group_vars/all.yml for global settings\n"
-        config_text += "  2. Edit ~/.config/com.crimson.cfg/local.yml for user-specific settings\n"
-        config_text += "  3. Local settings override global settings\n"
-        config_text += "  4. Restart CrimsonCFG after making changes\n\n"
+        config_text += "  1. Edit ~/.config/com.crimson.cfg/local.yml for user-specific settings\n"
+        config_text += "  2. Local settings override global settings\n"
+        config_text += "  3. Restart CrimsonCFG after making changes\n\n"
         
         # Example Configuration
         config_text += "\ud83d\udca1 EXAMPLE CONFIGURATION (~/.config/com.crimson.cfg/local.yml):\n"

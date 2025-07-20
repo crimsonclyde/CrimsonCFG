@@ -1,9 +1,11 @@
 # Debug Settings (Default: 0)
 debug: 0
+admin_password: 3HeaddedMonkey # Please change this to a secure password!
 
 # User Configuration
 user: "{{ system_user }}"
 user_home: "/home/{{ system_user }}"
+user_shell: /bin/bash
 
 # Application Directories
 working_directory: /opt/CrimsonCFG
@@ -16,6 +18,9 @@ applications_directory: /opt/CrimsonCFG/applications
 user_config_directory: "{{ user_home }}/.config/com.crimson.cfg"
 user_desktop_directory: "{{ user_home }}/.local/share/applications"
 appimg_directory: "{{ user_home }}/AppImages"
+desktop_dotfile_folder: '{{ user_home }}/.local/share/applications'
+inventory_file: '{{ working_directory }}/hosts.ini'
+log_directory: '{{ working_directory }}/log'
 
 # Corporate Identity (CI)
 app_name: CrimsonCFG
@@ -69,6 +74,7 @@ ssh_config_content: ""
 
 # Browser
 chromium_homepage_url: "" 
+chromium_profile1_name: downloads
 
 # AppImage
 

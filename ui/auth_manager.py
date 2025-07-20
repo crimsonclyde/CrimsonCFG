@@ -59,13 +59,6 @@ class AuthManager:
         
         # Main title - CrimsonCFG
         try:
-            # Load all.yml
-            all_config = {}
-            all_file = Path("group_vars/all.yml")
-            if all_file.exists():
-                with open(all_file, 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-            
             # Load local.yml
             local_config = {}
             config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -74,12 +67,10 @@ class AuthManager:
                 with open(local_file, 'r') as f:
                     local_config = yaml.safe_load(f) or {}
             
-            # Merge configurations (local overrides all)
-            merged_config = {**all_config, **local_config}
-            
-            app_name = merged_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = merged_config.get('app_subtitle', 'App &amp; Customization Selector')
-            app_logo = merged_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
+            # Use only local_config
+            app_name = local_config.get('app_name', 'CrimsonCFG')
+            app_subtitle = local_config.get('app_subtitle', 'App &amp; Customization Selector')
+            app_logo = local_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
         except Exception:
             app_name = 'CrimsonCFG'
             app_subtitle = 'App &amp; Customization Selector'

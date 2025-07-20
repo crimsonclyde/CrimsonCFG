@@ -117,14 +117,8 @@ from pathlib import Path
 import os
 config_dir = os.path.expanduser("~/.config/com.crimson.cfg")
 local = Path(config_dir) / "local.yml"
-allf = Path("group_vars/all.yml")
 if local.exists():
     with open(local) as f:
-        cfg = yaml.safe_load(f) or {}
-        if "working_directory" in cfg:
-            print(cfg["working_directory"]); exit()
-if allf.exists():
-    with open(allf) as f:
         cfg = yaml.safe_load(f) or {}
         if "working_directory" in cfg:
             print(cfg["working_directory"]); exit()

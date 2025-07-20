@@ -30,13 +30,6 @@ class ConfigManager:
         
     def load_config(self) -> Dict:
         """Load configuration from YAML files"""
-        # Load global configuration
-        all_config = {}
-        all_file = Path("group_vars/all.yml")
-        if all_file.exists():
-            with open(all_file, 'r') as f:
-                all_config = self.yaml.load(f) or {}
-        
         # Load local configuration (user-specific overrides)
         local_config = {}
         config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -76,9 +69,6 @@ class ConfigManager:
             with open(local_file, 'r') as f:
                 local_config = self.yaml.load(f) or {}
         
-        # Merge configurations (local overrides global)
-        merged_config = {**all_config, **local_config}
-        
         # Get actual system user
         system_user = getpass.getuser()
         
@@ -87,12 +77,12 @@ class ConfigManager:
             "categories": self.load_categories_from_yaml(),
             "settings": {
                 "default_user": system_user,
-                "working_directory": merged_config.get("working_directory", "/opt/CrimsonCFG"),
+                "working_directory": local_config.get("working_directory", "/opt/CrimsonCFG"),
                 "inventory_file": f"/opt/CrimsonCFG/hosts.ini",
                 "log_directory": f"/opt/CrimsonCFG/log",
-                "debug": merged_config.get("debug", 0),
-                "git_username": merged_config.get("git_username", system_user),
-                "git_email": merged_config.get("git_email", f"{system_user}@example.com")
+                "debug": local_config.get("debug", 0),
+                "git_username": local_config.get("git_username", system_user),
+                "git_email": local_config.get("git_email", f"{system_user}@example.com")
             }
         }
         return config

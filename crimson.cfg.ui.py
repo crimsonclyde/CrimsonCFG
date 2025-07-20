@@ -392,10 +392,7 @@ class CrimsonCFGGUI:
         """Load configuration from YAML files"""
         # Load global configuration
         all_config = {}
-        all_file = Path("group_vars/all.yml")
-        if all_file.exists():
-            with open(all_file, 'r') as f:  # type: ignore
-                all_config = yaml.safe_load(f) or {}
+        # Remove all_file = Path("group_vars/all.yml") and all_config loading
         
         # Load local configuration (user-specific)
         local_config = {}
@@ -410,8 +407,8 @@ class CrimsonCFGGUI:
             with open(local_file, 'r') as f:  # type: ignore
                 local_config = yaml.safe_load(f) or {}
         
-        # Merge configurations (local overrides global)
-        merged_config = {**all_config, **local_config}
+        # Remove any merging with all_config, use only local_config
+        # merged_config = {**all_config, **local_config} # This line is removed
         
         # Get actual system user
         import getpass
@@ -425,9 +422,9 @@ class CrimsonCFGGUI:
                 "working_directory": f"/home/{system_user}/Ansible",
                 "inventory_file": f"/home/{system_user}/Ansible/hosts.ini",
                 "log_directory": f"/home/{system_user}/Ansible/log",
-                "debug": merged_config.get("debug", 0),
-                "git_username": merged_config.get("git_username", system_user),
-                "git_email": merged_config.get("git_email", f"{system_user}@example.com")
+                "debug": local_config.get("debug", 0),
+                "git_username": local_config.get("git_username", system_user),
+                "git_email": local_config.get("git_email", f"{system_user}@example.com")
             }
         }
         return config

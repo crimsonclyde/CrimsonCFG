@@ -17,7 +17,7 @@ os.chdir(script_dir)
 # Load debug setting from YAML
 debug = False
 try:
-    with open("group_vars/all.yml", 'r') as f:
+    with open("local.yml", 'r') as f:
         yaml_config = yaml.safe_load(f)
         debug = yaml_config.get("debug", 0) == 1
 except:

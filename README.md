@@ -5,7 +5,6 @@
   - [Installation](#installation)
   - [Features](#features)
   - [Configuration Structure](#configuration-structure)
-    - [Global Configuration (`group_vars/all.yml`)](#global-configuration-group_varsallyml)
     - [Local Configuration (`~/.config/com.crimson.cfg/local.yml`)](#local-configuration-configcomcrimsoncfglocalyml)
     - [Configuration Priority](#configuration-priority)
   - [Usage](#usage)
@@ -43,15 +42,6 @@ wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/setup.sh -O setup.sh &&
 ## Configuration Structure
 
 CrimsonCFG uses a two-tier configuration system:
-
-### Global Configuration (`group_vars/all.yml`)
-
-Contains system-wide defaults and non-user-modifiable settings:
-
-- System paths and directories
-- Default application settings
-- Ansible configuration
-- System-wide package lists (read-only)
 
 ### Local Configuration (`~/.config/com.crimson.cfg/local.yml`)
 
