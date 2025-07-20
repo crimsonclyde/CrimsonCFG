@@ -21,21 +21,6 @@ set -e
 LOCAL_YML="$(dirname "$0")/../group_vars/local.yml"
 USER_HOME=""
 WORKING_DIRECTORY=""
-if [ -f "$LOCAL_YML" ]; then
-    USER_HOME=$(grep -E '^user_home:' "$LOCAL_YML" | awk '{print $2}')
-    if [ -z "$USER_HOME" ]; then
-        print_warning "user_home not set in local.yml. Defaulting to /home/$(logname)"
-        USER_HOME="/home/$(logname)"
-    fi
-    WORKING_DIRECTORY=$(grep -E '^working_directory:' "$LOCAL_YML" | awk '{print $2}')
-    if [ -z "$WORKING_DIRECTORY" ]; then
-        print_warning "working_directory not set in local.yml."
-    fi
-else
-    print_warning "local.yml not found. Defaulting to /home/$(logname)"
-    USER_HOME="/home/$(logname)"
-fi
-
 
 ##################
 # Functions
@@ -73,6 +58,34 @@ print_error() {
     echo -e "${RED}└───────────────────────────────────────────────┘${NC}"
 }
 
+load_local_yml() {
+if [ -f "$LOCAL_YML" ]; then
+    USER_HOME=$(grep -E '^user_home:' "$LOCAL_YML" | awk '{print $2}')
+    if [ -z "$USER_HOME" ]; then
+        print_warning "user_home not set in local.yml. Defaulting to /home/$(logname)"
+        USER_HOME="/home/$(logname)"
+    fi
+    WORKING_DIRECTORY=$(grep -E '^working_directory:' "$LOCAL_YML" | awk '{print $2}')
+    if [ -z "$WORKING_DIRECTORY" ]; then
+        print_warning "working_directory not set in local.yml."
+    fi
+else
+    print_warning "local.yml not found. Defaulting to /home/$(logname)"
+    USER_HOME="/home/$(logname)"
+fi
+}
+
+validate_vars() {
+    if [ -z "$USER_HOME" ]; then
+        print_error "USER_HOME is empty. Aborting to prevent dangerous operations."
+        exit 1
+    fi
+    if [ -z "$WORKING_DIRECTORY" ]; then
+        print_error "WORKING_DIRECTORY is empty. Aborting to prevent dangerous operations."
+        exit 1
+    fi
+}
+
 ##################
 # Main
 ##################
@@ -93,6 +106,12 @@ if [ "$confirm" != "y" ]; then
     exit 1
 fi
 
+# Load local.yml (we need that before we uninstall anything)
+load_local_yml
+
+# Validate critical variables before proceeding
+validate_vars
+
 # Remove the application
 print_status "Removing application..."
 
@@ -102,8 +121,6 @@ if sudo rm -rf "$INSTALL_DIR/"; then
 else
     print_error "Failed to remove $INSTALL_DIR/"
 fi
-
-
 
 # Remove config directory
 if sudo rm -r "$USER_HOME/.config/com.crimson.cfg/"; then
