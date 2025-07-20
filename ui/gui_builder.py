@@ -10,6 +10,8 @@ import getpass
 import yaml
 from pathlib import Path
 import json
+# Add ruamel.yaml import
+from ruamel.yaml import YAML
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk  # type: ignore
 
@@ -736,9 +738,14 @@ class GUIBuilder:
         if not local_file.exists():
             with open(local_file, 'w') as f:
                 yaml.safe_dump({}, f)
-        # Load local_config from file
+        # Use ruamel.yaml for comment preservation
+        yaml_ruamel = YAML()
+        yaml_ruamel.preserve_quotes = True
         with open(local_file, 'r') as f:
-            local_config = yaml.safe_load(f) or {}
+            try:
+                local_config = yaml_ruamel.load(f) or {}
+            except Exception:
+                local_config = {}
 
         # Ensure user and user_home are set in local_config
         system_user = getpass.getuser()
@@ -772,7 +779,7 @@ class GUIBuilder:
         
         if updated:
             with open(local_file, 'w') as f:
-                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+                yaml_ruamel.dump(local_config, f)
         
         def get_git_config(key):
             try:
@@ -1006,15 +1013,15 @@ class GUIBuilder:
             template = Template(template_content)
             rendered = template.render(system_user=getpass.getuser(), git_email='', git_username='')
             template_dict = yaml.safe_load(rendered) or {}
-
-            # Load the user's current local.yml as a dict
+            # Load the user's current local.yml as a ruamel CommentedMap
             with open(local_file, 'r') as f:
-                user_config = yaml.safe_load(f) or {}
-
+                try:
+                    user_config = yaml_ruamel.load(f) or {}
+                except Exception:
+                    user_config = {}
             # Merge template and user config (user values take precedence)
             merged_config = template_dict.copy()
             merged_config.update(user_config)
-
             # Only update the keys that are present in the form
             updates = {
                 "git_username": git_username_entry.get_text(),
@@ -1045,12 +1052,12 @@ class GUIBuilder:
             rgba = color_btn.get_rgba()
             hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
             updates["background_color"] = hex_color
-            # Update only the relevant keys in merged_config
+            # Update only the relevant keys in user_config (CommentedMap)
             for k, v in updates.items():
-                merged_config[k] = v
-            # Write the merged config back, preserving all other keys
+                user_config[k] = v
+            # Write the updated config back, preserving comments
             with open(local_file, 'w') as f:
-                yaml.safe_dump(merged_config, f, default_flow_style=False, allow_unicode=True)
+                yaml_ruamel.dump(user_config, f)
             # Reload config and update main_window variables
             self.main_window.config = self.main_window.config_manager.load_config()
             self.main_window.user = self.main_window.config.get("settings", {}).get("default_user", "user")
@@ -1068,7 +1075,7 @@ class GUIBuilder:
             bg_file_chooser.unselect_all()
             local_config.pop("background_image", None)
             with open(local_file, 'w') as f:
-                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+                yaml_ruamel.dump(local_config, f)
             self.apply_css()
         bg_clear_btn.connect("clicked", on_clear_bg)
         def on_reset_color(btn):
@@ -1077,7 +1084,7 @@ class GUIBuilder:
             color_btn.set_rgba(gdk_rgba)
             local_config["background_color"] = "#181a20"
             with open(local_file, 'w') as f:
-                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+                yaml_ruamel.dump(local_config, f)
             self.apply_css()
         color_reset_btn.connect("clicked", on_reset_color)
         def on_color_set(btn):
@@ -1086,7 +1093,7 @@ class GUIBuilder:
             hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
             local_config["background_color"] = hex_color
             with open(local_file, 'w') as f:
-                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+                yaml_ruamel.dump(local_config, f)
             self.apply_css()
         color_btn.connect("color-set", on_color_set)
         def on_bg_file_set(btn):
@@ -1097,7 +1104,7 @@ class GUIBuilder:
             else:
                 local_config.pop("background_image", None)
             with open(local_file, 'w') as f:
-                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+                yaml_ruamel.dump(local_config, f)
             self.apply_css()
         bg_file_chooser.connect("file-set", on_bg_file_set)
         config_box.pack_start(save_btn, False, False, 10)
