@@ -1,0 +1,39 @@
+# CrimsonCFG-Name: Media Codecs
+# CrimsonCFG-Description: Install media codecs
+# CrimsonCFG-Essential: false
+
+---
+- name: Enable multiverse and install media codecs
+  hosts: all
+  become: true
+
+  tasks:
+    #############################
+    # Enable multiverse repository
+    #############################
+    - name: Ensure multiverse repository is enabled
+      ansible.builtin.apt_repository:
+        repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} multiverse"
+        state: present
+
+    - name: Ensure multiverse updates repository is enabled
+      ansible.builtin.apt_repository:
+        repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }}-updates multiverse"
+        state: present
+
+    - name: Ensure multiverse security repository is enabled
+      ansible.builtin.apt_repository:
+        repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }}-security multiverse"
+        state: present
+
+    #############################
+    # Install media codecs
+    #############################
+    - name: Update APT cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install ubuntu-restricted-extras
+      ansible.builtin.apt:
+        name: ubuntu-restricted-extras
+        state: present
