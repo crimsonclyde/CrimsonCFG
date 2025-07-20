@@ -4,6 +4,10 @@
 ---
 - name: Install GNOME Boxes and QEMU/KVM and configure user permissions
   hosts: all
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
 
   tasks:
 
