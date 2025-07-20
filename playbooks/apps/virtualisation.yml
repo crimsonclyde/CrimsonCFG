@@ -65,3 +65,51 @@
       become: false
       ansible.builtin.debug:
         var: virsh_output.stdout
+
+    ## ----------------------------------------------------
+    ## Pin App to GNOME dock
+    ## ----------------------------------------------------
+    - name: Ensure python3-psutil is installed for dconf module
+      ansible.builtin.apt:
+        name: python3-psutil
+        state: present
+
+    - name: Get current GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        state: read
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      register: current_favorites
+
+    - name: Normalize GNOME favorites value to a list
+      ansible.builtin.set_fact:
+        gnome_favorites_list: >-
+          {{
+            (current_favorites.value
+              | default([])
+              | from_yaml
+              if (current_favorites.value is string)
+              else (current_favorites.value | default([]) | list)
+            )
+          }}
+
+    - name: Pin app to GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        value: >-
+          {{
+            (gnome_favorites_list +
+              ([app_desktop_file] if app_desktop_file not in gnome_favorites_list else [])
+            ) | to_json
+          }}
+        state: present
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      vars:
+        app_desktop_file: "gnome-boxes.desktop"
+      when: app_desktop_file not in gnome_favorites_list
