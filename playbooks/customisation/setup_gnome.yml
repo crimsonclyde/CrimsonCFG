@@ -1,0 +1,125 @@
+# CrimsonCFG-Name: Configure GNOME settings
+# CrimsonCFG-Description: Dark Mode, User Image, Wallpaper
+# CrimsonCFG-Essential: false
+---
+- name: Configure GNOME settings
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+      #######################
+      # Get Session/Display
+      #######################
+
+    - name: Find active session ID for user
+      ansible.builtin.shell: |
+        loginctl list-sessions --no-legend | grep '{{ user }}' | awk '{print $1}'
+      register: user_session
+      changed_when: false
+
+    - name: Get XDG_RUNTIME_DIR for user
+      ansible.builtin.shell: |
+        echo /run/user/$(id -u {{ user }})
+      register: runtime_dir
+      changed_when: false
+
+    - name: Debug session info
+      ansible.builtin.debug:
+        msg: |
+          Session ID: {{ user_session.stdout }}
+          XDG_RUNTIME_DIR: {{ runtime_dir.stdout }}
+
+    - name: Set GNOME dark mode using gsettings with manual DBUS_SESSION_BUS_ADDRESS
+      ansible.builtin.shell: |
+        sudo -u {{ user }} \
+          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
+          DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
+          gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+      args:
+        executable: /bin/bash
+
+
+      #######################
+      # Activate Dark Mode
+      #######################
+
+    - name: Also set legacy gtk-theme for fallback (optional)
+      ansible.builtin.shell: |
+        sudo -u {{ user }} \
+          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
+          DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
+          gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+      args:
+        executable: /bin/bash
+
+      #######################
+      # User Image
+      #######################
+
+    - name: Copy user file to user picture folder
+      ansible.builtin.copy:
+        src: "{{ files_directory }}/{{ user }}.png"
+        dest: "{{ user_home }}/Pictures/{{ user }}.png"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+
+      #######################
+      # Wallpaper
+      #######################
+
+    - name: Copy crimson wallpaper file to Pictures directory
+      ansible.builtin.copy:
+        src: "{{ files_directory }}/wallpaper.crimson.png"
+        dest: "{{ user_home }}/Pictures/wallpaper.crimson.png"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+
+    - name: Copy fuchsky-duckula wallpaper file to Pictures directory
+      ansible.builtin.copy:
+        src: "{{ files_directory }}/wallpaper.fuchsky-duckula.png"
+        dest: "{{ user_home }}/Pictures/wallpaper.fuchsky-duckula.png"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+
+    - name: Check current wallpaper
+      ansible.builtin.command:
+        cmd: gsettings get org.gnome.desktop.background picture-uri
+      register: current_wallpaper
+      become_user: "{{ user }}"
+      changed_when: false
+
+    - name: Set fact to compare wallpaper
+      ansible.builtin.set_fact:
+        wallpaper_changed: "{{ current_wallpaper.stdout != 'file:///home/' + user + '/Pictures/wallpaper.crimson.png' }}"
+
+    - name: Get current GNOME wallpaper (light mode)
+      become_user: "{{ user }}"
+      ansible.builtin.command: >
+        gsettings get org.gnome.desktop.background picture-uri
+      register: current_light_wallpaper
+      changed_when: false
+
+    - name: Set GNOME Wallpaper (light mode) to crimson
+      become_user: "{{ user }}"
+      ansible.builtin.command: >
+        gsettings set org.gnome.desktop.background picture-uri 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
+      when: wallpaper_changed and current_light_wallpaper.stdout != 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
+
+    - name: Get current GNOME Dark Mode wallpaper
+      become_user: "{{ user }}"
+      ansible.builtin.command: >
+        gsettings get org.gnome.desktop.background picture-uri-dark
+      register: current_dark_wallpaper
+      changed_when: false
+
+    - name: Set GNOME Dark Mode Wallpaper to crimson
+      become_user: "{{ user }}"
+      ansible.builtin.command: >
+        gsettings set org.gnome.desktop.background picture-uri-dark 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
+      when: wallpaper_changed and current_dark_wallpaper.stdout != 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
