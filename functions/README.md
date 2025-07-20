@@ -9,12 +9,6 @@ This directory contains utility functions and scripts for CrimsonCFG.
 
 ## Usage
 
-### Testing the Scanner
-
-```bash
-python3 functions/test_scanner.py
-```
-
 ### Manual Config Generation
 
 ```bash
