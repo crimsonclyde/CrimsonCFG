@@ -60,3 +60,6 @@ archive/
 
 # Ignore the docs folder
 docs/
+
+# Ignore bootcamp folder (contains old/legacy shell scripts and ideas)
+bootcamp/
