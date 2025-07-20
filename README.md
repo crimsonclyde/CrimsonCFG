@@ -23,7 +23,7 @@
 
 A modern, user-friendly GUI application for managing system configuration and application installation using Ansible playbooks.
 
-![Main Window Screenshot](/files/screenshots/VirtManager_AddConnection.png)
+![Main Window Screenshot](/files/screenshots/com.crimson.cfg_main.png)
 
 ## Installation
 
