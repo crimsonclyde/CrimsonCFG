@@ -14,21 +14,45 @@
     # Install basic apt pkgs
     #######################
 
+    - name: Check if APT package is installed
+      ansible.builtin.shell: "dpkg -s {{ item }} | grep -q '^Status: install'"
+      register: apt_installed
+      ignore_errors: true
+      changed_when: false
+      loop: "{{ apt_packages }}"
+      loop_control:
+        loop_var: item
+
     - name: Install common APT packages
       ansible.builtin.apt:
-        name: "{{ apt_packages }}"
+        name: "{{ item }}"
         state: present
-      when: apt_packages is defined and apt_packages | length > 0
+      when: apt_installed.results[loop.index0].rc != 0
+      loop: "{{ apt_packages }}"
+      loop_control:
+        loop_var: item
 
     #######################
     # Install basic snap pkgs
     #######################
 
+    - name: Check if snap package is installed
+      ansible.builtin.shell: "snap list {{ item }} | grep -w {{ item }}"
+      register: snap_installed
+      ignore_errors: true
+      changed_when: false
+      loop: "{{ snap_packages }}"
+      loop_control:
+        loop_var: item
+
     - name: Install Snap packages
       community.general.snap:
         name: "{{ item }}"
         state: present
+      when: snap_installed.results[loop.index0].rc != 0
       loop: "{{ snap_packages }}"
+      loop_control:
+        loop_var: item
 
     ## ----------------------------------------------------
     ## Pin App to GNOME dock
