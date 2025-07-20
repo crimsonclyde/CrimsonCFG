@@ -31,7 +31,7 @@
             | first
           }}
         fastfetch_latest_version: >-
-          {{ fastfetch_release.json.tag_name | regex_search('([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1') }}
+          {{ fastfetch_release.json.tag_name | regex_search('([0-9]+\.[0-9]+\.[0-9]+)', '\1') | default('0.0.0') }}
 
     - name: Get installed Fastfetch version
       ansible.builtin.command: fastfetch --version
@@ -130,9 +130,15 @@
         path: "/etc/fastfetch/fastfetch_config.jsonc"
       register: fastfetch_config
 
+    - name: Ensure /etc/fastfetch directory exists
+      ansible.builtin.file:
+        path: /etc/fastfetch
+        state: directory
+        mode: '0755'
+
     - name: Copy fastfetch config template with IP inserted
       ansible.builtin.template:
-        src: "fastfetch_config.jsonc.j2"
-        dest: "/etc/fastfetch/fastfetch_config.jsonc"
+        src: "{{ templates_directory }}/fastfetch_conf.jsonc.j2"
+        dest: /etc/fastfetch/fastfetch_config.jsonc
         mode: '0644'
       when: not fastfetch_config.stat.exists
