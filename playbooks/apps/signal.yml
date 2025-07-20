@@ -5,6 +5,9 @@
 - name: Install Signal Desktop
   hosts: all
   become: true
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
 
   tasks:
 
@@ -12,17 +15,29 @@
     # Signal Desktop
     #######################
 
+    - name: Check if Signal keyring exists
+      ansible.builtin.stat:
+        path: /usr/share/keyrings/signal-desktop-keyring.gpg
+      register: signal_keyring_stat
+
     - name: Signal-Desktop -> Download signing key
       ansible.builtin.get_url:
         url: https://updates.signal.org/desktop/apt/keys.asc
         dest: /tmp/signal-desktop-key.asc
         mode: '0644'
+      when: not signal_keyring_stat.stat.exists
 
     - name: Signal-Desktop -> Convert key to keyring
       ansible.builtin.command:
         cmd: "gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg /tmp/signal-desktop-key.asc"
         creates: /usr/share/keyrings/signal-desktop-keyring.gpg
       become: true
+      when: not signal_keyring_stat.stat.exists
+
+    - name: Check if Signal repo list exists
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/signal-xenial.list
+      register: signal_repo_stat
 
     - name: Signal-Desktop -> Add APT repository
       ansible.builtin.copy:
@@ -30,6 +45,7 @@
         content: |
           deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
         mode: '0644'
+      when: not signal_repo_stat.stat.exists
 
     - name: Signal-Desktop -> Update APT cache
       ansible.builtin.apt:
@@ -44,3 +60,52 @@
       ansible.builtin.file:
         path: /tmp/signal-desktop-key.asc
         state: absent
+      when: not signal_keyring_stat.stat.exists
+
+    ## ----------------------------------------------------
+    ## Pin App to GNOME dock
+    ## ----------------------------------------------------
+    - name: Ensure python3-psutil is installed for dconf module
+      ansible.builtin.apt:
+        name: python3-psutil
+        state: present
+
+    - name: Get current GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        state: read
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      register: current_favorites
+
+    - name: Normalize GNOME favorites value to a list
+      ansible.builtin.set_fact:
+        gnome_favorites_list: >-
+          {{
+            (current_favorites.value
+              | default([])
+              | from_yaml
+              if (current_favorites.value is string)
+              else (current_favorites.value | default([]) | list)
+            )
+          }}
+
+    - name: Pin app to GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        value: >-
+          {{
+            (gnome_favorites_list +
+              ([app_desktop_file] if app_desktop_file not in gnome_favorites_list else [])
+            ) | to_json
+          }}
+        state: present
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      vars:
+        app_desktop_file: "signal-desktop.desktop"
+      when: app_desktop_file not in gnome_favorites_list
