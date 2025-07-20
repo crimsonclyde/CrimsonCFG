@@ -997,10 +997,25 @@ class GUIBuilder:
         # --- Save Button (global) ---
         save_btn = Gtk.Button(label="Save Configuration")
         def on_save_clicked(btn):
-            # Load the latest local_config from file to avoid overwriting concurrent changes
+            # Load the template as a dict
+            from jinja2 import Template
+            template_path = os.path.join(os.path.dirname(__file__), '../templates/local.yml.j2')
+            with open(template_path, 'r') as f:
+                template_content = f.read()
+            # Render the template minimally (no variables, just as YAML)
+            template = Template(template_content)
+            rendered = template.render(system_user=getpass.getuser(), git_email='', git_username='')
+            template_dict = yaml.safe_load(rendered) or {}
+
+            # Load the user's current local.yml as a dict
             with open(local_file, 'r') as f:
-                local_config = yaml.safe_load(f) or {}
-            # Only update the keys that are present in the form, preserve all others
+                user_config = yaml.safe_load(f) or {}
+
+            # Merge template and user config (user values take precedence)
+            merged_config = template_dict.copy()
+            merged_config.update(user_config)
+
+            # Only update the keys that are present in the form
             updates = {
                 "git_username": git_username_entry.get_text(),
                 "git_email": git_email_entry.get_text(),
@@ -1030,12 +1045,12 @@ class GUIBuilder:
             rgba = color_btn.get_rgba()
             hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
             updates["background_color"] = hex_color
-            # Update only the relevant keys in local_config
+            # Update only the relevant keys in merged_config
             for k, v in updates.items():
-                local_config[k] = v
-            # Write the updated config back, preserving all other keys
+                merged_config[k] = v
+            # Write the merged config back, preserving all other keys
             with open(local_file, 'w') as f:
-                yaml.safe_dump(local_config, f, default_flow_style=False, allow_unicode=True)
+                yaml.safe_dump(merged_config, f, default_flow_style=False, allow_unicode=True)
             # Reload config and update main_window variables
             self.main_window.config = self.main_window.config_manager.load_config()
             self.main_window.user = self.main_window.config.get("settings", {}).get("default_user", "user")
