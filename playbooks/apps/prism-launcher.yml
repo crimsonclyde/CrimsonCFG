@@ -1,0 +1,113 @@
+# CrimsonCFG-Name: Prism Launcher
+# CrimsonCFG-Description: Install Prism Launcher (Minecraft Launcher)
+# CrimsonCFG-Essential: false
+---
+- name: Install Prism Launcher (Minecraft Launcher)
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Ensure AppImage folder exists
+    #######################
+    - name: Create AppImage folder for PrismLauncher
+      ansible.builtin.file:
+        path: "{{ prism_appimage_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0755'
+
+    #######################
+    # Get latest Prism Launcher release metadata
+    #######################
+    - name: Get latest Prism Launcher release metadata
+      ansible.builtin.uri:
+        url: "{{ prism_appimage_url }}"
+        return_content: true
+      register: prism_release
+
+    - name: Find .AppImage asset
+      ansible.builtin.set_fact:
+        prism_appimage_url: >-
+          {{
+            prism_release.json.assets
+            | selectattr('name', 'match', '.*Linux-x86_64.AppImage$')
+            | map(attribute='browser_download_url')
+            | first
+          }}
+
+    - name: Debug Prism Launcher .AppImage URL
+      ansible.builtin.debug:
+        var: prism_appimage_url
+
+    #######################
+    # Download AppImage
+    #######################
+    - name: Download Prism Launcher AppImage
+      ansible.builtin.get_url:
+        url: "{{ prism_appimage_url }}"
+        dest: "{{ prism_appimage_dir }}/{{ prism_appimage_filename }}"
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    #######################
+    # Extract icon from AppImage
+    #######################
+    - name: Extract AppImage to get icon
+      ansible.builtin.shell: |
+        cd {{ prism_appimage_dir }}
+        ./{{ prism_appimage_filename }} --appimage-extract
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Copy icon to proper location
+      ansible.builtin.copy:
+        src: "{{ prism_appimage_dir }}/squashfs-root/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg"
+        dest: "{{ prism_appimage_dir }}/PrismLauncher.svg"
+        remote_src: true
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+      when: >
+        ansible_check_mode or
+        (prism_appimage_dir + '/squashfs-root/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg') | file_exists
+
+    - name: Clean up extracted AppImage
+      ansible.builtin.file:
+        path: "{{ prism_appimage_dir }}/squashfs-root"
+        state: absent
+
+    #######################
+    # Create .desktop file for Prism Launcher
+    #######################
+    - name: Create Prism Launcher .desktop entry in user applications
+      ansible.builtin.copy:
+        dest: "{{ desktop_dotfile_folder }}/PrismLauncher.desktop"
+        content: |
+          [Desktop Entry]
+          Name=Prism Launcher
+          Comment=Minecraft launcher with support for multiple instances
+          GenericName=Minecraft Launcher
+          Exec={{ prism_appimage_dir }}/{{ prism_appimage_filename }} %F
+          Icon={{ prism_appimage_dir }}/PrismLauncher.svg
+          Type=Application
+          StartupNotify=false
+          StartupWMClass=PrismLauncher
+          Categories=Game;Minecraft;
+          MimeType=application/x-prismlauncher-instance;
+          Actions=new-instance;
+
+          [Desktop Action new-instance]
+          Name=New Instance
+          Exec={{ prism_appimage_dir }}/{{ prism_appimage_filename }} --new-instance
+          Icon={{ prism_appimage_dir }}/PrismLauncher.svg
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
