@@ -16,7 +16,8 @@ class PlaybookScanner:
         self.playbook_dirs = [
             "playbooks/apps",
             "playbooks/customisation", 
-            "playbooks/basics"
+            "playbooks/basics",
+            "playbooks/security"
         ]
         
     def parse_metadata(self, filepath: Path) -> Optional[Dict]:
