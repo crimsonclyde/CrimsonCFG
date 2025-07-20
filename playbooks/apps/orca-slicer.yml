@@ -1,0 +1,74 @@
+# CrimsonCFG-Name: Orca-Slicer
+# CrimsonCFG-Description: Install Orca-Slicer (AppImage)
+# CrimsonCFG-Essential: false
+---
+- name: Install Orca-Slicer (AppImage)
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Ensure AppImage folder exists
+    #######################
+    - name: Create AppImage folder for OrcaSlicer
+      ansible.builtin.file:
+        path: "{{ orca_appimage_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0755'
+
+    #######################
+    # Download AppImage
+    #######################
+    - name: Download OrcaSlicer AppImage
+      ansible.builtin.get_url:
+        url: "{{ orca_appimage_url }}"
+        dest: "{{ orca_appimage_dir }}/{{ orca_appimage_filename }}"
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    #######################
+    # Create .desktop file for OrcaSlicer
+    #######################
+    - name: Create OrcaSlicer .desktop entry in user applications
+      ansible.builtin.copy:
+        dest: "{{ user_home }}/.local/share/applications/orca-slicer.desktop"
+        content: |
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=OrcaSlicer
+          Comment=3D printing slicer
+          Exec={{ orca_appimage_dir }}/{{ orca_appimage_filename }} %F
+          Icon={{ orca_appimage_dir }}/{{ orca_appimage_filename }}
+          Terminal=false
+          Categories=Graphics;Utility;
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+
+
+    #######################
+    # Install gstreamer plugin (video)
+    #######################
+
+    - name: Install GStreamer development packages and plugins
+      ansible.builtin.apt:
+        update_cache: true
+        name:
+          - libgstreamer1.0-dev
+          - libgstreamer-plugins-base1.0-dev
+          - gstreamer1.0-plugins-base
+          - gstreamer1.0-plugins-good
+          - gstreamer1.0-plugins-bad
+          - gstreamer1.0-plugins-ugly
+          - gstreamer1.0-libav
+          - libgstrtspserver-1.0-dev
+          - libges-1.0-dev
+        state: present
