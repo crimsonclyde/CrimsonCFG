@@ -11,8 +11,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 class PlaybookScanner:
-    def __init__(self, base_dir: str = "."):
+    def __init__(self, base_dir: str = ".", external_repo_path: str = None):
         self.base_dir = Path(base_dir)
+        self.external_repo_path = Path(external_repo_path) if external_repo_path else None
         self.playbook_dirs = [
             "playbooks/apps",
             "playbooks/customisation", 
@@ -20,13 +21,15 @@ class PlaybookScanner:
             "playbooks/security"
         ]
         
-    def parse_metadata(self, filepath: Path) -> Optional[Dict]:
+    def parse_metadata(self, filepath: Path, rel_base: Path = None) -> Optional[Dict]:
         """Parse CrimsonCFG metadata comments from a playbook file."""
+        if rel_base is None:
+            rel_base = self.base_dir
         meta = {
             "name": None,
             "description": None, 
             "essential": False,
-            "path": str(filepath.relative_to(self.base_dir))
+            "path": str(filepath.relative_to(rel_base))
         }
         # Only set for essential playbooks
         essential_order = None
@@ -63,32 +66,40 @@ class PlaybookScanner:
         all_playbooks = {}
         
         for dir_path in self.playbook_dirs:
-            full_path = self.base_dir / dir_path
+            # Use external repo for apps and customisation if set
+            if self.external_repo_path and ("apps" in dir_path or "customisation" in dir_path):
+                # Look for playbooks in external_repo_path/playbooks/apps or playbooks/customisation
+                subdir = dir_path.split("/", 1)[1]
+                full_path = self.external_repo_path / "playbooks" / subdir
+                rel_base = self.external_repo_path
+            else:
+                full_path = self.base_dir / dir_path
+                rel_base = self.base_dir
             if not full_path.exists():
-                print(f"Warning: Directory {dir_path} does not exist")
+                print(f"Warning: Directory {full_path} does not exist")
                 continue
-                
+            
             category = full_path.name.capitalize()
             playbooks = []
             
             for yml_file in full_path.glob("*.yml"):
-                meta = self.parse_metadata(yml_file)
+                meta = self.parse_metadata(yml_file, rel_base=rel_base)
                 if meta:
                     playbooks.append(meta)
                     print(f"Found playbook: {meta['name']} in {category}")
                 else:
                     print(f"Skipping {yml_file.name} - no valid metadata")
-                    
+            
             if playbooks:
                 all_playbooks[category] = {
                     "description": f"{category} applications and configurations",
                     "playbooks": playbooks
                 }
-                
+        
         return {"categories": all_playbooks}
         
-    def generate_config(self, output_path: str = "") -> bool:
-        """Generate gui_config.json from scanned playbooks."""
+    def generate_config(self, output_path: str = "", external_repo_path: str = None) -> bool:
+        """Generate gui_config.json from scanned playbooks, supporting external repo."""
         try:
             import os
             import json
@@ -99,10 +110,14 @@ class PlaybookScanner:
                     config_dir.mkdir(parents=True, exist_ok=True)
                 output_path = str(config_dir / "gui_config.json")
             else:
-                # If output_path is in conf/, ensure conf/ exists
                 if output_path.startswith("conf/"):
                     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            config = self.scan_playbooks()
+            # Use external repo if provided
+            if external_repo_path:
+                scanner = PlaybookScanner(self.base_dir, external_repo_path)
+            else:
+                scanner = self
+            config = scanner.scan_playbooks()
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
             print(f"Generated {output_path} with {len(config['categories'])} categories")

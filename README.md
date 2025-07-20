@@ -62,74 +62,62 @@ Contains user-modifiable settings that override global defaults:
 2. Changes made through the UI are saved to the user's local.yml
 3. The application can be installed in `/opt/` without permission issues
 
+## External Playbook Repository
+
+CrimsonCFG allows you to use your own external repository for custom and apps playbooks. This lets you keep your personal or organization-specific playbooks separate from the built-in ones.
+
+### How to Add an External Repository
+
+1. **Go to the Administration tab in the CrimsonCFG UI.**
+2. **Open the 'External Playbooks' tab.**
+3. **Paste the URL of your Git repository** (e.g., `https://github.com/yourusername/your-playbooks-repo.git`) into the field provided.
+4. **Click 'Refresh Playbooks'** to clone or update the repository and load your playbooks.
+
+> **Warning:** Only use repositories you own and trust. Running untrusted playbooks can compromise your system.
+
+### Repository Structure
+
+Your external repository should have the following structure:
+
+```
+playbooks/
+  apps/
+    your_app_playbook.yml
+  customisation/
+    your_custom_playbook.yml
+```
+
+- Place your application playbooks in `playbooks/apps/`.
+- Place your customization playbooks in `playbooks/customisation/`.
+- Each playbook should start with CrimsonCFG metadata comments, for example:
+
+```
+# CrimsonCFG-Name: My Custom App
+# CrimsonCFG-Description: Installs my custom app
+# CrimsonCFG-Essential: false
+---
+- name: Install my custom app
+  hosts: all
+  tasks:
+    - name: Example task
+      ...
+```
+
+- Only the `apps` and `customisation` categories are loaded from your external repo. Built-in `basics` and `security` playbooks remain protected.
+
+### Example
+
+```
+my-playbooks-repo/
+└── playbooks/
+    ├── apps/
+    │   └── my_app.yml
+    └── customisation/
+        └── my_customisation.yml
+```
+
+After adding your repo and refreshing, your playbooks will appear in the CrimsonCFG UI under the appropriate categories.
+
 ## Usage
 
-1. **Start the Application**: Run `python3 crimson.cfg.main.py`
-2. **Enter Sudo Password**: Required for package installation
-3. **Select Playbooks**: Choose from available categories
-4. **Configure Settings**: Use the Administration tab to modify:
-   - APT packages
-   - Snap packages  
-   - Pinned applications
-   - Corporate identity
-5. **Install**: Click "Install Selected" to run the playbooks
-
-## File Structure
-
-```text
-CrimsonCFG/
-├── playbooks/           # Ansible playbooks
-├── ui/                  # GUI components
-├── functions/           # Utility functions
-└── templates/           # Jinja2 templates
-
-User Configuration:
-~/.config/com.crimson.cfg/
-├── local.yml            # User-modifiable overrides
-└── gui_config.json     # GUI configuration
-
-Desktop .dotfile:
-~/.local/share/applications/
-├── com.crimson.cfg.desktop # Desktopfile
-```
-
-## Development
-
-### Adding New Configuration Variables
-
-1. **User-modifiable**: Add to `~/.config/com.crimson.cfg/local.yml` and update UI save functions
-2. **UI integration**: Update `ui/gui_builder.py` to read/write the variable
-
-### Adding New Playbooks
-
-1. Create playbook in appropriate category directory
-2. Add metadata to `conf/gui_config.json`
-3. Include essential variables in `~/.config/com.crimson.cfg/local.yml`
-
-## Troubleshooting
-
-### Permission Issues
-
-- User-modifiable settings are now in `~/.config/com.crimson.cfg/local.yml`
-- The UI can write to the user's local.yml without elevated privileges
-- System-wide settings remain in `~/.config/com.crimson.cfg/local.yml`
-
-### Configuration Issues
-
-- Check `~/.config/com.crimson.cfg/local.yml` for variable definitions
-- Local settings override global settings
-- Restart the application after configuration changes
-
-## Uninstallation
-
-To completely remove CrimsonCFG from your system, run:
-
-```bash
-sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && bash /opt/CrimsonCFG/uninstall/uninstall.sh
-```
-
-This will remove the application files, configuration, and desktop entry, but will not remove any dependencies installed by the application.
-
-## License
-
-CrimsonCFG is licensed under the GNU Affero General Public License v3.0 (AGPLv3). See the LICENSE file for details.
+1. **Start the Application**: Run `

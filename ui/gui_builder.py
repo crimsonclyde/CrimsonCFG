@@ -1239,6 +1239,38 @@ class GUIBuilder:
             app_logo_entry.set_text(local_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
             ci_box.pack_start(app_logo_entry, False, False, 0)
             admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))
+            # --- External Playbooks Tab ---
+            from . import external_repo_manager
+            external_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+            external_box.set_margin_start(10)
+            external_box.set_margin_end(10)
+            external_box.set_margin_top(10)
+            external_box.set_margin_bottom(10)
+
+            # Warning label
+            external_repo_warning = Gtk.Label()
+            external_repo_warning.set_markup('<span foreground="red"><b>Warning:</b> Using external playbook repositories can be dangerous. Only use repositories you own and trust. Malicious playbooks can compromise your system.</span>')
+            external_repo_warning.set_line_wrap(True)
+            external_repo_warning.set_max_width_chars(80)
+            external_box.pack_start(external_repo_warning, False, False, 8)
+
+            # Repo URL entry
+            external_repo_url_entry = Gtk.Entry()
+            external_repo_url_entry.set_placeholder_text("External playbook repo URL (https://...)")
+            current_url = external_repo_manager.get_external_repo_url()
+            if current_url:
+                external_repo_url_entry.set_text(current_url)
+            def on_url_changed(entry):
+                self.main_window.on_external_repo_url_changed(entry)
+            external_repo_url_entry.connect("changed", on_url_changed)
+            external_box.pack_start(external_repo_url_entry, False, False, 8)
+
+            # Refresh button
+            refresh_playbooks_btn = Gtk.Button(label="Refresh Playbooks")
+            refresh_playbooks_btn.connect("clicked", self.main_window.on_refresh_playbooks_clicked)
+            external_box.pack_start(refresh_playbooks_btn, False, False, 8)
+
+            admin_notebook.append_page(external_box, Gtk.Label(label="External Playbooks"))
             # Save button for admin changes (update to save CI as well)
             def on_save_admin(btn):
                 # Save user-modifiable variables to user's local.yml

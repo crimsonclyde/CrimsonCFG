@@ -17,6 +17,7 @@ from .gui_builder import GUIBuilder
 from .installer import Installer
 from .logger import Logger
 from .playbook_manager import PlaybookManager
+from . import external_repo_manager
 
 class CrimsonCFGGUI:
     def __init__(self, application):
@@ -108,7 +109,20 @@ class CrimsonCFGGUI:
         
         # Create main container
         self.main_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        # Create notebook for tabs
+        self.notebook = Gtk.Notebook()
+        self.main_container.pack_start(self.notebook, True, True, 0)
         self.window.add(self.main_container)
+
+        # --- Main Tab ---
+        self.main_tab_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        # (Assume the rest of your main UI is added to self.main_tab_box elsewhere)
+        self.notebook.append_page(self.main_tab_box, Gtk.Label(label="Main"))
+
+        # --- Admin Tab ---
+        self.admin_tab_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        self.notebook.append_page(self.admin_tab_box, Gtk.Label(label="Admin"))
+
         
         # Show the window
         if self.debug:
@@ -124,6 +138,7 @@ class CrimsonCFGGUI:
         if self.debug:
             print("Showing sudo prompt...")
         self.auth_manager.show_sudo_prompt()
+        external_repo_manager.update_external_repo_async()
         if self.debug:
             print("CrimsonCFGGUI initialization complete")
         
@@ -280,3 +295,18 @@ class CrimsonCFGGUI:
             self.logger.log_message("Debug mode enabled")
         else:
             self.logger.log_message("Debug mode disabled") 
+
+    def on_external_repo_url_changed(self, entry):
+        url = entry.get_text().strip()
+        external_repo_manager.set_external_repo_url(url)
+        # Optionally, trigger an update when the URL changes
+        external_repo_manager.update_external_repo_async() 
+
+    def on_refresh_playbooks_clicked(self, button):
+        try:
+            self.config_manager.regenerate_gui_config()
+            self.config = self.config_manager.load_config()
+            self.update_playbook_list()
+            self.show_success_dialog("Playbooks refreshed from all sources.")
+        except Exception as e:
+            self.show_error_dialog(f"Failed to refresh playbooks: {e}") 

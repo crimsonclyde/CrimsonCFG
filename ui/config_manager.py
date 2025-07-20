@@ -12,6 +12,7 @@ from typing import Dict
 import shutil
 import os
 from jinja2 import Template
+from . import external_repo_manager
 
 # Import the playbook scanner
 try:
@@ -94,7 +95,7 @@ class ConfigManager:
         return config
             
     def regenerate_gui_config(self):
-        """Regenerate gui_config.json from playbook metadata"""
+        """Regenerate gui_config.json from playbook metadata, supporting external repo."""
         if self.debug:
             print("Regenerating GUI config from playbooks...")
         try:
@@ -103,7 +104,12 @@ class ConfigManager:
                 user_gui_config = config_dir / "gui_config.json"
                 if not config_dir.exists():
                     config_dir.mkdir(parents=True, exist_ok=True)
-                success = PlaybookScanner().generate_config(str(user_gui_config))
+                # Use external repo path if configured
+                external_repo_url = external_repo_manager.get_external_repo_url()
+                external_repo_path = None
+                if external_repo_url:
+                    external_repo_path = external_repo_manager.get_external_playbooks_path()
+                success = PlaybookScanner().generate_config(str(user_gui_config), external_repo_path=external_repo_path)
                 if success:
                     if self.debug:
                         print("GUI config regenerated successfully")
