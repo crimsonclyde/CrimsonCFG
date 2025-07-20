@@ -1,0 +1,349 @@
+# CrimsonCFG-Name: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
+# CrimsonCFG-Description: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
+# CrimsonCFG-Essential: false
+---
+- name: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install ZSH and fonts dependencies
+      ansible.builtin.apt:
+        name:
+          - zsh
+          - fonts-powerline
+          - wget
+          - git
+          - unzip
+          - dconf-cli
+        state: present
+
+    - name: Change default shell to zsh
+      ansible.builtin.user:
+        name: "{{ user }}"
+        shell: /usr/bin/zsh
+
+    - name: Install Oh My Zsh
+      become: false
+      ansible.builtin.shell: |
+        sh -c "$(wget -O- {{ oh_my_zsh_install_url }})" "" --unattended
+      args:
+        creates: ~/.oh-my-zsh
+
+    - name: Install Powerlevel10k theme
+      become: false
+      ansible.builtin.git:
+        repo: "{{ powerlevel10k_repo }}"
+        dest: "{{ user_home }}/.oh-my-zsh/custom/themes/powerlevel10k"
+        version: master
+
+    #######################
+    # Install Hack Nerd Font
+    #######################
+
+    - name: Check if Hack Nerd Font is installed
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.fonts/Hack Regular Nerd Font Complete.ttf"
+      register: hack_font
+
+    - name: Download Hack Nerd Font zip to /tmp
+      ansible.builtin.get_url:
+        url: "{{ meslo_nerd_font_url }}"
+        dest: "/tmp/Meslo.zip"
+        mode: '0644'
+        owner: "root"
+        group: "root"
+      when: not hack_font.stat.exists
+
+    - name: Ensure fonts directory exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.fonts"
+        state: directory
+        mode: '0755'
+        owner: "{{ user | basename }}"
+        group: "{{ user | basename }}"
+
+    - name: Unzip Hack Nerd Font to fonts directory
+      ansible.builtin.unarchive:
+        src: "/tmp/Meslo.zip"
+        dest: "{{ user_home }}/.fonts"
+        remote_src: true
+      when: not hack_font.stat.exists
+
+    - name: Update font cache
+      ansible.builtin.command:
+        cmd: fc-cache -fv
+      changed_when: false
+      when: not hack_font.stat.exists
+
+    - name: Remove downloaded zip file
+      ansible.builtin.file:
+        path: "/tmp/Meslo.zip"
+        state: absent
+      when: not hack_font.stat.exists
+
+    - name: Install Oh My Zsh plugins
+      become: false
+      ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: "{{ user_home }}/.oh-my-zsh/custom/plugins/{{ item.name }}"
+        version: master
+      loop: "{{ zsh_plugins }}"
+
+    - name: Set ZSH_THEME to powerlevel10k/powerlevel10k
+      become: false
+      ansible.builtin.replace:
+        path: "{{ user_home }}/.zshrc"
+        regexp: '^ZSH_THEME=".*"$'
+        replace: 'ZSH_THEME="powerlevel10k/powerlevel10k"'
+
+    - name: Copy p10k.zsh template to user's home directory
+      ansible.builtin.template:
+        src: "{{ ansible_folder }}/templates/p10k.zsh.j2"
+        dest: "{{ user_home }}/.p10k.zsh"
+        mode: '0644'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Ensure plugins are added to .zshrc
+      become: false
+      ansible.builtin.lineinfile:
+        path: "{{ user_home }}/.zshrc"
+        regexp: '^plugins='
+        line: 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions)'
+
+    - name: Ensure Powerlevel10k configuration is sourced in .zshrc
+      ansible.builtin.lineinfile:
+        path: "{{ user_home }}/.zshrc"
+        line: "source {{ user_home }}/.p10k.zsh"
+        insertafter: EOF
+        state: present
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+
+    - name: GNOME Terminal - Create or update '{{ user }}' profile
+      become: false
+      vars:
+        # Get user's session information
+        user_session_id: "{{ ansible_user_id }}"
+        xdg_runtime_dir: "/run/user/{{ lookup('pipe', 'id -u ' + user) }}"
+      block:
+
+        - name: Get current GNOME Terminal profiles list
+          ansible.builtin.command: gsettings get org.gnome.Terminal.ProfilesList list
+          register: profiles_list
+          changed_when: false
+          environment:
+            XDG_RUNTIME_DIR: "{{ xdg_runtime_dir }}"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path={{ xdg_runtime_dir }}/bus"
+
+        - name: Convert profiles list to usable array
+          ansible.builtin.set_fact:
+            profiles_array: "{{ profiles_list.stdout | regex_findall(\"'([a-f0-9\\-]+)'\") }}"
+
+        - name: Find UUID with visible-name '{{ user }}'
+          ansible.builtin.shell: |
+            set -o pipefail
+            for uuid in {{ profiles_array | join(' ') }}; do
+              name=$(gsettings get org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$uuid/ visible-name 2>/dev/null | tr -d "'")
+              if [ "$name" = "{{ user }}" ]; then echo $uuid; break; fi
+            done
+          register: profile_existing_uuid
+          changed_when: false
+          args:
+            executable: /bin/bash
+
+        - name: Use existing {{ user }} UUID if found
+          ansible.builtin.set_fact:
+            profile_uuid: "{{ profile_existing_uuid.stdout | default('') }}"
+
+        - name: Generate new UUID for {{ user }} if needed
+          ansible.builtin.command: uuidgen
+          register: new_profile_uuid
+          when: profile_uuid == ""
+          changed_when: false
+
+        - name: Set new {{ user }} UUID if generated
+          ansible.builtin.set_fact:
+            profile_uuid: "{{ new_profile_uuid.stdout }}"
+          when: profile_uuid == ""
+
+        - name: Get default profile UUID
+          ansible.builtin.command: gsettings get org.gnome.Terminal.ProfilesList default
+          register: default_profile_uuid_raw
+          changed_when: false
+          environment:
+            XDG_RUNTIME_DIR: "{{ xdg_runtime_dir }}"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path={{ xdg_runtime_dir }}/bus"
+
+        - name: Strip quotes from default UUID
+          ansible.builtin.set_fact:
+            default_profile_uuid: "{{ default_profile_uuid_raw.stdout | trim | trim(\"'\") }}"
+          changed_when: false
+
+        - name: Add {{ user }} UUID to profiles list if missing
+          ansible.builtin.shell: |
+            set -o pipefail
+            profiles=$(gsettings get org.gnome.Terminal.ProfilesList list)
+            if ! echo "$profiles" | grep -q "'{{ profile_uuid }}'"; then
+              updated=$(echo "$profiles" | sed "s/]$/, '{{ profile_uuid }}']/")
+              gsettings set org.gnome.Terminal.ProfilesList list "$updated"
+            fi
+          args:
+            executable: /bin/bash
+          environment:
+            XDG_RUNTIME_DIR: "{{ xdg_runtime_dir }}"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path={{ xdg_runtime_dir }}/bus"
+          changed_when: true
+
+        - name: Set visible-name to '{{ user }}' if profile is new
+          ansible.builtin.shell: |
+            gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" visible-name '{{ user }}'
+          args:
+            executable: /bin/bash
+          environment:
+            XDG_RUNTIME_DIR: "{{ xdg_runtime_dir }}"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path={{ xdg_runtime_dir }}/bus"
+          when: profile_existing_uuid.stdout == ""
+          changed_when: true
+
+        - name: Clone default profile keys (except visible-name) to {{ user }}
+          ansible.builtin.shell: |
+            keys=$(gsettings list-keys org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ default_profile_uuid }}/")
+            for key in $keys; do
+              if [ "$key" != "visible-name" ]; then
+                value=$(gsettings get org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ default_profile_uuid }}/" $key)
+                gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" $key "$value"
+              fi
+            done
+          args:
+            executable: /bin/bash
+          environment:
+            XDG_RUNTIME_DIR: "{{ xdg_runtime_dir }}"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path={{ xdg_runtime_dir }}/bus"
+          when: profile_existing_uuid.stdout == ""
+          changed_when: true
+
+        - name: Ensure visible-name is '{{ user }}'
+          ansible.builtin.shell: |
+            gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" visible-name '{{ user }}'
+          args:
+            executable: /bin/bash
+          environment:
+            XDG_RUNTIME_DIR: "{{ xdg_runtime_dir }}"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path={{ xdg_runtime_dir }}/bus"
+          changed_when: true
+
+        - name: Set custom settings for profile
+          ansible.builtin.shell: |
+            gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" use-transparent-background true
+            gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" background-transparency-percent 10
+            gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" default-size-columns 123
+            gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:"{{ profile_uuid }}/" default-size-rows 32
+          args:
+            executable: /bin/bash
+          changed_when: true
+
+        - name: Set profile as default profile
+          ansible.builtin.shell: |
+            gsettings set org.gnome.Terminal.ProfilesList default "{{ profile_uuid }}"
+          args:
+            executable: /bin/bash
+          changed_when: true
+
+        - name: Add super-upgrade function to .zshrc before Powerlevel10k source
+          become: false
+          vars:
+            zshrc_file: "{{ user_home }}/.zshrc"
+          blockinfile:
+            path: "{{ zshrc_file }}"
+            marker: "# {mark} ANSIBLE MANAGED BLOCK: SUPER-UPGRADE FUNCTION"
+            block: |
+              super-upgrade() {
+                # Clear the screen
+                clear
+
+                # Log directory in your home folder
+                LOG_DIR="$HOME/.super-update"
+                mkdir -p "$LOG_DIR"
+
+                # Log file name with timestamp
+                LOG_FILE="$LOG_DIR/$(date '+%Y-%m-%d_%H-%M-%S').log"
+
+                {
+                  echo "##############################"
+                  echo "# 🔄 SUPER-UPGRADE"
+                  echo "#"
+                  echo "# Started at $(date)"
+                  echo "# Kernel version: $(uname -r)"
+                  echo "##############################"
+                } | tee "$LOG_FILE"
+
+                {
+                  echo "##############################"
+                  echo "# 🔄 Updating APT packages..."
+                  echo "##############################"
+                  sudo apt-get update
+                  sudo apt-get full-upgrade -y
+                  sudo apt-get autoremove -y
+                  sudo apt-get clean
+
+                  echo "##############################"
+                  echo "# 🔄 Updating Snap packages..."
+                  echo "##############################"
+                  sudo snap refresh
+
+                  echo "##############################"
+                  echo "# ✅ System fully updated at $(date)!"
+                  echo "##############################"
+
+                  if [ -f /var/run/reboot-required ]; then
+                    echo "##############################"
+                    echo "# ⚠️  Reboot is required!"
+                    echo "##############################"
+                  fi
+                } | tee -a "$LOG_FILE"
+
+                ls -1t "$LOG_DIR" | tail -n +6 | while read -r old_log; do
+                  rm -f "$LOG_DIR/$old_log"
+                done
+              }
+
+              # /usr/bin/fastfetch
+            insertafter: "^(?=.*source /home/{{ user }}/.p10k.zsh)"
+
+        #######################
+        # Debug
+        #######################
+        - name: Debug current profile UUID and profile list
+          ansible.builtin.debug:
+            msg:
+              - "profile_uuid: {{ profile_uuid }}"
+              - "profile_existing_uuid.stdout: {{ profile_existing_uuid.stdout }}"
+              - "profiles_array: {{ profiles_array }}"
+
+        - name: List visible-names for debugging
+          ansible.builtin.shell: |
+            set -o pipefail
+            for uuid in $(echo {{ profiles_list.stdout | regex_replace("[\\[\\]',]", "") }}); do
+              name=$(gsettings get org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$uuid/ visible-name || echo "(none)")
+              echo "$uuid: $name"
+            done
+          args:
+            executable: /bin/bash
+          register: profile_names
+          changed_when: false
+
+        - name: Show current GNOME Terminal profiles and names
+          ansible.builtin.debug:
+            msg: "{{ profile_names.stdout_lines }}"
+
+        - name: Debug current profile UUID
+          ansible.builtin.debug:
+            msg:
+              - "profile_uuid: {{ profile_uuid }}"
+              - "profile_existing_uuid.stdout: {{ profile_existing_uuid.stdout }}"
+              - "profiles_array: {{ profiles_array }}"
