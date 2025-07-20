@@ -51,16 +51,6 @@ apt_packages:
 snap_packages:
   - bitwarden
 
-# Pinned Apps (deprecated)
-pinned_apps:
-  - chromium_chromium.desktop
-  - codium_codium.desktop
-  - nautilus.desktop
-  - gnome-terminal.desktop
-  - bitwarden_bitwarden.desktop
-  - signal-desktop.desktop
-  - gnome-boxes.desktop
-
 # GIT Settings
 git_email: "{{ git_email }}"
 git_username: "{{ git_username }}"
@@ -75,6 +65,10 @@ ssh_config_content: ""
 # Browser
 chromium_homepage_url: "" 
 chromium_profile1_name: downloads
+
+# Fonts
+hack_nerd_font_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Hack.zip"
+meslo_nerd_font_url: "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
 
 # AppImage
 
