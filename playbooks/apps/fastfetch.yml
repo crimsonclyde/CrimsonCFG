@@ -1,0 +1,139 @@
+# CrimsonCFG-Name: Fastfetch
+# CrimsonCFG-Description: Install Fastfetch
+# CrimsonCFG-Essential: false
+
+---
+- name: Install Fastfetch
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Fastfetch (GitHub .deb)
+    #######################
+
+    - name: Get latest Fastfetch release metadata
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest"
+        return_content: true
+      register: fastfetch_release
+
+    - name: Find .deb asset
+      ansible.builtin.set_fact:
+        fastfetch_deb_url: >-
+          {{
+            fastfetch_release.json.assets
+            | selectattr('name', 'match', '.*linux-amd64.deb$')
+            | map(attribute='browser_download_url')
+            | first
+          }}
+        fastfetch_latest_version: >-
+          {{ fastfetch_release.json.tag_name | regex_search('([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1') }}
+
+    - name: Get installed Fastfetch version
+      ansible.builtin.command: fastfetch --version
+      register: fastfetch_installed_version
+      failed_when: false
+      changed_when: false
+
+    - name: Set installed Fastfetch version fact
+      ansible.builtin.set_fact:
+        fastfetch_installed_version_str: "{{ fastfetch_installed_version.stdout | regex_search('([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1') | default('0.0.0') }}"
+
+    - name: Debug Fastfetch versions
+      ansible.builtin.debug:
+        msg: "Installed: {{ fastfetch_installed_version_str }}, Latest: {{ fastfetch_latest_version }}"
+
+    - name: Download latest Fastfetch .deb
+      ansible.builtin.get_url:
+        url: "{{ fastfetch_deb_url }}"
+        dest: "/tmp/fastfetch-latest.deb"
+        mode: '0755'
+        owner: "root"
+        group: "root"
+      when: fastfetch_installed_version_str != fastfetch_latest_version
+
+    - name: Install Fastfetch .deb
+      ansible.builtin.apt:
+        deb: "/tmp/fastfetch-latest.deb"
+      when: fastfetch_installed_version_str != fastfetch_latest_version
+
+    - name: Remove downloaded .deb
+      ansible.builtin.file:
+        path: "/tmp/fastfetch-latest.deb"
+        state: absent
+      when: fastfetch_installed_version_str != fastfetch_latest_version
+
+    - name: Verify Fastfetch installation
+      ansible.builtin.command: fastfetch --version
+      register: fastfetch_version
+      changed_when: false
+
+    - name: Display Fastfetch version
+      ansible.builtin.debug:
+        var: fastfetch_version.stdout
+
+    #######################
+    # Install Hack Nerd Font
+    #######################
+
+    - name: Check if Hack Nerd Font is installed
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.fonts/Hack Regular Nerd Font Complete.ttf"
+      register: hack_font
+
+    - name: Download Hack Nerd Font zip to /tmp
+      ansible.builtin.get_url:
+        url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Hack.zip"
+        dest: "/tmp/Hack.zip"
+        mode: '0644'
+        owner: "root"
+        group: "root"
+      when: not hack_font.stat.exists
+
+    - name: Ensure fonts directory exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.fonts"
+        state: directory
+        mode: '0755'
+        owner: "{{ user | basename }}"
+        group: "{{ user | basename }}"
+
+    - name: Unzip Hack Nerd Font to fonts directory
+      ansible.builtin.unarchive:
+        src: "/tmp/Hack.zip"
+        dest: "{{ user_home }}/.fonts"
+        remote_src: true
+      when: not hack_font.stat.exists
+
+    - name: Update font cache
+      ansible.builtin.command:
+        cmd: fc-cache -fv
+      changed_when: false
+      when: not hack_font.stat.exists
+
+    - name: Remove downloaded zip file
+      ansible.builtin.file:
+        path: "/tmp/Hack.zip"
+        state: absent
+      when: not hack_font.stat.exists
+
+    #######################
+    # Install custom config
+    #######################
+
+    - name: Check if fastfetch config exists
+      ansible.builtin.stat:
+        path: "/etc/fastfetch/fastfetch_config.jsonc"
+      register: fastfetch_config
+
+    - name: Copy fastfetch config template with IP inserted
+      ansible.builtin.template:
+        src: "fastfetch_config.jsonc.j2"
+        dest: "/etc/fastfetch/fastfetch_config.jsonc"
+        mode: '0644'
+      when: not fastfetch_config.stat.exists
