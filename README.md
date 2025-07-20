@@ -78,8 +78,6 @@ Contains user-modifiable settings that override global defaults:
 
 ```text
 CrimsonCFG/
-├── group_vars/
-│   └── all.yml          # System-wide defaults
 ├── playbooks/           # Ansible playbooks
 ├── ui/                  # GUI components
 ├── functions/           # Utility functions
@@ -99,15 +97,14 @@ Desktop .dotfile:
 
 ### Adding New Configuration Variables
 
-1. **System-wide defaults**: Add to `group_vars/all.yml`
-2. **User-modifiable**: Add to `~/.config/com.crimson.cfg/local.yml` and update UI save functions
-3. **UI integration**: Update `ui/gui_builder.py` to read/write the variable
+1. **User-modifiable**: Add to `~/.config/com.crimson.cfg/local.yml` and update UI save functions
+2. **UI integration**: Update `ui/gui_builder.py` to read/write the variable
 
 ### Adding New Playbooks
 
 1. Create playbook in appropriate category directory
 2. Add metadata to `conf/gui_config.json`
-3. Include essential variables in `group_vars/all.yml` or `group_vars/local.yml`
+3. Include essential variables in `~/.config/com.crimson.cfg/local.yml`
 
 ## Troubleshooting
 
@@ -115,11 +112,11 @@ Desktop .dotfile:
 
 - User-modifiable settings are now in `~/.config/com.crimson.cfg/local.yml`
 - The UI can write to the user's local.yml without elevated privileges
-- System-wide settings remain in `group_vars/all.yml`
+- System-wide settings remain in `~/.config/com.crimson.cfg/local.yml`
 
 ### Configuration Issues
 
-- Check both `all.yml` and `~/.config/com.crimson.cfg/local.yml` for variable definitions
+- Check `~/.config/com.crimson.cfg/local.yml` for variable definitions
 - Local settings override global settings
 - Restart the application after configuration changes
 

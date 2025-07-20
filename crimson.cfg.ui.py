@@ -392,7 +392,6 @@ class CrimsonCFGGUI:
         """Load configuration from YAML files"""
         # Load global configuration
         all_config = {}
-        # Remove all_file = Path("group_vars/all.yml") and all_config loading
         
         # Load local configuration (user-specific)
         local_config = {}

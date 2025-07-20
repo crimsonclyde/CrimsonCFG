@@ -1,5 +1,5 @@
 # CrimsonCFG-Name: Basic Applications
-# CrimsonCFG-Description: Install basic system applications and utilities specified in all.yml variables.
+# CrimsonCFG-Description: Install basic system applications and utilities specified in local.yml variables.
 # CrimsonCFG-Essential: true
 # CrimsonCFG-Essential-Order: 3
 ---

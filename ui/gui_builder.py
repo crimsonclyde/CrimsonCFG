@@ -956,7 +956,7 @@ class GUIBuilder:
         userinfo_box.pack_start(user_home_entry, False, False, 0)
 
         working_directory_label = Gtk.Label(label="Working Directory (user override, see docs):")
-        working_directory_label.set_tooltip_text("This value is loaded from ~/.config/com.crimson.cfg/local.yml if present, otherwise from group_vars/all.yml. Editing here only affects your user.")
+        working_directory_label.set_tooltip_text("This value is loaded from ~/.config/com.crimson.cfg/local.yml if present.")
         working_directory_label.set_xalign(0)
         userinfo_box.pack_start(working_directory_label, False, False, 0)
         working_directory_entry = Gtk.Entry()
@@ -1110,8 +1110,7 @@ class GUIBuilder:
             # Clear admin_tab
             for child in admin_tab.get_children():
                 admin_tab.remove(child)
-            # Load merged configuration (all.yml + local.yml)
-            
+
             # Load local.yml
             local_config = {}
             config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -1119,9 +1118,7 @@ class GUIBuilder:
             if local_file.exists():
                 with open(local_file, 'r') as f:
                     local_config = yaml.safe_load(f) or {}
-            
-            # Merge configurations (local overrides all)
-            merged_config = local_config
+
             # Admin notebook
             admin_notebook = Gtk.Notebook()
             admin_tab.pack_start(admin_notebook, True, True, 0)
@@ -1134,7 +1131,7 @@ class GUIBuilder:
             apt_label = Gtk.Label(label="APT Packages:")
             default_apps_box.pack_start(apt_label, False, False, 0)
             apt_store = Gtk.ListStore(str)
-            for pkg in merged_config.get('apt_packages', []):
+            for pkg in local_config.get('apt_packages', []):
                 apt_store.append([pkg])
             apt_view = Gtk.TreeView(model=apt_store)
             renderer = Gtk.CellRendererText()
@@ -1170,7 +1167,7 @@ class GUIBuilder:
             snap_label = Gtk.Label(label="Snap Packages:")
             snap_box.pack_start(snap_label, False, False, 0)
             snap_store = Gtk.ListStore(str)
-            for pkg in merged_config.get('snap_packages', []):
+            for pkg in local_config.get('snap_packages', []):
                 snap_store.append([pkg])
             snap_view = Gtk.TreeView(model=snap_store)
             snap_renderer = Gtk.CellRendererText()
@@ -1206,7 +1203,7 @@ class GUIBuilder:
             pinned_label = Gtk.Label(label="Pinned Apps:")
             pinned_box.pack_start(pinned_label, False, False, 0)
             pinned_store = Gtk.ListStore(str)
-            for app in merged_config.get('pinned_apps', []):
+            for app in local_config.get('pinned_apps', []):
                 pinned_store.append([app])
             pinned_view = Gtk.TreeView(model=pinned_store)
             pinned_renderer = Gtk.CellRendererText()
@@ -1273,13 +1270,13 @@ class GUIBuilder:
             # App Name
             app_name_label = Gtk.Label(label="Application Name:")
             app_name_entry = Gtk.Entry()
-            app_name_entry.set_text(merged_config.get('app_name', 'CrimsonCFG'))
+            app_name_entry.set_text(local_config.get('app_name', 'CrimsonCFG'))
             ci_box.pack_start(app_name_label, False, False, 0)
             ci_box.pack_start(app_name_entry, False, False, 0)
             # App Subtitle
             app_subtitle_label = Gtk.Label(label="Application Subtitle:")
             app_subtitle_entry = Gtk.Entry()
-            app_subtitle_entry.set_text(merged_config.get('app_subtitle', 'App &amp; Customization Selector'))
+            app_subtitle_entry.set_text(local_config.get('app_subtitle', 'App &amp; Customization Selector'))
             ci_box.pack_start(app_subtitle_label, False, False, 0)
             ci_box.pack_start(app_subtitle_entry, False, False, 0)
             # App Logo
@@ -1291,7 +1288,7 @@ class GUIBuilder:
             working_dir_label.set_xalign(0)
             ci_box.pack_start(working_dir_label, False, False, 0)
             app_logo_entry = Gtk.Entry()
-            app_logo_entry.set_text(merged_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
+            app_logo_entry.set_text(local_config.get('app_logo', 'files/com.crimson.cfg.logo.png'))
             ci_box.pack_start(app_logo_entry, False, False, 0)
             admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))
             # Save button for admin changes (update to save CI as well)
@@ -1336,9 +1333,11 @@ class GUIBuilder:
                 admin_tab.remove(child)
             # TODO: This is insecure and just a proof of concept. Do not use plaintext admin passwords in production.
             try:
-                with open('group_vars/all.yml', 'r') as f:
-                    all_config = yaml.safe_load(f) or {}
-                admin_password = all_config['admin_password']
+                config_dir = Path.home() / ".config/com.crimson.cfg"
+                local_file = config_dir / "local.yml"
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+                admin_password = local_config['admin_password']
                 password_missing = False
             except Exception:
                 admin_password = None
@@ -1366,7 +1365,7 @@ class GUIBuilder:
             pw_box.pack_start(status_label, False, False, 0)
             def on_pw_submit(entry):
                 if password_missing or admin_password is None:
-                    status_label.set_text("Admin password is not set in all.yml. Access denied.")
+                    status_label.set_text("Admin password is not set in local.yml. Access denied.")
                     return
                 if pw_entry.get_text() == admin_password:
                     self._admin_authenticated = True
@@ -1376,7 +1375,7 @@ class GUIBuilder:
                 status_label.set_text("Incorrect password.")
             pw_entry.connect("activate", on_pw_submit)
             if password_missing or admin_password is None:
-                status_label.set_text("Admin password is not set in all.yml. Access denied.")
+                status_label.set_text("Admin password is not set in local.yml. Access denied.")
                 pw_entry.set_sensitive(False)
                 mask_btn.set_sensitive(False)
             admin_tab.pack_start(pw_box, True, True, 0)
