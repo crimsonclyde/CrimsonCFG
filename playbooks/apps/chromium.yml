@@ -50,7 +50,7 @@
     ## ----------------------------------------------------
     - name: Render chromium_policies.j2 to temp file
       ansible.builtin.template:
-        src: "{{ ansible_folder }}/templates/chromium_policies.j2"
+        src: "{{ templates_directory }}/chromium_policies.j2"
         dest: /tmp/chromium_policies_raw.json
         owner: "{{ user }}"
         group: "{{ user }}"
@@ -65,7 +65,7 @@
 
     - name: Deploy policies.json to Chromium managed folder
       ansible.builtin.copy:
-        src: "{{ working_directory }}/templates/chromium_policies.json"
+        src: "{{ templates_directory }}/chromium_policies.json"
         dest: /var/snap/chromium/current/policies/managed/policies.json
         owner: root
         group: root
@@ -77,7 +77,7 @@
         state: absent
       loop:
         - /tmp/chromium_policies_raw.json
-        - "{{ working_directory }}/templates/chromium_policies.json"
+        - "{{ templates_directory }}/chromium_policies.json"
 
     ## ----------------------------------------------------
     ## 5) Launch Chromium using loginctl inside the user’s real session
