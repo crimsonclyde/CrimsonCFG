@@ -1,0 +1,28 @@
+# CrimsonCFG-Name: Steam
+# CrimsonCFG-Description: Install Steam via Snap
+# CrimsonCFG-Essential: false
+---
+- name: Install Steam via Snap
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install snapd
+      ansible.builtin.apt:
+        name: snapd
+        state: present
+
+    - name: Enable snapd.socket
+      ansible.builtin.systemd:
+        name: snapd.socket
+        enabled: true
+        state: started
+
+    - name: Install Steam via Snap
+      community.general.snap:
+        name:
+          - steam
+      become: true
