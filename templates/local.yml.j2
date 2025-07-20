@@ -1,7 +1,11 @@
+# Debug Settings (Default: 0)
+debug: 0
+
 # User Configuration
 user: "{{ system_user }}"
 user_home: "/home/{{ system_user }}"
-debug: 0
+
+# Application Directories
 working_directory: /opt/CrimsonCFG
 playbooks_directory: /opt/CrimsonCFG/playbooks
 basics_directory: /opt/CrimsonCFG/playbooks/basics
@@ -9,15 +13,16 @@ security_directory: /opt/CrimsonCFG/playbooks/security
 apps_directory: /opt/CrimsonCFG/playbooks/apps
 templates_directory: /opt/CrimsonCFG/templates
 applications_directory: /opt/CrimsonCFG/applications
-user_config_directory: "/home/{{ system_user }}/.config/com.crimson.cfg"
-user_desktop_directory: "/home/{{ system_user }}/.local/share/applications"
+user_config_directory: "{{ user_home }}/.config/com.crimson.cfg"
+user_desktop_directory: "{{ user_home }}/.local/share/applications"
+appimg_directory: "{{ user_home }}/AppImages"
 
 # Corporate Identity (CI)
 app_name: CrimsonCFG
 app_subtitle: App & Customization Selector
 background_color: "#181a20"
 
-# Basics 
+# Basics APT Packages
 apt_packages:
   - btop
   - mc
@@ -37,9 +42,11 @@ apt_packages:
   - software-properties-common
   - flameshot
 
+# Basic Snap Packages
 snap_packages:
   - bitwarden
 
+# Pinned Apps (deprecated)
 pinned_apps:
   - chromium_chromium.desktop
   - codium_codium.desktop
@@ -49,11 +56,11 @@ pinned_apps:
   - signal-desktop.desktop
   - gnome-boxes.desktop
 
-# GIT
+# GIT Settings
 git_email: "{{ git_email }}"
 git_username: "{{ git_username }}"
 
-# SSH
+# SSH Settings
 ssh_private_key_name: id_rsa
 ssh_public_key_name: id_rsa.pub
 ssh_private_key_content: ""
@@ -62,3 +69,38 @@ ssh_config_content: ""
 
 # Browser
 chromium_homepage_url: "" 
+
+# AppImage
+
+## Cursor
+cursor_appimage_dir: '{{ appimg_directory }}/Cursor'
+cursor_appimage_filename: Cursor.AppImage
+cursor_appimage_url: https://downloads.cursor.com/production/faa03b17cce93e8a80b7d62d57f5eda6bb6ab9fa/linux/x64/Cursor-1.2.2-x86_64.AppImage
+
+## Orca-Slicer
+orca_appimage_dir: '{{ appimg_directory }}/OrcaSlicer'
+orca_appimage_filename: OrcaSlicer.AppImage
+orca_appimage_url: https://github.com/SoftFever/OrcaSlicer/releases/download/v2.3.0/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.3.0.AppImage
+
+## Prism-Launcher
+prism_appimage_dir: '{{ appimg_direcory }}/PrismLauncher'
+prism_appimage_filename: PrismLauncher.AppImage
+prism_appimage_url: https://api.github.com/repos/PrismLauncher/PrismLauncher/releases/latest
+
+
+# ZSH
+
+## ZSH Plugins
+zsh_plugins:
+- name: zsh-autosuggestions
+  repo: https://github.com/zsh-users/zsh-autosuggestions.git
+- name: zsh-syntax-highlighting
+  repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+- name: zsh-completions
+  repo: https://github.com/zsh-users/zsh-completions.git
+
+## Oh-my-ZSH
+oh_my_zsh_install_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+
+## Powerlevel10K
+powerlevel10k_repo: https://github.com/romkatv/powerlevel10k.git
