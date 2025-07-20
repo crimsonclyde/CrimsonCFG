@@ -89,6 +89,8 @@
         loginctl list-sessions --no-legend | grep '{{ user }}' | awk '{print $1}'
       register: user_session
       changed_when: false
+      args:
+        executable: /bin/bash
 
     - name: Get XDG_RUNTIME_DIR for user
       ansible.builtin.shell: |
@@ -167,7 +169,6 @@
     ## ----------------------------------------------------
     - name: Rename Default profile in Local State
       ansible.builtin.shell: |
-        set -o pipefail
         jq '
           .profile.info_cache.Default.name = "{{ user }}" |
           .profile.info_cache.Default.is_using_default_name = false |
@@ -181,7 +182,6 @@
 
     - name: Rename Profile 1 in Local State
       ansible.builtin.shell: |
-        set -o pipefail
         jq '
           .profile.info_cache["Profile 1"].name = "{{ chromium_profile1_name }}" |
           .profile.info_cache["Profile 1"].is_using_default_name = false |
@@ -198,7 +198,6 @@
     ## ----------------------------------------------------
     - name: Rename Default Preferences
       ansible.builtin.shell: |
-        set -o pipefail
         jq '.profile.name = "{{ user }}" |
             .profile.avatar_index = 31 |
             .profile.color_variant2 = 1 |
