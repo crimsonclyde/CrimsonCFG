@@ -183,6 +183,32 @@ class ConfigTab(Gtk.Box):
             self.main_window.gui_builder.apply_css()
         color_reset_btn.connect("clicked", on_reset_color)
         app_tab.pack_start(color_reset_btn, False, False, 0)
+        # Theme Mode Switch
+        theme_label = Gtk.Label(label="Theme Mode:")
+        theme_label.set_xalign(0)
+        theme_combo = Gtk.ComboBoxText()
+        theme_combo.append_text("System Default")
+        theme_combo.append_text("Light")
+        theme_combo.append_text("Dark")
+        theme_combo.set_active(0)
+        current_theme = self._get_config_value("theme_mode", "")
+        if current_theme == "light":
+            theme_combo.set_active(1)
+        elif current_theme == "dark":
+            theme_combo.set_active(2)
+        else:
+            theme_combo.set_active(0)
+        def on_theme_changed(combo):
+            idx = combo.get_active()
+            if idx == 1:
+                self._set_config_value("theme_mode", "light")
+            elif idx == 2:
+                self._set_config_value("theme_mode", "dark")
+            else:
+                self._set_config_value("theme_mode", "")
+        theme_combo.connect("changed", on_theme_changed)
+        app_tab.pack_start(theme_label, False, False, 0)
+        app_tab.pack_start(theme_combo, False, False, 0)
         save_btn = Gtk.Button(label="Save Application Settings")
         def on_save_app(btn):
             self._set_config_value("working_directory", wd_entry.get_text())
