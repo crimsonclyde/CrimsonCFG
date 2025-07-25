@@ -6,6 +6,7 @@ admin_password: 3HeaddedMonkey # Please change this to a secure password!
 user: "{{ system_user }}"
 user_home: "/home/{{ system_user }}"
 user_shell: /bin/bash
+user_avatar: ''
 
 # Application Directories
 working_directory: /opt/CrimsonCFG
@@ -25,10 +26,13 @@ user_desktop_directory: "{{ user_home }}/.local/share/applications"
 appimg_directory: "{{ user_home }}/AppImages"
 desktop_dotfile_folder: "{{ user_home }}/.local/share/applications"
 
+# Gnome Settings
+gnome_background_image: ''
 
 # Corporate Identity (CI)
 app_name: CrimsonCFG
-app_subtitle: App & Customization Selector
+app_subtitle: System Configuration Manager
+app_logo: ''
 background_color: "#181a20"
 
 # Basics APT Packages

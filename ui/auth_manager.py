@@ -11,11 +11,13 @@ import os
 import subprocess
 import yaml
 from pathlib import Path
+import threading
 
 class AuthManager:
-    def __init__(self, main_window):
+    def __init__(self, main_window, on_success=None):
         self.main_window = main_window
-        self.debug = main_window.debug
+        self.debug = True
+        self.on_success = on_success
         
     def show_sudo_prompt(self):
         """Show sudo password prompt in the main window"""
@@ -69,11 +71,11 @@ class AuthManager:
             
             # Use only local_config
             app_name = local_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = local_config.get('app_subtitle', 'App &amp; Customization Selector')
+            app_subtitle = local_config.get('app_subtitle', 'System Configuration Manager')
             app_logo = local_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
         except Exception:
             app_name = 'CrimsonCFG'
-            app_subtitle = 'App &amp; Customization Selector'
+            app_subtitle = 'System Configuration Manager'
             app_logo = os.path.join("files", "com.crimson.cfg.logo.png")
         title_label = Gtk.Label()
         title_label.set_markup(f"<span size='x-large' weight='bold'>{app_name}</span>")
@@ -237,34 +239,37 @@ class AuthManager:
                 print("No password entered")
             self.status_label.set_text("Please enter your sudo password.")
             return
-            
-        # Test password
-        if self.debug:
-            print("Testing sudo password...")
+        
+        # Set status and start validation in a thread
         self.status_label.set_text("Validating password...")
         self.main_window.window.queue_draw()
-        
-        if self.test_sudo_password(password):
-            if self.debug:
-                print("Password validated successfully!")
-            self.status_label.set_text("Password validated successfully!")
-            self.main_window.window.queue_draw()
-            self.main_window.sudo_password = password
-            
-            # Regenerate GUI config from playbooks
-            self.main_window.config_manager.regenerate_gui_config()
-            self.main_window.config = self.main_window.config_manager.load_config()
-            
-            # Transition to main interface
-            if self.debug:
-                print("Transitioning to main interface...")
-            self.main_window.gui_builder.show_main_interface()
-        else:
-            if self.debug:
-                print("Password validation failed!")
-            self.status_label.set_text("Invalid password. Please try again.")
-            self.password_entry.set_text("")
-            self.password_entry.grab_focus()
+        def validate():
+            result = self.test_sudo_password(password)
+            def after():
+                if result:
+                    if self.debug:
+                        print("Password validated successfully!")
+                    self.status_label.set_text("Password validated successfully!")
+                    self.main_window.window.queue_draw()
+                    self.main_window.sudo_password = password
+                    # Regenerate GUI config from playbooks
+                    self.main_window.config_manager.regenerate_gui_config()
+                    self.main_window.config = self.main_window.config_manager.load_config()
+                    # Transition to main interface
+                    if self.debug:
+                        print("Transitioning to main interface...")
+                    if self.on_success:
+                        self.on_success()
+                else:
+                    if self.debug:
+                        print("Password validation failed!")
+                    self.status_label.set_text("Invalid password. Please try again.")
+                    self.password_entry.set_text("")
+                    self.password_entry.grab_focus()
+                return False  # Stop idle_add
+            from gi.repository import GLib
+            GLib.idle_add(after)
+        threading.Thread(target=validate, daemon=True).start()
             
     def test_sudo_password(self, password) -> bool:
         """Test if the provided sudo password is valid"""

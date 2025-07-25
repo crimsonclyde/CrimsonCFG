@@ -155,9 +155,13 @@ class CrimsonCFGGUI:
         title_label.set_valign(Gtk.Align.CENTER)
         title_box.pack_start(title_label, False, False, 0)
         
-        # Subtitle - App & Customization Selector
+        # Subtitle - use config value or fallback
+        from ui.config_manager import ConfigManager
+        config_manager = ConfigManager()
+        config = config_manager.load_config()
+        app_subtitle = config.get('settings', {}).get('app_subtitle', 'System Configuration Manager')
         subtitle_label = Gtk.Label()
-        subtitle_label.set_markup("<span size='medium'>App &amp; Customization Selector</span>")
+        subtitle_label.set_markup(f"<span size='medium'>{app_subtitle}</span>")
         subtitle_label.set_halign(Gtk.Align.START)
         subtitle_label.set_valign(Gtk.Align.CENTER)
         title_box.pack_start(subtitle_label, False, False, 0)
@@ -400,8 +404,33 @@ class CrimsonCFGGUI:
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
         if not local_file.exists():
-            with open(local_file, 'w') as f:  # type: ignore
-                yaml.safe_dump({}, f)
+            # Create from template if available
+            template_path = Path(__file__).parent.parent / 'templates' / 'local.yml.j2'
+            if template_path.exists():
+                from jinja2 import Template
+                from ruamel.yaml import YAML
+                with open(template_path, 'r') as f:
+                    template_content = f.read()
+                # Prepare context with resolved values
+                import getpass
+                context = {
+                    "system_user": getpass.getuser(),
+                    "user_home": os.path.expanduser("~"),
+                    "git_username": os.environ.get("GIT_USERNAME", getpass.getuser()),
+                    "git_email": os.environ.get("GIT_EMAIL", "user@example.com"),
+                    "working_directory": "/opt/CrimsonCFG",
+                    "appimg_directory": f"/home/{getpass.getuser()}/AppImages"
+                }
+                template = Template(template_content)
+                rendered = template.render(**context)
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
+                template_map = yaml_ruamel.load(rendered)
+                with open(local_file, 'w') as f:
+                    yaml_ruamel.dump(template_map, f)
+            else:
+                with open(local_file, 'w') as f:
+                    yaml.safe_dump({}, f)
         if local_file.exists():
             with open(local_file, 'r') as f:  # type: ignore
                 local_config = yaml.safe_load(f) or {}
@@ -657,9 +686,13 @@ class CrimsonCFGGUI:
         title_label.set_valign(Gtk.Align.CENTER)
         title_box.pack_start(title_label, False, False, 0)
         
-        # Subtitle - App & Customization Selector
+        # Subtitle - use config value or fallback
+        from ui.config_manager import ConfigManager
+        config_manager = ConfigManager()
+        config = config_manager.load_config()
+        app_subtitle = config.get('settings', {}).get('app_subtitle', 'System Configuration Manager')
         subtitle_label = Gtk.Label()
-        subtitle_label.set_markup("<span size='medium'>App &amp; Customization Selector</span>")
+        subtitle_label.set_markup(f"<span size='medium'>{app_subtitle}</span>")
         subtitle_label.set_halign(Gtk.Align.START)
         subtitle_label.set_valign(Gtk.Align.CENTER)
         title_box.pack_start(subtitle_label, False, False, 0)

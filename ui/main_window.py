@@ -21,6 +21,7 @@ from . import external_repo_manager
 
 class CrimsonCFGGUI:
     def __init__(self, application):
+        print("[DEBUG] CrimsonCFGGUI.__init__ starting")
         # Request dark theme for the application
         settings = Gtk.Settings.get_default()
         if settings is not None:
@@ -56,16 +57,32 @@ class CrimsonCFGGUI:
             
             # Use only local_config
             app_name = local_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = local_config.get('app_subtitle', 'App &amp; Customization Selector')
+            app_subtitle = local_config.get('app_subtitle', 'System Configuration Manager')
             app_logo = local_config.get('app_logo', None)
         except Exception:
             app_name = 'CrimsonCFG'
-            app_subtitle = 'App &amp; Customization Selector'
+            app_subtitle = 'System Configuration Manager'
             app_logo = None
         self.window.set_title(f"{app_name} - {app_subtitle}")
+        # Improved icon fallback logic
+        icon_set = False
         if app_logo and os.path.exists(app_logo):
             self.window.set_icon_from_file(app_logo)
+            icon_set = True
         else:
+            # Try working_directory/files/app/com.crimson.cfg.icon.png
+            try:
+                working_dir = getattr(self, 'working_directory', '/opt/CrimsonCFG')
+                fallback_icon = os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png')
+                if os.path.exists(fallback_icon):
+                    self.window.set_icon_from_file(fallback_icon)
+                    icon_set = True
+                elif os.path.exists('/opt/CrimsonCFG/files/app/com.crimson.cfg.icon.png'):
+                    self.window.set_icon_from_file('/opt/CrimsonCFG/files/app/com.crimson.cfg.icon.png')
+                    icon_set = True
+            except Exception:
+                pass
+        if not icon_set:
             self.window.set_icon_name("com.crimson.cfg")
         
         # Apply CSS class for styling
@@ -88,12 +105,13 @@ class CrimsonCFGGUI:
         self.debug = self.config.get("settings", {}).get("debug", 0) == 1
         
         # Initialize remaining managers (after debug is set)
-        self.auth_manager = AuthManager(self)
+        self.auth_manager = AuthManager(self, on_success=self.on_auth_success)
         self.gui_builder = GUIBuilder(self)
+        print("[DEBUG] GUIBuilder initialized")
         self.installer = Installer(self)
         self.logger = Logger(self)
         self.playbook_manager = PlaybookManager(self)
-        
+        print("[DEBUG] All managers initialized")
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
@@ -104,43 +122,17 @@ class CrimsonCFGGUI:
         self.selected_playbooks = set()
         self.installation_running = False
         
+        print("[DEBUG] About to show main interface")
+        # Create main container and add to window before showing main interface
+        self.main_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.window.add(self.main_container)
+        print("[DEBUG] main_container created and added to window")
+        # Show the sudo prompt first
+        self.auth_manager.show_sudo_prompt()
+        print("[DEBUG] Sudo prompt should now be visible")
+        
         # Setup Ansible environment
         self.installer.setup_ansible_environment()
-        
-        # Create main container
-        self.main_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        # Create notebook for tabs
-        self.notebook = Gtk.Notebook()
-        self.main_container.pack_start(self.notebook, True, True, 0)
-        self.window.add(self.main_container)
-
-        # --- Main Tab ---
-        self.main_tab_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        # (Assume the rest of your main UI is added to self.main_tab_box elsewhere)
-        self.notebook.append_page(self.main_tab_box, Gtk.Label(label="Main"))
-
-        # --- Admin Tab ---
-        self.admin_tab_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        self.notebook.append_page(self.admin_tab_box, Gtk.Label(label="Admin"))
-
-        
-        # Show the window
-        if self.debug:
-            print("Showing window...")
-        self.window.show_all()
-        if self.debug:
-            print("Window shown successfully")
-        
-        # Connect to window close event
-        self.window.connect("delete-event", self.on_window_delete_event)
-        
-        # Start with sudo password prompt
-        if self.debug:
-            print("Showing sudo prompt...")
-        self.auth_manager.show_sudo_prompt()
-        external_repo_manager.update_external_repo_async()
-        if self.debug:
-            print("CrimsonCFGGUI initialization complete")
         
     def on_window_delete_event(self, widget, event):
         """Handle window close event"""
@@ -310,3 +302,6 @@ class CrimsonCFGGUI:
             self.show_success_dialog("Playbooks refreshed from all sources.")
         except Exception as e:
             self.show_error_dialog(f"Failed to refresh playbooks: {e}") 
+
+    def on_auth_success(self):
+        self.gui_builder.show_main_interface() 

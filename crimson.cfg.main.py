@@ -15,7 +15,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 # Load debug setting from YAML
-debug = False
+debug = True
 try:
     with open("local.yml", 'r') as f:
         yaml_config = yaml.safe_load(f)
@@ -69,34 +69,36 @@ class CrimsonCFGApplication(Gtk.Application):
         )
         if debug:
             print("CrimsonCFGApplication initialized")
+        # Note: Gtk.Application does not support set_icon_name or set_icon_from_file.
+        # The icon must be set on the main window (Gtk.ApplicationWindow) for dock/taskbar icon.
 
     def do_activate(self):
-        if debug:
-            print("=== do_activate called ===")
-            print("Activating application...")
+        print("=== do_activate called ===")
         try:
             self.main_ui = CrimsonCFGGUI(self)
-            if debug:
-                print("CrimsonCFGGUI created successfully")
+            print("CrimsonCFGGUI created successfully")
             self.main_ui.window.present()
-            if debug:
-                print("Window presented")
+            print("Window presented")
             self.add_window(self.main_ui.window)
-            if debug:
-                print("Window added to application")
+            print("Window added to application")
             self.hold()
-            if debug:
-                print("Application held")
+            print("Application held")
         except Exception as e:
-            if debug:
-                print(f"Error in do_activate: {e}")
-                import traceback
-                traceback.print_exc()
+            print(f"Error in do_activate: {e}")
+            import traceback
+            traceback.print_exc()
 
 def main():
-    """Main entry point"""
-    app = CrimsonCFGApplication()
-    app.run(sys.argv)
+    print("=== main() called ===")
+    try:
+        app = CrimsonCFGApplication()
+        print("CrimsonCFGApplication created")
+        app.run(sys.argv)
+        print("App run completed")
+    except Exception as e:
+        print(f"Error in main(): {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main() 

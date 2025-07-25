@@ -39,7 +39,6 @@ class ConfigManager:
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
         
-        # Create initial local.yml if it doesn't exist
         if not local_file.exists():
             # Load template and render with variables
             template_file = Path("templates/local.yml.j2")
