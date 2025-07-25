@@ -1,0 +1,37 @@
+# CrimsonCFG-Name: SSH Config
+# CrimsonCFG-Description: Writes a default SSH config
+# CrimsonCFG-Essential: false
+---
+- name: SSH Config
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Fail if ssh_config_content is not set
+      ansible.builtin.fail:
+        msg: "ssh_config_content variable is not set or empty in local.yml. Please provide your SSH config content."
+      when: ssh_config_content is not defined or ssh_config_content | length == 0
+
+  tasks:
+
+      #######################
+      # SSH Config
+      #######################
+
+    - name: SSH-> Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.ssh"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0700'
+      changed_when: false
+
+    - name: SSH-> Write config from variable if set
+      ansible.builtin.copy:
+        dest: "{{ user_home }}/.ssh/config"
+        content: "{{ ssh_config_content }}"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0600'
+      when: ssh_config_content is defined and ssh_config_content | length > 0

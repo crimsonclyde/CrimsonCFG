@@ -1,0 +1,67 @@
+# CrimsonCFG-Name: Set GNOME Theme
+# CrimsonCFG-Description: Set GNOME Theme dark mode or light mode
+# CrimsonCFG-Essential: false
+---
+- name: Set GNOME Theme
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  pre_tasks:
+    - name: Fail if theme_mode is not set
+      ansible.builtin.fail:
+        msg: "theme_mode variable is not set in local.yml. Please set it to 'light' or 'dark'."
+      when: theme_mode is not defined or theme_mode|length == 0
+    - name: Fail if user is not set
+      ansible.builtin.fail:
+        msg: "user variable is not set in local.yml."
+      when: user is not defined or user|length == 0
+
+  tasks:
+
+      #######################
+      # Get Session/Display
+      #######################
+
+    - name: Find active session ID for user
+      ansible.builtin.shell: |
+        loginctl list-sessions --no-legend | grep '{{ user }}' | awk '{print $1}'
+      register: user_session
+      changed_when: false
+
+    - name: Get XDG_RUNTIME_DIR for user
+      ansible.builtin.shell: |
+        echo /run/user/$(id -u {{ user }})
+      register: runtime_dir
+      changed_when: false
+
+    - name: Debug session info
+      ansible.builtin.debug:
+        msg: |
+          Session ID: {{ user_session.stdout }}
+          XDG_RUNTIME_DIR: {{ runtime_dir.stdout }}
+
+    - name: Set GNOME dark mode using gsettings with manual DBUS_SESSION_BUS_ADDRESS
+      ansible.builtin.shell: |
+        sudo -u {{ user }} \
+          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
+          DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
+          gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+      args:
+        executable: /bin/bash
+
+
+      #######################
+      # Activate Dark Mode
+      #######################
+
+    - name: Also set legacy gtk-theme for fallback (optional)
+      ansible.builtin.shell: |
+        sudo -u {{ user }} \
+          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
+          DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
+          gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+      args:
+        executable: /bin/bash
+
