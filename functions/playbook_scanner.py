@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 class PlaybookScanner:
-    def __init__(self, base_dir: str = ".", external_repo_path: str = None):
+    def __init__(self, base_dir: str = ".", external_repo_path: str = None, debug: bool = False):
         self.base_dir = Path(base_dir)
         self.external_repo_path = Path(external_repo_path) if external_repo_path else None
         self.playbook_dirs = [
@@ -20,6 +20,7 @@ class PlaybookScanner:
             "playbooks/basics",
             "playbooks/security"
         ]
+        self.debug = debug
         
     def parse_metadata(self, filepath: Path, rel_base: Path = None) -> Optional[Dict]:
         """Parse CrimsonCFG metadata comments from a playbook file."""
@@ -53,6 +54,11 @@ class PlaybookScanner:
                             essential_order = int(line.split(":", 1)[1].strip())
                         except Exception:
                             essential_order = None
+                    elif "CrimsonCFG-RequiredVars:" in line:
+                        value = line.split(":", 1)[1].strip().lower()
+                        meta["required_vars"] = value == "true"
+            if "required_vars" not in meta:
+                meta["required_vars"] = False
             if meta["essential"] and essential_order is not None:
                 meta["essential_order"] = essential_order
         except Exception as e:
@@ -76,7 +82,8 @@ class PlaybookScanner:
                 full_path = self.base_dir / dir_path
                 rel_base = self.base_dir
             if not full_path.exists():
-                print(f"Warning: Directory {full_path} does not exist")
+                if self.debug:
+                    print(f"Warning: Directory {full_path} does not exist")
                 continue
             
             category = full_path.name.capitalize()
@@ -86,9 +93,11 @@ class PlaybookScanner:
                 meta = self.parse_metadata(yml_file, rel_base=rel_base)
                 if meta:
                     playbooks.append(meta)
-                    print(f"Found playbook: {meta['name']} in {category}")
+                    if self.debug:
+                        print(f"Found playbook: {meta['name']} in {category}")
                 else:
-                    print(f"Skipping {yml_file.name} - no valid metadata")
+                    if self.debug:
+                        print(f"Skipping {yml_file.name} - no valid metadata")
             
             if playbooks:
                 all_playbooks[category] = {

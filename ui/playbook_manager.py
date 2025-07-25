@@ -31,17 +31,56 @@ class PlaybookManager:
             return
             
         cat_info = self.main_window.config["categories"][self.main_window.current_category]
+        # Load local.yml config for checking required vars
+        from ruamel.yaml import YAML
+        from pathlib import Path
+        config_dir = Path.home() / ".config/com.crimson.cfg"
+        local_file = config_dir / "local.yml"
+        local_config = {}
+        if local_file.exists():
+            with open(local_file, 'r') as f:
+                local_config = YAML().load(f) or {}
         for playbook in cat_info["playbooks"]:
+            # Parse CrimsonCFG-RequiredVars from playbook YAML header if not already set
+            if "required_vars" not in playbook:
+                playbook_path = playbook.get("path")
+                if playbook_path:
+                    try:
+                        with open(playbook_path, "r") as f:
+                            for _ in range(10):  # Only check first 10 lines
+                                line = f.readline()
+                                if not line or line.strip() == "---":
+                                    break
+                                if line.strip().startswith("# CrimsonCFG-RequiredVars:"):
+                                    value = line.split(":", 1)[1].strip().lower()
+                                    playbook["required_vars"] = value == "true"
+                                    break
+                    except Exception:
+                        pass
             essential = "✓" if playbook.get("essential", False) else ""
             description = playbook.get("description", "")
             playbook_key = f"{self.main_window.current_category}:{playbook['name']}"
             selected = playbook_key in self.main_window.selected_playbooks
-            
+            # Check if playbook should be disabled
+            disabled = False
+            require_config_icon = ''
+            if playbook.get("required_vars", False):
+                # For now, only check SSH key requirements
+                priv = local_config.get("ssh_private_key_content", "")
+                pub = local_config.get("ssh_public_key_content", "")
+                if not priv or not pub:
+                    disabled = True
+                    selected = False
+                    require_config_icon = 'process-stop-symbolic'  # stop sign
+                else:
+                    require_config_icon = 'emblem-ok-symbolic'  # checkmark
             self.main_window.playbook_store.append([
                 playbook["name"],
                 essential,
                 description,
-                selected
+                selected,
+                disabled,
+                require_config_icon
             ])
             
     def on_playbook_selection_changed(self, selection):
@@ -49,6 +88,9 @@ class PlaybookManager:
         model, treeiter = selection.get_selected()
         if treeiter:
             playbook_name = model[treeiter][0]
+            disabled = model[treeiter][4]
+            if disabled:
+                return  # Prevent selection if disabled
             playbook_key = f"{self.main_window.current_category}:{playbook_name}"
             
             if playbook_key in self.main_window.selected_playbooks:

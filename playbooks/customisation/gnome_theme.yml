@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Set GNOME Theme
-# CrimsonCFG-Description: Set GNOME Theme (Configure dark mode or light mode in settings before running this playbook)
+# CrimsonCFG-Description: Set GNOME Theme
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
 ---
 - name: Set GNOME Theme
   hosts: all

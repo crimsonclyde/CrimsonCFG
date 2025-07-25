@@ -409,24 +409,40 @@ class GUIBuilder:
         center_background.add(center_box)
         
         # Playbook tree
-        self.main_window.playbook_store = Gtk.ListStore(str, str, str, bool)  # name, essential, description, selected
+        self.main_window.playbook_store = Gtk.ListStore(str, str, str, bool, bool, str)  # name, essential, description, selected, disabled, require_config_icon
         self.main_window.playbook_tree = Gtk.TreeView(model=self.main_window.playbook_store)
         
         # Columns
         renderer = Gtk.CellRendererText()
-        col1 = Gtk.TreeViewColumn("Playbook", renderer, text=0)
+        col1 = Gtk.TreeViewColumn("Playbook", renderer)
+        col1.set_cell_data_func(renderer, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][0]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col1.set_expand(True)
         self.main_window.playbook_tree.append_column(col1)
         
         renderer2 = Gtk.CellRendererText()
-        col2 = Gtk.TreeViewColumn("Essential", renderer2, text=1)
+        col2 = Gtk.TreeViewColumn("Essential", renderer2)
+        col2.set_cell_data_func(renderer2, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][1]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col2.set_expand(False)
         self.main_window.playbook_tree.append_column(col2)
         
         renderer3 = Gtk.CellRendererText()
-        col3 = Gtk.TreeViewColumn("Description", renderer3, text=2)
+        col3 = Gtk.TreeViewColumn("Description", renderer3)
+        col3.set_cell_data_func(renderer3, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][2]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col3.set_expand(True)
         self.main_window.playbook_tree.append_column(col3)
+
+        # Require Config Icon column
+        renderer_icon = Gtk.CellRendererPixbuf()
+        col_icon = Gtk.TreeViewColumn("Require Config", renderer_icon)
+        def icon_data_func(col, cell, model, iter, data):
+            icon_name = model[iter][5]
+            if icon_name:
+                cell.set_property('icon-name', icon_name)
+            else:
+                cell.set_property('icon-name', None)
+        col_icon.set_cell_data_func(renderer_icon, icon_data_func)
+        col_icon.set_expand(False)
+        self.main_window.playbook_tree.append_column(col_icon)
         
         # Selection
         self.main_window.playbook_tree.get_selection().connect("changed", self.main_window.on_playbook_selection_changed)

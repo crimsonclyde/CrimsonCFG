@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: SSH Config
-# CrimsonCFG-Description: Writes a default SSH config (Configure SSH config in settings before running this playbook)
+# CrimsonCFG-Description: Writes a default SSH config
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
 ---
 - name: SSH Config
   hosts: all

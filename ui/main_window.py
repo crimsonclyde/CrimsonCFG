@@ -21,16 +21,15 @@ from . import external_repo_manager
 
 class CrimsonCFGGUI:
     def __init__(self, application):
-        print("[DEBUG] CrimsonCFGGUI.__init__ starting")
+        self.debug = False
+        if self.debug:
+            print("[DEBUG] CrimsonCFGGUI.__init__ starting")
         # Request dark theme for the application
         settings = Gtk.Settings.get_default()
         if settings is not None:
             settings.set_property('gtk-application-prefer-dark-theme', True)
         self.application = application
         self.sudo_password = None
-        
-        # Set default debug value early
-        self.debug = False
         
         if self.debug:
             print("Initializing CrimsonCFGGUI...")
@@ -107,11 +106,13 @@ class CrimsonCFGGUI:
         # Initialize remaining managers (after debug is set)
         self.auth_manager = AuthManager(self, on_success=self.on_auth_success)
         self.gui_builder = GUIBuilder(self)
-        print("[DEBUG] GUIBuilder initialized")
+        if self.debug:
+            print("[DEBUG] GUIBuilder initialized")
         self.installer = Installer(self)
         self.logger = Logger(self)
         self.playbook_manager = PlaybookManager(self)
-        print("[DEBUG] All managers initialized")
+        if self.debug:
+            print("[DEBUG] All managers initialized")
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
@@ -122,14 +123,17 @@ class CrimsonCFGGUI:
         self.selected_playbooks = set()
         self.installation_running = False
         
-        print("[DEBUG] About to show main interface")
+        if self.debug:
+            print("[DEBUG] About to show main interface")
         # Create main container and add to window before showing main interface
         self.main_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.window.add(self.main_container)
-        print("[DEBUG] main_container created and added to window")
+        if self.debug:
+            print("[DEBUG] main_container created and added to window")
         # Show the sudo prompt first
         self.auth_manager.show_sudo_prompt()
-        print("[DEBUG] Sudo prompt should now be visible")
+        if self.debug:
+            print("[DEBUG] Sudo prompt should now be visible")
         
         # Setup Ansible environment
         self.installer.setup_ansible_environment()

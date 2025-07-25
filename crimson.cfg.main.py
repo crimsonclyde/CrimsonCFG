@@ -73,28 +73,36 @@ class CrimsonCFGApplication(Gtk.Application):
         # The icon must be set on the main window (Gtk.ApplicationWindow) for dock/taskbar icon.
 
     def do_activate(self):
-        print("=== do_activate called ===")
+        if debug:
+            print("=== do_activate called ===")
         try:
             self.main_ui = CrimsonCFGGUI(self)
-            print("CrimsonCFGGUI created successfully")
+            if debug:
+                print("CrimsonCFGGUI created successfully")
             self.main_ui.window.present()
-            print("Window presented")
+            if debug:
+                print("Window presented")
             self.add_window(self.main_ui.window)
-            print("Window added to application")
+            if debug:
+                print("Window added to application")
             self.hold()
-            print("Application held")
+            if debug:
+                print("Application held")
         except Exception as e:
             print(f"Error in do_activate: {e}")
             import traceback
             traceback.print_exc()
 
 def main():
-    print("=== main() called ===")
+    if debug:
+        print("=== main() called ===")
     try:
         app = CrimsonCFGApplication()
-        print("CrimsonCFGApplication created")
+        if debug:
+            print("CrimsonCFGApplication created")
         app.run(sys.argv)
-        print("App run completed")
+        if debug:
+            print("App run completed")
     except Exception as e:
         print(f"Error in main(): {e}")
         import traceback

@@ -16,7 +16,7 @@ import threading
 class AuthManager:
     def __init__(self, main_window, on_success=None):
         self.main_window = main_window
-        self.debug = True
+        self.debug = getattr(main_window, 'debug', False)
         self.on_success = on_success
         
     def show_sudo_prompt(self):
