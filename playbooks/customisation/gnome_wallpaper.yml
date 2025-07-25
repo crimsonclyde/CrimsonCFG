@@ -1,5 +1,5 @@
 # CrimsonCFG-Name: Set GNOME Wallpaper
-# CrimsonCFG-Description: Set GNOME Wallpaper
+# CrimsonCFG-Description: Set GNOME Wallpaper (Configure wallpaper in settings before running this playbook)
 # CrimsonCFG-Essential: false
 ---
 - name: Set GNOME Wallpaper

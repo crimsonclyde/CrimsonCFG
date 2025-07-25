@@ -1,5 +1,5 @@
 # CrimsonCFG-Name: Costumisation -> SSH Key
-# CrimsonCFG-Description: Set's SSH keys
+# CrimsonCFG-Description: Set's SSH keys (Configure SSH keys in settings before running this playbook)
 # CrimsonCFG-Essential: false
 ---
 - name: SSH Key
