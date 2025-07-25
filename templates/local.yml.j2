@@ -16,6 +16,7 @@ security_directory: "{{ working_directory }}/playbooks/security"
 apps_directory: "{{ working_directory }}/playbooks/apps"
 templates_directory: "{{ working_directory }}/templates"
 files_directory: "{{ working_directory }}/files"
+wallpaper_directory: "{{ files_directory }}/wallpapers"
 applications_directory: "{{ working_directory }}/applications"
 inventory_file: "{{ working_directory }}/hosts.ini"
 log_directory: "{{ working_directory }}/log"
@@ -28,6 +29,7 @@ desktop_dotfile_folder: "{{ user_home }}/.local/share/applications"
 
 # Gnome Settings
 gnome_background_image: ''
+theme_mode: ''
 
 # Corporate Identity (CI)
 app_name: CrimsonCFG
@@ -54,10 +56,6 @@ apt_packages:
   - nautilus
   - software-properties-common
   - flameshot
-
-# Basic Snap Packages
-snap_packages:
-  - bitwarden
 
 # GIT Settings
 git_email: "{{ git_email }}"
