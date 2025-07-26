@@ -122,7 +122,6 @@ class CrimsonCFGGUI:
         self.inventory_file = f"{self.working_directory}/hosts.ini"
         self.selected_playbooks = set()
         self.installation_running = False
-        self.current_category = None
         
         if self.debug:
             print("[DEBUG] About to show main interface")
