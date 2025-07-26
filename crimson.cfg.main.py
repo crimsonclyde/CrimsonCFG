@@ -71,6 +71,21 @@ class CrimsonCFGApplication(Gtk.Application):
             print("CrimsonCFGApplication initialized")
         # Note: Gtk.Application does not support set_icon_name or set_icon_from_file.
         # The icon must be set on the main window (Gtk.ApplicationWindow) for dock/taskbar icon.
+        
+    def do_window_added(self, window):
+        """Handle window added to application"""
+        if debug:
+            print("Window added to application")
+            
+    def do_window_removed(self, window):
+        """Handle window removed from application"""
+        if debug:
+            print("Window removed from application")
+        # If this was the last window, quit the application
+        if len(self.get_windows()) == 0:
+            if debug:
+                print("No more windows, quitting application")
+            self.quit()
 
     def do_activate(self):
         if debug:

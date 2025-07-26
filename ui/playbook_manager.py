@@ -16,6 +16,43 @@ class PlaybookManager:
         self.main_window = main_window
         self.debug = main_window.debug
         
+    def _check_playbook_requirements(self, playbook_name: str, local_config: Dict) -> tuple[bool, str]:
+        """
+        Check if a playbook's requirements are met.
+        Returns (requirements_met, icon_name)
+        """
+        # Define requirements for each playbook
+        requirements_map = {
+            "SSH Key": {
+                "variables": ["ssh_private_key_content", "ssh_public_key_content"],
+                "check": lambda config: (config.get("ssh_private_key_content", "") and 
+                                       config.get("ssh_public_key_content", ""))
+            },
+            "SSH Config": {
+                "variables": ["ssh_config_content"],
+                "check": lambda config: config.get("ssh_config_content", "")
+            },
+            "Set GNOME Wallpaper": {
+                "variables": ["gnome_background_image"],
+                "check": lambda config: config.get("gnome_background_image", "")
+            },
+            "Set GNOME Theme": {
+                "variables": ["theme_mode"],
+                "check": lambda config: config.get("theme_mode", "") in ["light", "dark"]
+            }
+        }
+        
+        if playbook_name not in requirements_map:
+            return True, 'emblem-ok-symbolic'  # No requirements, always available
+            
+        requirement = requirements_map[playbook_name]
+        requirements_met = requirement["check"](local_config)
+        
+        if requirements_met:
+            return True, 'emblem-ok-symbolic'
+        else:
+            return False, 'process-stop-symbolic'
+        
     def on_category_changed(self, button, category):
         """Handle category selection change"""
         if button.get_active():
@@ -65,15 +102,14 @@ class PlaybookManager:
             disabled = False
             require_config_icon = ''
             if playbook.get("required_vars", False):
-                # For now, only check SSH key requirements
-                priv = local_config.get("ssh_private_key_content", "")
-                pub = local_config.get("ssh_public_key_content", "")
-                if not priv or not pub:
+                # Check specific requirements for this playbook
+                requirements_met, icon = self._check_playbook_requirements(playbook['name'], local_config)
+                if not requirements_met:
                     disabled = True
                     selected = False
-                    require_config_icon = 'process-stop-symbolic'  # stop sign
+                    require_config_icon = icon
                 else:
-                    require_config_icon = 'emblem-ok-symbolic'  # checkmark
+                    require_config_icon = icon
             self.main_window.playbook_store.append([
                 playbook["name"],
                 essential,

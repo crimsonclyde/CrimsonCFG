@@ -144,7 +144,11 @@ class CrimsonCFGGUI:
             print("Window close event received")
         # Release the application hold
         self.application.release()
-        return False  # Allow the window to close
+        # Remove window from application (this will trigger do_window_removed)
+        self.application.remove_window(self.window)
+        # Destroy the window to ensure proper cleanup
+        self.window.destroy()
+        return True  # Prevent default handling
         
     def run(self):
         """Show the window and start the main loop"""

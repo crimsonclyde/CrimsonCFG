@@ -716,8 +716,8 @@ class GUIBuilder:
         if self.debug:
             print("setup_gui: Complete")
         
-        # Connect window close event
-        self.main_window.window.connect("destroy", Gtk.main_quit)
+        # Connect window close event - let the application handle cleanup
+        self.main_window.window.connect("delete-event", self.main_window.on_window_delete_event)
         
     def update_config_display(self, button):
         """Update the configuration display with current settings"""

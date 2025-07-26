@@ -72,6 +72,21 @@ class AdminTab(Gtk.Box):
             apt_btn_box.pack_start(add_apt_btn, False, False, 0)
             apt_btn_box.pack_start(remove_apt_btn, False, False, 0)
             default_apps_box.pack_start(apt_btn_box, False, False, 0)
+            # Save APT packages button
+            save_apt_btn = Gtk.Button(label="Save APT Packages")
+            def on_save_apt(btn):
+                apt_packages = []
+                for row in apt_store:
+                    if row[0].strip():  # Only add non-empty packages
+                        apt_packages.append(row[0].strip())
+                local_config['apt_packages'] = apt_packages
+                with open(local_file, 'w') as f:
+                    yaml.safe_dump(local_config, f)
+                # Refresh playbook list to update requirement status
+                if hasattr(self.main_window, 'playbook_manager'):
+                    self.main_window.playbook_manager.update_playbook_list()
+            save_apt_btn.connect("clicked", on_save_apt)
+            default_apps_box.pack_start(save_apt_btn, False, False, 0)
             admin_notebook.append_page(default_apps_box, Gtk.Label(label="APT Packages"))
 
             # --- Corporate Identity Tab ---
@@ -108,6 +123,9 @@ class AdminTab(Gtk.Box):
                 local_config['app_logo'] = logo_chooser.get_filename() or ''
                 with open(local_file, 'w') as f:
                     yaml.safe_dump(local_config, f)
+                # Refresh playbook list to update requirement status
+                if hasattr(self.main_window, 'playbook_manager'):
+                    self.main_window.playbook_manager.update_playbook_list()
             save_btn.connect("clicked", on_save_ci)
             ci_box.pack_start(save_btn, False, False, 0)
             admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))

@@ -10,10 +10,12 @@
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
 
   pre_tasks:
+
     - name: Fail if theme_mode is not set
       ansible.builtin.fail:
         msg: "theme_mode variable is not set in local.yml. Please set it to 'light' or 'dark'."
       when: theme_mode is not defined or theme_mode|length == 0
+
     - name: Fail if user is not set
       ansible.builtin.fail:
         msg: "user variable is not set in local.yml."

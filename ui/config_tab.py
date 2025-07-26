@@ -94,6 +94,10 @@ class ConfigTab(Gtk.Box):
             img_preview.clear()
         remove_avatar_btn.connect("clicked", on_remove_avatar)
         img_row.pack_start(remove_avatar_btn, False, False, 0)
+        # Add lightning bolt symbol for instantly applied setting
+        instant_icon = Gtk.Label(label="\u26A1")
+        instant_icon.set_tooltip_text("Instantly applied")
+        img_row.pack_start(instant_icon, False, False, 0)
         def on_img_file_set(widget):
             selected_path = img_chooser.get_filename()
             if selected_path:
@@ -183,32 +187,6 @@ class ConfigTab(Gtk.Box):
             self.main_window.gui_builder.apply_css()
         color_reset_btn.connect("clicked", on_reset_color)
         app_tab.pack_start(color_reset_btn, False, False, 0)
-        # Theme Mode Switch
-        theme_label = Gtk.Label(label="Theme Mode:")
-        theme_label.set_xalign(0)
-        theme_combo = Gtk.ComboBoxText()
-        theme_combo.append_text("System Default")
-        theme_combo.append_text("Light")
-        theme_combo.append_text("Dark")
-        theme_combo.set_active(0)
-        current_theme = self._get_config_value("theme_mode", "")
-        if current_theme == "light":
-            theme_combo.set_active(1)
-        elif current_theme == "dark":
-            theme_combo.set_active(2)
-        else:
-            theme_combo.set_active(0)
-        def on_theme_changed(combo):
-            idx = combo.get_active()
-            if idx == 1:
-                self._set_config_value("theme_mode", "light")
-            elif idx == 2:
-                self._set_config_value("theme_mode", "dark")
-            else:
-                self._set_config_value("theme_mode", "")
-        theme_combo.connect("changed", on_theme_changed)
-        app_tab.pack_start(theme_label, False, False, 0)
-        app_tab.pack_start(theme_combo, False, False, 0)
         save_btn = Gtk.Button(label="Save Application Settings")
         def on_save_app(btn):
             self._set_config_value("working_directory", wd_entry.get_text())
@@ -261,6 +239,9 @@ class ConfigTab(Gtk.Box):
         priv_key_name_label.set_xalign(0)
         priv_key_name_entry = Gtk.Entry()
         priv_key_name_entry.set_text(self._get_config_value("ssh_private_key_name", "id_rsa"))
+        def on_priv_key_name_changed(widget):
+            self._set_config_value("ssh_private_key_name", widget.get_text())
+        priv_key_name_entry.connect("changed", on_priv_key_name_changed)
         ssh_tab.pack_start(priv_key_name_label, False, False, 0)
         ssh_tab.pack_start(priv_key_name_entry, False, False, 0)
         ssh_priv_frame = Gtk.Frame(label="SSH Private Key")
@@ -278,6 +259,11 @@ class ConfigTab(Gtk.Box):
         ssh_priv_view.set_hexpand(True)
         ssh_priv_view.set_vexpand(True)
         ssh_priv_view.set_size_request(-1, 80)
+        def on_ssh_priv_changed(buffer):
+            start, end = buffer.get_bounds()
+            content = buffer.get_text(start, end, True)
+            self._set_config_value("ssh_private_key_content", content)
+        ssh_priv_buffer.connect("changed", on_ssh_priv_changed)
         ssh_priv_box.pack_start(ssh_priv_view, True, True, 0)
         ssh_priv_frame.add(ssh_priv_box)
         ssh_tab.pack_start(ssh_priv_frame, False, False, 0)
@@ -285,6 +271,9 @@ class ConfigTab(Gtk.Box):
         pub_key_name_label.set_xalign(0)
         pub_key_name_entry = Gtk.Entry()
         pub_key_name_entry.set_text(self._get_config_value("ssh_public_key_name", "id_rsa.pub"))
+        def on_pub_key_name_changed(widget):
+            self._set_config_value("ssh_public_key_name", widget.get_text())
+        pub_key_name_entry.connect("changed", on_pub_key_name_changed)
         ssh_tab.pack_start(pub_key_name_label, False, False, 0)
         ssh_tab.pack_start(pub_key_name_entry, False, False, 0)
         ssh_pub_frame = Gtk.Frame(label="SSH Public Key")
@@ -302,6 +291,11 @@ class ConfigTab(Gtk.Box):
         ssh_pub_view.set_hexpand(True)
         ssh_pub_view.set_vexpand(True)
         ssh_pub_view.set_size_request(-1, 40)
+        def on_ssh_pub_changed(buffer):
+            start, end = buffer.get_bounds()
+            content = buffer.get_text(start, end, True)
+            self._set_config_value("ssh_public_key_content", content)
+        ssh_pub_buffer.connect("changed", on_ssh_pub_changed)
         ssh_pub_box.pack_start(ssh_pub_view, True, True, 0)
         ssh_pub_frame.add(ssh_pub_box)
         ssh_tab.pack_start(ssh_pub_frame, False, False, 0)
@@ -319,6 +313,11 @@ class ConfigTab(Gtk.Box):
         ssh_cfg_view.set_hexpand(True)
         ssh_cfg_view.set_vexpand(True)
         ssh_cfg_view.set_size_request(-1, 80)
+        def on_ssh_cfg_changed(buffer):
+            start, end = buffer.get_bounds()
+            content = buffer.get_text(start, end, True)
+            self._set_config_value("ssh_config_content", content)
+        ssh_cfg_buffer.connect("changed", on_ssh_cfg_changed)
         ssh_cfg_box.pack_start(ssh_cfg_view, True, True, 0)
         ssh_cfg_frame.add(ssh_cfg_box)
         ssh_tab.pack_start(ssh_cfg_frame, False, False, 0)
@@ -346,6 +345,34 @@ class ConfigTab(Gtk.Box):
         def on_gnome_bg_changed(widget):
             self._set_config_value("gnome_background_image", gnome_bg_file_chooser.get_filename() or "")
         gnome_bg_file_chooser.connect("file-set", on_gnome_bg_changed)
+        
+        # Theme Mode Switch
+        theme_label = Gtk.Label(label="Theme Mode:")
+        theme_label.set_xalign(0)
+        theme_combo = Gtk.ComboBoxText()
+        theme_combo.append_text("System Default")
+        theme_combo.append_text("Light")
+        theme_combo.append_text("Dark")
+        theme_combo.set_active(0)
+        current_theme = self._get_config_value("theme_mode", "")
+        if current_theme == "light":
+            theme_combo.set_active(1)
+        elif current_theme == "dark":
+            theme_combo.set_active(2)
+        else:
+            theme_combo.set_active(0)
+        def on_theme_changed(combo):
+            idx = combo.get_active()
+            if idx == 1:
+                self._set_config_value("theme_mode", "light")
+            elif idx == 2:
+                self._set_config_value("theme_mode", "dark")
+            else:
+                self._set_config_value("theme_mode", "")
+        theme_combo.connect("changed", on_theme_changed)
+        gnome_tab.pack_start(theme_label, False, False, 0)
+        gnome_tab.pack_start(theme_combo, False, False, 0)
+        
         config_notebook.append_page(gnome_tab, Gtk.Label(label="Gnome"))
 
     def _get_config_value(self, key, default=None):
@@ -406,6 +433,9 @@ class ConfigTab(Gtk.Box):
         with open(local_file, 'w') as f:
             yaml_ruamel.dump(local_config, f)
         self._reload_main_config()
+        # Refresh playbook list to update requirement status
+        if hasattr(self.main_window, 'playbook_manager'):
+            self.main_window.playbook_manager.update_playbook_list()
 
     def _reload_main_config(self):
         self.main_window.config = self.main_window.config_manager.load_config()
