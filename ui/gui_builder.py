@@ -274,6 +274,7 @@ class GUIBuilder:
         logo_box.set_halign(Gtk.Align.CENTER)
         
         # Try to load logo
+        logo_path = None
         try:
             # Load local.yml
             local_config = {}
@@ -283,12 +284,45 @@ class GUIBuilder:
                 with open(local_file, 'r') as f:
                     local_config = yaml.safe_load(f) or {}
             
-            # Merge configurations (local overrides all)
-            merged_config = local_config
-            logo_path = merged_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
+            # Get logo path from config
+            logo_path = local_config.get('app_logo', '')
         except Exception:
-            logo_path = os.path.join("files", "com.crimson.cfg.logo.png")
-        if os.path.exists(logo_path):
+            logo_path = ''
+        
+        # Improved logo fallback logic
+        logo_loaded = False
+        if logo_path and os.path.exists(logo_path):
+            try:
+                # Resize logo to a smaller size (150px max width)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(logo_path, 150, -1)
+                logo_image = Gtk.Image.new_from_pixbuf(pixbuf)
+                logo_box.pack_start(logo_image, False, False, 0)
+                logo_loaded = True
+            except Exception as e:
+                if self.debug:
+                    print(f"Logo loading failed: {e}")
+        
+        # Try default icon if custom logo not loaded
+        if not logo_loaded:
+            try:
+                # Try working_directory/files/app/com.crimson.cfg.icon.png
+                working_dir = getattr(self.main_window, 'working_directory', '/opt/CrimsonCFG')
+                default_icon = os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png')
+                if os.path.exists(default_icon):
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(default_icon, 150, -1)
+                    logo_image = Gtk.Image.new_from_pixbuf(pixbuf)
+                    logo_box.pack_start(logo_image, False, False, 0)
+                    logo_loaded = True
+                elif os.path.exists('/opt/CrimsonCFG/files/app/com.crimson.cfg.icon.png'):
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size('/opt/CrimsonCFG/files/app/com.crimson.cfg.icon.png', 150, -1)
+                    logo_image = Gtk.Image.new_from_pixbuf(pixbuf)
+                    logo_box.pack_start(logo_image, False, False, 0)
+                    logo_loaded = True
+            except Exception as e:
+                if self.debug:
+                    print(f"Default icon loading failed: {e}")
+        
+        if not logo_loaded:
             try:
                 # Resize logo to a smaller size (150px max width)
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(logo_path, 150, -1)
