@@ -424,12 +424,6 @@ class GUIBuilder:
         col2.set_cell_data_func(renderer2, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][1]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col2.set_expand(False)
         self.main_window.playbook_tree.append_column(col2)
-        
-        renderer3 = Gtk.CellRendererText()
-        col3 = Gtk.TreeViewColumn("Description", renderer3)
-        col3.set_cell_data_func(renderer3, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][2]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
-        col3.set_expand(True)
-        self.main_window.playbook_tree.append_column(col3)
 
         # Require Config Icon column
         renderer_icon = Gtk.CellRendererPixbuf()
@@ -443,6 +437,12 @@ class GUIBuilder:
         col_icon.set_cell_data_func(renderer_icon, icon_data_func)
         col_icon.set_expand(False)
         self.main_window.playbook_tree.append_column(col_icon)
+        
+        renderer3 = Gtk.CellRendererText()
+        col3 = Gtk.TreeViewColumn("Description", renderer3)
+        col3.set_cell_data_func(renderer3, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][2]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
+        col3.set_expand(True)
+        self.main_window.playbook_tree.append_column(col3)
         
         # Selection
         self.main_window.playbook_tree.get_selection().connect("changed", self.main_window.on_playbook_selection_changed)

@@ -17,7 +17,7 @@ apps_directory: "{{ working_directory }}/playbooks/apps"
 templates_directory: "{{ working_directory }}/templates"
 files_directory: "{{ working_directory }}/files"
 app_directory: "{{ working_directory }}/app"
-wallpaper_directory: "{{ app_directory }}/wallpapers"
+wallpaper_directory: "{{ working_directory }}/app/wallpapers"
 applications_directory: "{{ working_directory }}/applications"
 inventory_file: "{{ working_directory }}/hosts.ini"
 log_directory: "{{ working_directory }}/log"
@@ -35,7 +35,7 @@ theme_mode: ''
 # Corporate Identity (CI)
 app_name: CrimsonCFG
 app_subtitle: System Configuration Manager
-app_logo: '{{ app_directory }}/com.crimson.cfg.icon.png'
+app_logo: '{{ working_directory }}/app/com.crimson.cfg.icon.png'
 background_color: "#181a20"
 
 # Basics APT Packages

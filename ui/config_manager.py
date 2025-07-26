@@ -63,17 +63,16 @@ class ConfigManager:
                 # Save as local.yml
                 with open(local_file, 'w') as f:
                     f.write(rendered)
-                if self.debug:
-                    print(f"Created initial local.yml at {local_file}")
             else:
-                if self.debug:
-                    print(f"Template file not found: {template_file}")
                 # Fallback to empty config if template doesn't exist
                 initial_local_config = {}
             
         if local_file.exists():
             with open(local_file, 'r') as f:
                 local_config = self.yaml.load(f) or {}
+            
+            # Process the loaded configuration to resolve any remaining template variables
+            local_config = self._process_config_variables(local_config)
         
         # Get actual system user
         system_user = getpass.getuser()
@@ -95,8 +94,6 @@ class ConfigManager:
             
     def regenerate_gui_config(self):
         """Regenerate gui_config.json from playbook metadata, supporting external repo."""
-        if self.debug:
-            print("Regenerating GUI config from playbooks...")
         try:
             if PlaybookScanner is not None:
                 config_dir = Path.home() / ".config/com.crimson.cfg"
@@ -110,19 +107,14 @@ class ConfigManager:
                     external_repo_path = external_repo_manager.get_external_playbooks_path()
                 success = PlaybookScanner().generate_config(str(user_gui_config), external_repo_path=external_repo_path)
                 if success:
-                    if self.debug:
-                        print("GUI config regenerated successfully")
                     # Reload the config
                     return self.load_config()
                 else:
-                    if self.debug:
-                        print("Failed to regenerate GUI config")
+                    print("Failed to regenerate GUI config")
             else:
-                if self.debug:
-                    print("PlaybookScanner not available, skipping config regeneration")
+                print("PlaybookScanner not available, skipping config regeneration")
         except Exception as e:
-            if self.debug:
-                print(f"Error regenerating GUI config: {e}")
+            print(f"Error regenerating GUI config: {e}")
         return None
             
     def load_categories_from_yaml(self) -> Dict:
@@ -141,6 +133,43 @@ class ConfigManager:
                 return json_config.get("categories", {})
         else:
             return {} 
+
+    def _process_config_variables(self, config: Dict) -> Dict:
+        """Process configuration to resolve any remaining template variables."""
+        import getpass
+        system_user = getpass.getuser()
+        user_home = os.path.expanduser("~")
+        working_directory = "/opt/CrimsonCFG"
+        appimg_directory = f"/home/{system_user}/AppImages"
+        app_directory = f"{working_directory}/app"
+        
+        # Define replacements
+        replacements = {
+            "{{ system_user }}": system_user,
+            "{{ user_home }}": user_home,
+            "{{ working_directory }}": working_directory,
+            "{{ appimg_directory }}": appimg_directory,
+            "{{ app_directory }}": app_directory,
+            "{{ git_username }}": os.environ.get("GIT_USERNAME", system_user),
+            "{{ git_email }}": os.environ.get("GIT_EMAIL", f"{system_user}@example.com")
+        }
+        
+        def process_value(value):
+            """Recursively process values to replace template variables."""
+            if isinstance(value, dict):
+                return {k: process_value(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [process_value(v) for v in value]
+            elif isinstance(value, str):
+                result = value
+                for template_var, replacement in replacements.items():
+                    if template_var in result:
+                        result = result.replace(template_var, str(replacement))
+                return result
+            else:
+                return value
+        
+        return process_value(config)
 
     def get_git_config_value(self, key: str) -> str:
         """Get a git config --global value for a given key, or None if not set."""

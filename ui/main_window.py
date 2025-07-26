@@ -100,8 +100,9 @@ class CrimsonCFGGUI:
             print(f"Config loaded: {len(self.config.get('categories', {}))} categories")
             print("Config loading completed")
         
-        # Initialize debug setting (override default)
+        # Initialize debug setting (override default) and update config manager
         self.debug = self.config.get("settings", {}).get("debug", 0) == 1
+        self.config_manager.debug = self.debug  # Update debug flag after config is loaded
         
         # Initialize remaining managers (after debug is set)
         self.auth_manager = AuthManager(self, on_success=self.on_auth_success)
