@@ -53,7 +53,8 @@ class ConfigManager:
                     "git_username": self.get_git_config_value("user.name") or os.environ.get("GIT_USERNAME", getpass.getuser()),
                     "git_email": self.get_git_config_value("user.email") or os.environ.get("GIT_EMAIL", "user@example.com"),
                     "working_directory": "/opt/CrimsonCFG",
-                    "appimg_directory": "/home/" + getpass.getuser() + "/AppImages"
+                    "appimg_directory": "/home/" + getpass.getuser() + "/AppImages",
+                    "app_directory": "/opt/CrimsonCFG/app"
                 }
                 
                 # Render template
