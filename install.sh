@@ -98,12 +98,12 @@ mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
 mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
 
 # Install application icon
-if [ -f "files/com.crimson.cfg.dock.png" ]; then
+if [ -f "files/app/com.crimson.cfg.icon.png" ]; then
     print_status "Installing application icon..."
-    cp "files/com.crimson.cfg.dock.png" "$HOME/.local/share/icons/hicolor/48x48/apps/com.crimson.cfg.png"
-    cp "files/com.crimson.cfg.dock.png" "$HOME/.local/share/icons/hicolor/64x64/apps/com.crimson.cfg.png"
-    cp "files/com.crimson.cfg.dock.png" "$HOME/.local/share/icons/hicolor/128x128/apps/com.crimson.cfg.png"
-    cp "files/com.crimson.cfg.dock.png" "$HOME/.local/share/icons/hicolor/256x256/apps/com.crimson.cfg.png"
+    cp "files/app/com.crimson.cfg.icon.png" "$HOME/.local/share/icons/hicolor/48x48/apps/com.crimson.cfg.png"
+    cp "files/app/com.crimson.cfg.icon.png" "$HOME/.local/share/icons/hicolor/64x64/apps/com.crimson.cfg.png"
+    cp "files/app/com.crimson.cfg.icon.png" "$HOME/.local/share/icons/hicolor/128x128/apps/com.crimson.cfg.png"
+    cp "files/app/com.crimson.cfg.icon.png" "$HOME/.local/share/icons/hicolor/256x256/apps/com.crimson.cfg.png"
     
     # Update icon cache
     print_status "Updating icon cache..."

@@ -72,11 +72,11 @@ class AuthManager:
             # Use only local_config
             app_name = local_config.get('app_name', 'CrimsonCFG')
             app_subtitle = local_config.get('app_subtitle', 'System Configuration Manager')
-            app_logo = local_config.get('app_logo', os.path.join("files", "com.crimson.cfg.logo.png"))
+            app_logo = local_config.get('app_logo', os.path.join("files", "app", "com.crimson.cfg.icon.png"))
         except Exception:
             app_name = 'CrimsonCFG'
             app_subtitle = 'System Configuration Manager'
-            app_logo = os.path.join("files", "com.crimson.cfg.logo.png")
+            app_logo = os.path.join("files", "app", "com.crimson.cfg.icon.png")
         title_label = Gtk.Label()
         title_label.set_markup(f"<span size='x-large' weight='bold'>{app_name}</span>")
         title_label.set_halign(Gtk.Align.START)
