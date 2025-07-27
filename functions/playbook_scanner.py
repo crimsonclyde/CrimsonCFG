@@ -73,34 +73,43 @@ class PlaybookScanner:
         all_playbooks = {}
         
         for dir_path in self.playbook_dirs:
-            # Use external repo for apps and customisation if set
-            is_external = False
-            if self.external_repo_path and ("apps" in dir_path or "customisation" in dir_path):
-                # Look for playbooks in external_repo_path/playbooks/apps or playbooks/customisation
-                subdir = dir_path.split("/", 1)[1]
-                full_path = self.external_repo_path / "playbooks" / subdir
-                rel_base = self.external_repo_path
-                is_external = True
-            else:
-                full_path = self.base_dir / dir_path
-                rel_base = self.base_dir
-            if not full_path.exists():
-                if self.debug:
-                    print(f"Warning: Directory {full_path} does not exist")
-                continue
-            
-            category = full_path.name.capitalize()
+            category = dir_path.split("/", 1)[1].capitalize()
             playbooks = []
             
-            for yml_file in full_path.glob("*.yml"):
-                meta = self.parse_metadata(yml_file, rel_base=rel_base, is_external=is_external)
-                if meta:
-                    playbooks.append(meta)
+            # Always scan built-in playbooks first
+            built_in_path = self.base_dir / dir_path
+            if built_in_path.exists():
+                if self.debug:
+                    print(f"Scanning built-in playbooks in {built_in_path}")
+                for yml_file in built_in_path.glob("*.yml"):
+                    meta = self.parse_metadata(yml_file, rel_base=self.base_dir, is_external=False)
+                    if meta:
+                        playbooks.append(meta)
+                        if self.debug:
+                            print(f"Found built-in playbook: {meta['name']} in {category}")
+                    else:
+                        if self.debug:
+                            print(f"Skipping built-in {yml_file.name} - no valid metadata")
+            
+            # Then scan external playbooks for apps and customisation if external repo is set
+            if self.external_repo_path and ("apps" in dir_path or "customisation" in dir_path):
+                subdir = dir_path.split("/", 1)[1]
+                external_path = self.external_repo_path / "playbooks" / subdir
+                if external_path.exists():
                     if self.debug:
-                        print(f"Found playbook: {meta['name']} in {category} (Source: {meta['source']})")
+                        print(f"Scanning external playbooks in {external_path}")
+                    for yml_file in external_path.glob("*.yml"):
+                        meta = self.parse_metadata(yml_file, rel_base=self.external_repo_path, is_external=True)
+                        if meta:
+                            playbooks.append(meta)
+                            if self.debug:
+                                print(f"Found external playbook: {meta['name']} in {category}")
+                        else:
+                            if self.debug:
+                                print(f"Skipping external {yml_file.name} - no valid metadata")
                 else:
                     if self.debug:
-                        print(f"Skipping {yml_file.name} - no valid metadata")
+                        print(f"Warning: External directory {external_path} does not exist")
             
             if playbooks:
                 all_playbooks[category] = {
