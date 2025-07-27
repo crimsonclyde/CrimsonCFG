@@ -61,6 +61,74 @@ cd /opt/CrimsonCFG/ && sudo git pull
   cd /opt/CrimsonCFG && python3 crimson.cfg.main.py
   ```
 
+## 🔗 External Playbook Repository
+
+CrimsonCFG allows you to use your own external repository for custom and apps playbooks. This lets you keep your personal or organization-specific playbooks separate from the built-in ones.
+
+### How to Add an External Repository
+
+1. **Go to the Administration tab in the CrimsonCFG UI.**
+2. **Open the 'External Repository' tab.**
+3. **Paste the URL of your Git repository** (e.g., `https://github.com/yourusername/your-playbooks-repo.git`) into the field provided.
+4. **Click 'Save External Repository Settings'** to save the URL and clone the repository.
+5. **Click 'Refresh Playbooks'** to update the playbook list and load your playbooks.
+
+> **Warning:** Only use repositories you own and trust. Running untrusted playbooks can compromise your system.
+
+### Repository Structure
+
+Your external repository should have the following structure:
+
+```text
+playbooks/
+  apps/
+    your_app_playbook.yml
+  customisation/
+    your_custom_playbook.yml
+```
+
+- Place your application playbooks in `playbooks/apps/`.
+- Place your customization playbooks in `playbooks/customisation/`.
+- Each playbook should start with CrimsonCFG metadata comments, for example:
+
+```yaml
+# CrimsonCFG-Name: My Custom App
+# CrimsonCFG-Description: Installs my custom app
+# CrimsonCFG-Essential: false
+---
+- name: Install my custom app
+  hosts: all
+  tasks:
+    - name: Example task
+      ...
+```
+
+- Only the `apps` and `customisation` categories are loaded from your external repo. Built-in `basics` and `security` playbooks remain protected.
+- External playbooks are stored in `/opt/CrimsonCFG/external_src/` and are automatically cloned/pulled when you save the repository URL.
+
+### Example
+
+```text
+my-playbooks-repo/
+└── playbooks/
+    ├── apps/
+    │   └── my_app.yml
+    └── customisation/
+        └── my_customisation.yml
+```
+
+After adding your repo and refreshing, your playbooks will appear in the CrimsonCFG UI under the appropriate categories with a "External" source indicator.
+
+### Example Repository
+
+You can use the official CrimsonCFG-Playbooks repository as a boilerplate to get started:
+
+```bash
+git clone https://github.com/crimsonclyde/CrimsonCFG-Playbooks.git
+```
+
+This repository contains example playbooks that demonstrate the proper structure and metadata format. You can clone it, modify the playbooks to suit your needs, and then use your own repository URL in CrimsonCFG.
+
 ## Bugs / Todo / Improve
 
 ### 🐛 Bugs
@@ -119,90 +187,6 @@ CrimsonCFG uses a clean, modular architecture with separate components for diffe
 ### Utility Components
 
 - **`external_repo_manager.py`**: External repository management
-
-## 🔗 External Playbook Repository
-
-CrimsonCFG allows you to use your own external repository for custom and apps playbooks. This lets you keep your personal or organization-specific playbooks separate from the built-in ones.
-
-### How to Add an External Repository
-
-1. **Go to the Administration tab in the CrimsonCFG UI.**
-2. **Open the 'External Playbooks' tab.**
-3. **Paste the URL of your Git repository** (e.g., `https://github.com/yourusername/your-playbooks-repo.git`) into the field provided.
-4. **Click 'Refresh Playbooks'** to clone or update the repository and load your playbooks.
-
-> **Warning:** Only use repositories you own and trust. Running untrusted playbooks can compromise your system.
-
-### Repository Structure
-
-Your external repository should have the following structure:
-
-```text
-playbooks/
-  apps/
-    your_app_playbook.yml
-  customisation/
-    your_custom_playbook.yml
-```
-
-- Place your application playbooks in `playbooks/apps/`.
-- Place your customization playbooks in `playbooks/customisation/`.
-- Each playbook should start with CrimsonCFG metadata comments, for example:
-
-```yaml
-# CrimsonCFG-Name: My Custom App
-# CrimsonCFG-Description: Installs my custom app
-# CrimsonCFG-Essential: false
----
-- name: Install my custom app
-  hosts: all
-  tasks:
-    - name: Example task
-      ...
-```
-
-- Only the `apps` and `customisation` categories are loaded from your external repo. Built-in `basics` and `security` playbooks remain protected.
-
-### Example
-
-```text
-my-playbooks-repo/
-└── playbooks/
-    ├── apps/
-    │   └── my_app.yml
-    └── customisation/
-        └── my_customisation.yml
-```
-
-After adding your repo and refreshing, your playbooks will appear in the CrimsonCFG UI under the appropriate categories.
-
-## 🎯 Usage
-
-### Main Tab
-
-- **Select Categories**: Choose from Basics, Apps, Customisation, or Security
-- **Browse Playbooks**: View available playbooks with descriptions and requirements
-- **Select Playbooks**: Choose which playbooks to install
-- **Install**: Run the selected playbooks with Ansible
-
-### Configuration Tab
-
-- **User Settings**: Configure user information, Git credentials, and avatar
-- **Application Settings**: Set working directory, background image, and colors
-- **Browser Settings**: Configure Chromium homepage (applied when Chromium playbook runs)
-- **SSH Settings**: Configure SSH keys and config (applied when SSH playbooks run)
-- **Gnome Settings**: Configure theme and background (applied when Gnome playbook runs)
-
-### Administration Tab
-
-- **External Repositories**: Add and manage custom playbook repositories
-- **System Administration**: Advanced system management features
-
-### Logs Tab
-
-- **Real-time Logs**: View installation progress and debug information
-- **Debug Controls**: Enable/disable debug mode and manage logs
-- **Copy Logs**: Copy log content to clipboard for troubleshooting
 
 ## 🔧 Development
 
