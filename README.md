@@ -45,6 +45,28 @@ cd /opt/CrimsonCFG/ && sudo git pull
   cd /opt/CrimsonCFG && python3 crimson.cfg.main.py
   ```
 
+## Bugs / Todo / Improve
+
+### Bugs
+
+- Main Window "Select None" removes all including our essential apps
+  They shall only be removed when pressing "Remove essentials" because there is a warning!
+  Rename to "Remove all keep essentials"
+- "Deselect" behaves weird
+  Improve by double click on a singel app removes the app from "Selected playbooks"
+- "Select All" means select all in the current categorie selected
+
+### Todo
+
+- Secure SSH private key
+- Fix debug messages
+
+### Improve
+
+- Debug Messages  
+  `[Debug] Filename - Group - Message`  
+  Additionally debug shall be visible in the log window right now you have them only on CLI
+
 ## ✨ Features
 
 - **Modern GTK3 Interface**: Clean, dark-themed UI with Material Design elements
