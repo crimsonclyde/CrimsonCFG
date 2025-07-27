@@ -6,6 +6,8 @@
 - name: SSH Key
   hosts: all
   become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
 
   pre_tasks:
     - name: Fail if ssh_private_key_content is not set
