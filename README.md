@@ -14,6 +14,21 @@
 
 CrimsonCFG is a powerful, user-friendly system configuration manager designed to help you get your system up and running quickly—especially after a fresh install or on new machines. With CrimsonCFG, you can prepare your Ansible playbooks in advance and apply them with just a few clicks, automating the setup of essential applications, settings, and customizations in no time. It's ideal for both personal use and managed desktop (MDM) environments, making it easy to standardize and streamline system provisioning across multiple devices.
 
+### Platform
+
+GTK3 application for Gnome. Written with Python, YAML and Shell. Based on Ansible. Made with 🖤 for open source!
+
+### Supported Systems
+
+|OS|Version|
+|---|---|
+|Ubuntu|22.04|
+
+### Info
+
+This was "written" with the help of Cursor AI. Don't expect nice code - but due to time limitations - and for personal training it's a fun project.  
+Don't hate the player - hate the game!
+
 ## 🚀 Quick Start
 
 ### 📦 Installation
@@ -104,60 +119,6 @@ CrimsonCFG uses a clean, modular architecture with separate components for diffe
 ### Utility Components
 
 - **`external_repo_manager.py`**: External repository management
-
-## ⚙️ Configuration Structure
-
-CrimsonCFG uses a two-tier configuration system:
-
-### Local Configuration (`~/.config/com.crimson.cfg/local.yml`)
-
-Contains user-modifiable settings that override global defaults:
-
-```yaml
-# User Configuration (instantly applied)
-user: "your_username"
-user_home: "/home/your_username"
-git_username: "your_git_username"
-git_email: "your_email@example.com"
-
-# Application Configuration (save required)
-working_directory: "/opt/CrimsonCFG"
-background_image: "/path/to/background.png"
-background_color: "#181a20"
-
-# Package Lists
-apt_packages:
-  - firefox
-  - vlc
-snap_packages:
-  - spotify
-
-# Application Branding
-app_name: "MyCompanyCFG"
-app_subtitle: "Custom Configuration Manager"
-app_logo: "/path/to/logo.png"
-
-# Playbook-specific Settings
-chromium_homepage_url: "https://example.com"
-ssh_private_key_name: "id_rsa"
-ssh_private_key_content: |
-  -----BEGIN OPENSSH PRIVATE KEY-----
-  ...
-  -----END OPENSSH PRIVATE KEY-----
-ssh_public_key_name: "id_rsa.pub"
-ssh_public_key_content: "ssh-rsa ..."
-ssh_config_content: |
-  Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_rsa
-```
-
-### Configuration Priority
-
-1. Local settings (`~/.config/com.crimson.cfg/local.yml`) override global settings
-2. Changes made through the UI are saved to the user's local.yml
-3. The application can be installed in `/opt/` without permission issues
 
 ## 🔗 External Playbook Repository
 
