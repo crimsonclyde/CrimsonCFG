@@ -39,6 +39,14 @@ class PlaybookManager:
             "Set GNOME Theme": {
                 "variables": ["theme_mode"],
                 "check": lambda config: config.get("theme_mode", "") in ["light", "dark"]
+            },
+            "Chromium": {
+                "variables": ["chromium_homepage_url", "chromium_profile1_name"],
+                "check": lambda config: (
+                    config.get("chromium_homepage_url", "") and 
+                    config.get("chromium_profile1_name", "") and
+                    self._check_chromium_files_exist()
+                )
             }
         }
         
@@ -260,4 +268,29 @@ class PlaybookManager:
                             "essential_order": essential_order
                         })
                         break
-        return selected 
+        return selected
+
+    def _check_chromium_files_exist(self) -> bool:
+        """Check if the required Chromium template files exist"""
+        try:
+            from pathlib import Path
+            import os
+            
+            # Check if templates directory exists
+            templates_dir = Path("templates")
+            if not templates_dir.exists():
+                return False
+            
+            # Check if chromium_policies.j2 exists
+            policies_file = templates_dir / "chromium_policies.j2"
+            if not policies_file.exists():
+                return False
+            
+            # Check if master_preferences exists
+            master_prefs_file = templates_dir / "master_preferences"
+            if not master_prefs_file.exists():
+                return False
+            
+            return True
+        except Exception:
+            return False 

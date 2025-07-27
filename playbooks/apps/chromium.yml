@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Chromium
 # CrimsonCFG-Description: Install Chromium web browser
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
 ---
 - name: Install and configure Chromium with custom profiles
   hosts: all
