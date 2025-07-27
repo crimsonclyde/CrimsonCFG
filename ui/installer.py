@@ -112,10 +112,17 @@ localhost
                 GLib.idle_add(self.main_window.logger.log_message, f"Source: {source}")
                 return False
                 
+            # Set templates directory based on playbook source
+            if source == 'External':
+                templates_directory = os.path.join(self.main_window.working_directory, 'external_src', 'templates')
+            else:
+                templates_directory = os.path.join(self.main_window.working_directory, 'templates')
+            
             cmd = [
                 "ansible-playbook",
                 "-b",  # Add become for privilege escalation
                 "-i", self.main_window.inventory_file,
+                "-e", f"templates_directory={templates_directory}",
                 playbook_path
             ]
             

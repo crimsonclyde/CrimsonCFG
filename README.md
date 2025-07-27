@@ -85,10 +85,16 @@ playbooks/
     your_app_playbook.yml
   customisation/
     your_custom_playbook.yml
+templates/
+  your_template.j2
+files/
+  your_files/
 ```
 
 - Place your application playbooks in `playbooks/apps/`.
 - Place your customization playbooks in `playbooks/customisation/`.
+- Place your Jinja2 templates in `templates/` (optional).
+- Place any additional files in `files/` (optional).
 - Each playbook should start with CrimsonCFG metadata comments, for example:
 
 ```yaml
@@ -105,6 +111,7 @@ playbooks/
 
 - Only the `apps` and `customisation` categories are loaded from your external repo. Built-in `basics` and `security` playbooks remain protected.
 - External playbooks are stored in `/opt/CrimsonCFG/external_src/` and are automatically cloned/pulled when you save the repository URL.
+- Templates in external repositories are automatically available to your playbooks via the `templates_directory` variable.
 
 ### Example
 
