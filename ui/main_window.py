@@ -152,13 +152,26 @@ class CrimsonCFGGUI:
         # Setup Ansible environment
         self.installer.setup_ansible_environment()
         
+        # Connect window close signal
+        self.window.connect("destroy", self.on_window_destroy)
+        
     def on_window_delete_event(self, widget, event):
         """Handle window close event"""
         if self.debug:
             print("Window close event received")
         # Properly handle window close with application lifecycle
-        self.window.destroy()
+        # Remove the window from the application first
+        self.application.remove_window(self.window)
+        # Then signal the application to quit
+        self.application.quit()
         return True  # Prevent default handling
+        
+    def on_window_destroy(self, widget):
+        """Handle window destroy event"""
+        if self.debug:
+            print("Window destroy event received")
+        # Signal the application to quit
+        self.application.quit()
         
     def run(self):
         """Show the window and start the main loop"""

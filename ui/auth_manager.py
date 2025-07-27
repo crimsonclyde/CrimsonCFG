@@ -226,7 +226,8 @@ class AuthManager:
         
     def on_cancel_clicked(self, button):
         """Handle cancel button click"""
-        self.main_window.window.destroy()
+        # Use application quit instead of window destroy
+        self.main_window.application.quit()
         
     def on_sudo_ok_clicked(self, button):
         """Handle sudo OK button click"""

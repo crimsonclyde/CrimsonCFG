@@ -112,6 +112,18 @@ class CrimsonCFGApplication(Gtk.Application):
         Gtk.Application.do_startup(self)
         if debug:
             print("do_startup completed")
+            
+    def do_shutdown(self):
+        """Handle application shutdown"""
+        if debug:
+            print("=== do_shutdown called ===")
+        # Release the application hold
+        self.release()
+        if debug:
+            print("Application released")
+        Gtk.Application.do_shutdown(self)
+        if debug:
+            print("do_shutdown completed")
 
 def main():
     if debug:
