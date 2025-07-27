@@ -218,6 +218,72 @@ class AdminTab(Gtk.Box):
             password_box.pack_start(change_password_btn, False, False, 0)
             
             admin_notebook.append_page(password_box, Gtk.Label(label="Admin Password"))
+
+            # --- External Repository Tab ---
+            external_repo_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            external_repo_box.set_margin_start(10)
+            external_repo_box.set_margin_end(10)
+            external_repo_box.set_margin_top(10)
+            external_repo_box.set_margin_bottom(10)
+            
+            external_repo_label = Gtk.Label(label="External Repository Management:")
+            external_repo_box.pack_start(external_repo_label, False, False, 0)
+            
+            # External repository URL entry
+            repo_url_label = Gtk.Label(label="Repository URL:")
+            repo_url_label.set_xalign(0)
+            external_repo_box.pack_start(repo_url_label, False, False, 0)
+            
+            repo_url_entry = Gtk.Entry()
+            repo_url_entry.set_text(local_config.get('external_playbook_repo_url', ''))
+            repo_url_entry.set_tooltip_text("Enter the URL of your external playbook repository (e.g., https://github.com/username/repo.git)")
+            external_repo_box.pack_start(repo_url_entry, False, False, 0)
+            
+            # Refresh playbooks button
+            refresh_btn = Gtk.Button(label="Refresh Playbooks")
+            refresh_btn.set_tooltip_text("Refresh playbooks from all sources (including external repository)")
+            external_repo_box.pack_start(refresh_btn, False, False, 0)
+            
+            # Status label
+            repo_status_label = Gtk.Label(label="")
+            external_repo_box.pack_start(repo_status_label, False, False, 0)
+            
+            # Save external repo settings
+            save_repo_btn = Gtk.Button(label="Save External Repository Settings")
+            def on_save_repo(btn):
+                repo_url = repo_url_entry.get_text().strip()
+                local_config['external_playbook_repo_url'] = repo_url
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
+                with open(local_file, 'w') as f:
+                    yaml_ruamel.dump(local_config, f)
+                
+                # Update external repository using authenticated sudo password
+                from . import external_repo_manager
+                external_repo_manager.set_external_repo_url(repo_url)
+                # Use the authenticated sudo password from main window
+                sudo_password = getattr(self.main_window, 'sudo_password', None)
+                external_repo_manager.update_external_repo_async(sudo_password)
+                
+                repo_status_label.set_text("External repository settings saved successfully!")
+                
+            save_repo_btn.connect("clicked", on_save_repo)
+            external_repo_box.pack_start(save_repo_btn, False, False, 0)
+            
+            # Refresh playbooks handler
+            def on_refresh_playbooks(btn):
+                try:
+                    repo_status_label.set_text("Refreshing playbooks from all sources...")
+                    self.main_window.config_manager.regenerate_gui_config()
+                    self.main_window.config = self.main_window.config_manager.load_config()
+                    self.main_window.update_playbook_list()
+                    repo_status_label.set_text("Playbooks refreshed successfully!")
+                except Exception as e:
+                    repo_status_label.set_text(f"Error refreshing playbooks: {e}")
+            
+            refresh_btn.connect("clicked", on_refresh_playbooks)
+            
+            admin_notebook.append_page(external_repo_box, Gtk.Label(label="External Repository"))
             self.show_all()
 
         def show_password_prompt():

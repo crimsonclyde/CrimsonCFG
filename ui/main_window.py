@@ -319,20 +319,7 @@ class CrimsonCFGGUI:
         else:
             self.logger.log_message("Debug mode disabled") 
 
-    def on_external_repo_url_changed(self, entry):
-        url = entry.get_text().strip()
-        external_repo_manager.set_external_repo_url(url)
-        # Optionally, trigger an update when the URL changes
-        external_repo_manager.update_external_repo_async() 
-
-    def on_refresh_playbooks_clicked(self, button):
-        try:
-            self.config_manager.regenerate_gui_config()
-            self.config = self.config_manager.load_config()
-            self.update_playbook_list()
-            self.show_success_dialog("Playbooks refreshed from all sources.")
-        except Exception as e:
-            self.show_error_dialog(f"Failed to refresh playbooks: {e}") 
+ 
 
     def on_auth_success(self):
         # Check and create admin password if needed

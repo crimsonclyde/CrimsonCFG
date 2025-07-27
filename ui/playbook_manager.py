@@ -118,13 +118,17 @@ class PlaybookManager:
                     require_config_icon = icon
                 else:
                     require_config_icon = icon
+            # Get source information (default to "Built-in" if not specified)
+            source = playbook.get("source", "Built-in")
+            
             self.main_window.playbook_store.append([
                 playbook["name"],
                 essential,
                 description,
                 selected,
                 disabled,
-                require_config_icon
+                require_config_icon,
+                source
             ])
             
     def on_playbook_selection_changed(self, selection):

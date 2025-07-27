@@ -38,26 +38,34 @@ def get_external_playbooks_path():
     """Return the local path where external playbooks are stored."""
     return EXTERNAL_REPO_DIR
 
-def ensure_external_repo_dir():
+def ensure_external_repo_dir(sudo_password=None):
     import subprocess
     import getpass
     if not os.path.exists(EXTERNAL_REPO_DIR):
         try:
             os.makedirs(EXTERNAL_REPO_DIR, exist_ok=True)
         except PermissionError:
-            # Try to create with sudo
+            # Try to create with sudo using provided password
             try:
-                subprocess.run(['sudo', 'mkdir', '-p', EXTERNAL_REPO_DIR], check=True)
-                subprocess.run(['sudo', 'chown', f'{getpass.getuser()}:{getpass.getuser()}', EXTERNAL_REPO_DIR], check=True)
+                if sudo_password:
+                    # Use the authenticated password
+                    subprocess.run(['sudo', '-k', '-S', 'mkdir', '-p', EXTERNAL_REPO_DIR], 
+                                 input=f"{sudo_password}\n", text=True, check=True)
+                    subprocess.run(['sudo', '-k', '-S', 'chown', f'{getpass.getuser()}:{getpass.getuser()}', EXTERNAL_REPO_DIR], 
+                                 input=f"{sudo_password}\n", text=True, check=True)
+                else:
+                    # Fallback to direct sudo (will prompt)
+                    subprocess.run(['sudo', 'mkdir', '-p', EXTERNAL_REPO_DIR], check=True)
+                    subprocess.run(['sudo', 'chown', f'{getpass.getuser()}:{getpass.getuser()}', EXTERNAL_REPO_DIR], check=True)
             except Exception as e:
                 print(f"Failed to create {EXTERNAL_REPO_DIR} with sudo: {e}")
                 return False
     return True
 
-def _clone_or_pull_repo(repo_url):
+def _clone_or_pull_repo(repo_url, sudo_password=None):
     if not repo_url:
         return
-    if not ensure_external_repo_dir():
+    if not ensure_external_repo_dir(sudo_password):
         print(f"Cannot clone external repo: insufficient permissions for {EXTERNAL_REPO_DIR}")
         return
     if not os.path.exists(EXTERNAL_REPO_DIR) or not os.listdir(EXTERNAL_REPO_DIR):
@@ -65,11 +73,11 @@ def _clone_or_pull_repo(repo_url):
     else:
         subprocess.run(['git', '-C', EXTERNAL_REPO_DIR, 'pull'], check=False)
 
-def update_external_repo_async():
+def update_external_repo_async(sudo_password=None):
     """Clone or pull the external repo asynchronously."""
     repo_url = get_external_repo_url()
     if not repo_url:
         return
-    thread = threading.Thread(target=_clone_or_pull_repo, args=(repo_url,))
+    thread = threading.Thread(target=_clone_or_pull_repo, args=(repo_url, sudo_password))
     thread.daemon = True
     thread.start() 

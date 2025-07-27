@@ -22,7 +22,7 @@ class PlaybookScanner:
         ]
         self.debug = debug
         
-    def parse_metadata(self, filepath: Path, rel_base: Path = None) -> Optional[Dict]:
+    def parse_metadata(self, filepath: Path, rel_base: Path = None, is_external: bool = False) -> Optional[Dict]:
         """Parse CrimsonCFG metadata comments from a playbook file."""
         if rel_base is None:
             rel_base = self.base_dir
@@ -30,7 +30,8 @@ class PlaybookScanner:
             "name": None,
             "description": None, 
             "essential": False,
-            "path": str(filepath.relative_to(rel_base))
+            "path": str(filepath.relative_to(rel_base)),
+            "source": "External" if is_external else "Built-in"
         }
         # Only set for essential playbooks
         essential_order = None
@@ -73,11 +74,13 @@ class PlaybookScanner:
         
         for dir_path in self.playbook_dirs:
             # Use external repo for apps and customisation if set
+            is_external = False
             if self.external_repo_path and ("apps" in dir_path or "customisation" in dir_path):
                 # Look for playbooks in external_repo_path/playbooks/apps or playbooks/customisation
                 subdir = dir_path.split("/", 1)[1]
                 full_path = self.external_repo_path / "playbooks" / subdir
                 rel_base = self.external_repo_path
+                is_external = True
             else:
                 full_path = self.base_dir / dir_path
                 rel_base = self.base_dir
@@ -90,11 +93,11 @@ class PlaybookScanner:
             playbooks = []
             
             for yml_file in full_path.glob("*.yml"):
-                meta = self.parse_metadata(yml_file, rel_base=rel_base)
+                meta = self.parse_metadata(yml_file, rel_base=rel_base, is_external=is_external)
                 if meta:
                     playbooks.append(meta)
                     if self.debug:
-                        print(f"Found playbook: {meta['name']} in {category}")
+                        print(f"Found playbook: {meta['name']} in {category} (Source: {meta['source']})")
                 else:
                     if self.debug:
                         print(f"Skipping {yml_file.name} - no valid metadata")

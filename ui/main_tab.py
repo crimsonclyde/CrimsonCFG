@@ -102,7 +102,7 @@ class MainTab(Gtk.Box):
         center_background.add(center_box)
         
         # Playbook tree
-        self.main_window.playbook_store = Gtk.ListStore(str, str, str, bool, bool, str)  # name, essential, description, selected, disabled, require_config_icon
+        self.main_window.playbook_store = Gtk.ListStore(str, str, str, bool, bool, str, str)  # name, essential, description, selected, disabled, require_config_icon, source
         self.main_window.playbook_tree = Gtk.TreeView(model=self.main_window.playbook_store)
         
         # Columns
@@ -136,6 +136,13 @@ class MainTab(Gtk.Box):
         col3.set_cell_data_func(renderer3, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][2]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col3.set_expand(True)
         self.main_window.playbook_tree.append_column(col3)
+        
+        # Source column
+        renderer4 = Gtk.CellRendererText()
+        col4 = Gtk.TreeViewColumn("Source", renderer4)
+        col4.set_cell_data_func(renderer4, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][6]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
+        col4.set_expand(False)
+        self.main_window.playbook_tree.append_column(col4)
         
         # Selection
         self.main_window.playbook_tree.get_selection().connect("changed", self.main_window.on_playbook_selection_changed)
