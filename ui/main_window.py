@@ -21,7 +21,21 @@ from . import external_repo_manager
 
 class CrimsonCFGGUI:
     def __init__(self, application):
+        # Load debug setting early from user's local.yml
         self.debug = False
+        try:
+            import yaml
+            from pathlib import Path
+            config_dir = Path.home() / ".config/com.crimson.cfg"
+            local_file = config_dir / "local.yml"
+            if local_file.exists():
+                with open(local_file, 'r') as f:
+                    local_config = yaml.safe_load(f) or {}
+                    self.debug = local_config.get("debug", 0) == 1
+        except Exception as e:
+            print(f"Failed to load debug setting: {e}")
+            self.debug = False
+            
         if self.debug:
             print("[DEBUG] CrimsonCFGGUI.__init__ starting")
         # Request dark theme for the application
@@ -100,9 +114,8 @@ class CrimsonCFGGUI:
             print(f"Config loaded: {len(self.config.get('categories', {}))} categories")
             print("Config loading completed")
         
-        # Initialize debug setting (override default) and update config manager
-        self.debug = self.config.get("settings", {}).get("debug", 0) == 1
-        self.config_manager.debug = self.debug  # Update debug flag after config is loaded
+        # Keep debug setting from early load (don't override it)
+        self.config_manager.debug = self.debug  # Ensure debug flag is consistent
         
         # Initialize remaining managers (after debug is set)
         self.auth_manager = AuthManager(self, on_success=self.on_auth_success)
@@ -143,11 +156,7 @@ class CrimsonCFGGUI:
         """Handle window close event"""
         if self.debug:
             print("Window close event received")
-        # Release the application hold
-        self.application.release()
-        # Remove window from application (this will trigger do_window_removed)
-        self.application.remove_window(self.window)
-        # Destroy the window to ensure proper cleanup
+        # Properly handle window close with application lifecycle
         self.window.destroy()
         return True  # Prevent default handling
         

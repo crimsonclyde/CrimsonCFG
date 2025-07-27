@@ -14,8 +14,11 @@ class MainTab(Gtk.Box):
         self.debug = main_window.debug
         self.set_margin_top(6)
         
-        # Add Material Design background to main tab
-        self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.1, 0.1, 0.1, 0.3))
+        # Remove the opaque background - let the main window background show through
+        # self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.1, 0.1, 0.1, 0.3))
+        
+        if self.debug:
+            print("MainTab: Initialized with transparent background")
         
         self._build_tab()
         
@@ -38,8 +41,11 @@ class MainTab(Gtk.Box):
         # Add background to categories
         left_background = Gtk.EventBox()
         left_background.set_visible_window(True)
-        left_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.6))
+        left_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.3))
         left_frame.add(left_background)
+        
+        if self.debug:
+            print("MainTab: Left panel background set with 0.3 opacity")
         
         left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         left_box.set_margin_start(15)
@@ -82,8 +88,11 @@ class MainTab(Gtk.Box):
         # Add background to available playbooks
         center_background = Gtk.EventBox()
         center_background.set_visible_window(True)
-        center_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.6))
+        center_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.3))
         center_frame.add(center_background)
+        
+        if self.debug:
+            print("MainTab: Center panel background set with 0.3 opacity")
         
         center_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         center_box.set_margin_start(15)
@@ -149,8 +158,11 @@ class MainTab(Gtk.Box):
         # Add background to selection controls
         controls_background = Gtk.EventBox()
         controls_background.set_visible_window(True)
-        controls_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.6))
+        controls_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.3))
         controls_frame.add(controls_background)
+        
+        if self.debug:
+            print("MainTab: Controls background set with 0.3 opacity")
         
         controls_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         controls_box.set_margin_start(15)
@@ -183,8 +195,11 @@ class MainTab(Gtk.Box):
         # Add background to selected items
         selected_background = Gtk.EventBox()
         selected_background.set_visible_window(True)
-        selected_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.6))
+        selected_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.3))
         selected_frame.add(selected_background)
+        
+        if self.debug:
+            print("MainTab: Selected items background set with 0.3 opacity")
         
         selected_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         selected_box.set_margin_start(15)
@@ -213,8 +228,11 @@ class MainTab(Gtk.Box):
         # Add background to actions
         action_background = Gtk.EventBox()
         action_background.set_visible_window(True)
-        action_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.6))
+        action_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.3))
         action_frame.add(action_background)
+        
+        if self.debug:
+            print("MainTab: Actions background set with 0.3 opacity")
         
         action_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         action_box.set_margin_start(15)

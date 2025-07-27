@@ -28,31 +28,39 @@ class GUIBuilder:
     def apply_css(self):
         """Apply custom CSS styling"""
         try:
+            if self.debug:
+                print("GUIBuilder: Starting apply_css...")
+            
             # Load user config for background image and color
             config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             if not config_dir.exists():
                 config_dir.mkdir(parents=True, exist_ok=True)
-            if not local_file.exists():
-                with open(local_file, 'w') as f:
-                    yaml.safe_dump({}, f)
-            background_image = None
-            background_color = "#181a20"
             if local_file.exists():
                 with open(local_file, 'r') as f:
                     local_config = yaml.safe_load(f) or {}
-                    background_image = local_config.get("background_image", None)
+                    app_background_image = local_config.get("app_background_image", None)
                     background_color = local_config.get("background_color", "#181a20")
-            if background_image:
+            else:
+                app_background_image = None
+                background_color = "#181a20"
+                
+            if self.debug:
+                print(f"GUIBuilder: Background image: {app_background_image}")
+                print(f"GUIBuilder: Background color: {background_color}")
+            
+            if app_background_image:
                 css_data = f"""
                 window, .main-window {{
-                    background-image: url('{background_image}');
+                    background-image: url('{app_background_image}');
                     background-size: cover;
                     background-position: center;
                     background-repeat: no-repeat;
                     color: #ffffff;
                 }}
                 """
+                if self.debug:
+                    print(f"GUIBuilder: Applied background image CSS")
             else:
                 css_data = f"""
                 window, .main-window {{
@@ -60,6 +68,9 @@ class GUIBuilder:
                     color: #ffffff;
                 }}
                 """
+                if self.debug:
+                    print(f"GUIBuilder: Applied background color CSS")
+            
             css_data += """
             .main-window label {
                 color: #ffffff;
@@ -128,7 +139,7 @@ class GUIBuilder:
                 background-color: transparent;
             }
             .main-window notebook {
-                background-color: rgba(0.2, 0.2, 0.2, 0.9);
+                background-color: transparent;
             }
             .main-window notebook tab {
                 background-color: rgba(0.2, 0.2, 0.2, 0.9);
@@ -151,6 +162,7 @@ class GUIBuilder:
                 border: 1px solid rgba(255, 255, 255, 0.2);
             }
             """
+            
             style_context = self.main_window.window.get_style_context()
             # Remove previous provider if present
             if hasattr(self, '_css_provider') and self._css_provider is not None:
@@ -162,6 +174,10 @@ class GUIBuilder:
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
             )
             self._css_provider = css_provider
+            
+            if self.debug:
+                print("GUIBuilder: CSS applied successfully")
+                
         except Exception as e:
             print(f"CSS loading failed: {e}")
             # Continue without CSS styling
@@ -169,35 +185,35 @@ class GUIBuilder:
     def show_main_interface(self):
         """Show the main application interface"""
         if self.debug:
-            print("Starting show_main_interface...")
+            print("GUIBuilder: Starting show_main_interface...")
         # Clear main container
         for child in self.main_window.main_container.get_children():
             self.main_window.main_container.remove(child)
             
         # Apply CSS styling
         if self.debug:
-            print("Applying CSS...")
+            print("GUIBuilder: Applying CSS...")
         self.apply_css()
         
         # Create the main interface content
         if self.debug:
-            print("Setting up GUI...")
+            print("GUIBuilder: Setting up GUI...")
         self.setup_gui()
         
         if self.debug:
-            print("Main interface setup complete")
+            print("GUIBuilder: Main interface setup complete")
         self.main_window.window.show_all()
         
     def setup_gui(self):
         """Setup the main GUI interface"""
         if self.debug:
-            print("setup_gui: Starting...")
+            print("GUIBuilder: setup_gui: Starting...")
         # Main container
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.main_window.main_container.pack_start(main_box, True, True, 0)
         
         if self.debug:
-            print("setup_gui: Creating header...")
+            print("GUIBuilder: setup_gui: Creating header...")
         # Header container (full width)
         header_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         header_container.set_hexpand(True)
@@ -269,7 +285,7 @@ class GUIBuilder:
         header_box.pack_start(title_box, False, False, 0)
         
         if self.debug:
-            print("setup_gui: Loading logo...")
+            print("GUIBuilder: setup_gui: Loading logo...")
         # Logo (right side)
         logo_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         logo_box.set_halign(Gtk.Align.CENTER)
@@ -311,7 +327,7 @@ class GUIBuilder:
         main_box.pack_start(header_container, False, False, 0)
         
         if self.debug:
-            print("setup_gui: Creating content area...")
+            print("GUIBuilder: setup_gui: Creating content area...")
         # Content container with margins
         content_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         content_container.set_margin_start(8)
@@ -322,8 +338,11 @@ class GUIBuilder:
         # Create notebook for tabs
         self.notebook = Gtk.Notebook()
         
-        # Style the notebook tab area to have a background
-        self.notebook.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 0.9))
+        # Style the notebook tab area to have a transparent background
+        self.notebook.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.2, 0.2, 0.2, 0.3))
+        
+        if self.debug:
+            print("GUIBuilder: Notebook background set with 0.3 opacity")
         
         content_container.pack_start(self.notebook, True, True, 0)
         
@@ -342,6 +361,9 @@ class GUIBuilder:
         progress_background.set_visible_window(True)
         progress_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.2))
         progress_frame.add(progress_background)
+        
+        if self.debug:
+            print("GUIBuilder: Progress background set with 0.2 opacity")
         
         progress_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         progress_box.set_margin_start(15)
@@ -377,7 +399,7 @@ class GUIBuilder:
         self.main_window.select_essential_playbooks()
         
         if self.debug:
-            print("setup_gui: Complete")
+            print("GUIBuilder: setup_gui: Complete")
         
         # Connect window close event - let the application handle cleanup
         self.main_window.window.connect("delete-event", self.main_window.on_window_delete_event) 

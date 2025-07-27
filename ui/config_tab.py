@@ -17,6 +17,8 @@ class ConfigTab(Gtk.Box):
         self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.1, 0.1, 0.1, 0.3))
         self.set_margin_top(15)
         self._build_tab()
+        
+
 
     def _build_tab(self):
         config_frame = Gtk.Frame(label="Current Configuration")
@@ -144,6 +146,15 @@ class ConfigTab(Gtk.Box):
         wd_label.set_xalign(0)
         wd_entry = Gtk.Entry()
         wd_entry.set_text(self._get_config_value("working_directory", ""))
+        
+        # Add changed signal to save working directory instantly
+        def on_wd_changed(widget):
+            new_wd = widget.get_text()
+            if self.main_window.debug:
+                print(f"ConfigTab: Working directory changed to: '{new_wd}'")
+            self._set_config_value("working_directory", new_wd)
+        wd_entry.connect("changed", on_wd_changed)
+        
         app_tab.pack_start(wd_label, False, False, 0)
         app_tab.pack_start(wd_entry, False, False, 0)
         # Background Image (optional)
@@ -151,14 +162,35 @@ class ConfigTab(Gtk.Box):
         bg_label.set_xalign(0)
         bg_file_chooser = Gtk.FileChooserButton(title="Select Background Image", action=Gtk.FileChooserAction.OPEN)
         bg_file_chooser.set_width_chars(40)
-        bg_file_chooser.set_filename(self._get_config_value("background_image", ""))
+        bg_filename = self._get_config_value("app_background_image", "")
+        if self.main_window.debug:
+            print(f"ConfigTab: Setting background filename to: '{bg_filename}'")
+        if bg_filename and os.path.exists(bg_filename):
+            bg_file_chooser.set_filename(bg_filename)
+            # Also set the current folder to help with display
+            bg_file_chooser.set_current_folder(os.path.dirname(bg_filename))
+        else:
+            bg_file_chooser.unselect_all()
+        
+        # Add file-set signal to save instantly
+        def on_bg_file_set(widget):
+            selected_path = widget.get_filename() or ""
+            if self.main_window.debug:
+                print(f"ConfigTab: Background file selected: '{selected_path}'")
+            self._set_config_value("app_background_image", selected_path)
+            self._reload_main_config()
+            self.main_window.gui_builder.apply_css()
+        bg_file_chooser.connect("file-set", on_bg_file_set)
+        
         app_tab.pack_start(bg_label, False, False, 0)
         app_tab.pack_start(bg_file_chooser, False, False, 0)
         # Restore Clear Background Image button
         bg_clear_btn = Gtk.Button(label="Clear Background Image")
         def on_clear_bg(btn):
             bg_file_chooser.unselect_all()
-            self._set_config_value("background_image", "")
+            if self.main_window.debug:
+                print(f"ConfigTab: Clearing background image")
+            self._set_config_value("app_background_image", "")
             self._reload_main_config()
             self.main_window.gui_builder.apply_css()
         bg_clear_btn.connect("clicked", on_clear_bg)
@@ -174,6 +206,18 @@ class ConfigTab(Gtk.Box):
             color_btn.set_rgba(gdk_rgba)
         except Exception:
             pass
+        
+        # Add color-set signal to save instantly
+        def on_color_set(widget):
+            rgba = widget.get_rgba()
+            hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
+            if self.main_window.debug:
+                print(f"ConfigTab: Color changed to: '{hex_color}'")
+            self._set_config_value("background_color", hex_color)
+            self._reload_main_config()
+            self.main_window.gui_builder.apply_css()
+        color_btn.connect("color-set", on_color_set)
+        
         app_tab.pack_start(color_label, False, False, 0)
         app_tab.pack_start(color_btn, False, False, 0)
         # Restore Reset Color to Default button
@@ -182,22 +226,14 @@ class ConfigTab(Gtk.Box):
             gdk_rgba = Gdk.RGBA()
             gdk_rgba.parse("#181a20")
             color_btn.set_rgba(gdk_rgba)
+            if self.main_window.debug:
+                print(f"ConfigTab: Resetting color to default")
             self._set_config_value("background_color", "#181a20")
             self._reload_main_config()
             self.main_window.gui_builder.apply_css()
         color_reset_btn.connect("clicked", on_reset_color)
         app_tab.pack_start(color_reset_btn, False, False, 0)
-        save_btn = Gtk.Button(label="Save Application Settings")
-        def on_save_app(btn):
-            self._set_config_value("working_directory", wd_entry.get_text())
-            self._set_config_value("background_image", bg_file_chooser.get_filename() or "")
-            rgba = color_btn.get_rgba()
-            hex_color = "#%02x%02x%02x" % (int(rgba.red*255), int(rgba.green*255), int(rgba.blue*255))
-            self._set_config_value("background_color", hex_color)
-            self._reload_main_config()
-            self.main_window.gui_builder.apply_css()
-        save_btn.connect("clicked", on_save_app)
-        app_tab.pack_start(save_btn, False, False, 0)
+
         config_notebook.append_page(app_tab, Gtk.Label(label="Application"))
 
         # --- Web Browser Tab (playbook-only) ---
@@ -414,12 +450,16 @@ class ConfigTab(Gtk.Box):
         return local_config.get(key, default)
 
     def _set_config_value(self, key, value):
+        if self.main_window.debug:
+            print(f"ConfigTab: _set_config_value called with key='{key}', value='{value}'")
         config_dir = Path.home() / ".config/com.crimson.cfg"
         local_file = config_dir / "local.yml"
         yaml_ruamel = YAML()
         yaml_ruamel.preserve_quotes = True
         # If the file doesn't exist, create it from the template using ruamel.yaml
         if not local_file.exists():
+            if self.main_window.debug:
+                print(f"ConfigTab: Creating local.yml from template")
             template_path = os.path.join(os.path.dirname(__file__), '../templates/local.yml.j2')
             if os.path.exists(template_path):
                 from jinja2 import Template
@@ -445,11 +485,17 @@ class ConfigTab(Gtk.Box):
         with open(local_file, 'r') as f:
             try:
                 local_config = yaml_ruamel.load(f) or yaml_ruamel.load('{}')
-            except Exception:
+            except Exception as e:
+                if self.main_window.debug:
+                    print(f"ConfigTab: Error loading local.yml: {e}")
                 local_config = yaml_ruamel.load('{}')
         local_config[key] = value
+        if self.main_window.debug:
+            print(f"ConfigTab: Writing to {local_file}")
         with open(local_file, 'w') as f:
             yaml_ruamel.dump(local_config, f)
+        if self.main_window.debug:
+            print(f"ConfigTab: Successfully wrote to local.yml")
         self._reload_main_config()
         # Refresh playbook list to update requirement status
         if hasattr(self.main_window, 'playbook_manager'):

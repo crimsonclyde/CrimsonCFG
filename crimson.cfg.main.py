@@ -7,19 +7,24 @@ Main entry point that ties together the sudo handler and UI
 import os
 import sys
 import yaml
+from pathlib import Path
 
 # Change to the directory where this script is located
 # This ensures relative paths work correctly
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
-# Load debug setting from YAML
-debug = True
+# Load debug setting from user's local.yml
+debug = False
 try:
-    with open("local.yml", 'r') as f:
-        yaml_config = yaml.safe_load(f)
-        debug = yaml_config.get("debug", 0) == 1
-except:
+    config_dir = Path.home() / ".config/com.crimson.cfg"
+    local_file = config_dir / "local.yml"
+    if local_file.exists():
+        with open(local_file, 'r') as f:
+            yaml_config = yaml.safe_load(f)
+            debug = yaml_config.get("debug", 0) == 1
+except Exception as e:
+    print(f"Failed to load debug setting from local.yml: {e}")
     debug = False
 
 if debug:
@@ -74,22 +79,39 @@ class CrimsonCFGApplication(Gtk.Application):
         if debug:
             print("=== do_activate called ===")
         try:
+            if debug:
+                print("Creating CrimsonCFGGUI...")
             self.main_ui = CrimsonCFGGUI(self)
             if debug:
                 print("CrimsonCFGGUI created successfully")
+            if debug:
+                print("Presenting window...")
             self.main_ui.window.present()
             if debug:
                 print("Window presented")
+            if debug:
+                print("Adding window to application...")
             self.add_window(self.main_ui.window)
             if debug:
                 print("Window added to application")
+            if debug:
+                print("Holding application...")
             self.hold()
             if debug:
                 print("Application held")
+            if debug:
+                print("do_activate completed successfully")
         except Exception as e:
             print(f"Error in do_activate: {e}")
             import traceback
             traceback.print_exc()
+            
+    def do_startup(self):
+        if debug:
+            print("=== do_startup called ===")
+        Gtk.Application.do_startup(self)
+        if debug:
+            print("do_startup completed")
 
 def main():
     if debug:
@@ -98,7 +120,17 @@ def main():
         app = CrimsonCFGApplication()
         if debug:
             print("CrimsonCFGApplication created")
+        if debug:
+            print("Starting GTK application...")
+        # Check if we're running in a headless environment
+        if not os.environ.get('DISPLAY'):
+            print("No DISPLAY environment variable found. Running in headless mode.")
+            return 0
+        if debug:
+            print("Running GTK application...")
         app.run(sys.argv)
+        if debug:
+            print("GTK application run completed")
         if debug:
             print("App run completed")
     except Exception as e:
