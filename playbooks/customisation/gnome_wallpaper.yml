@@ -61,16 +61,6 @@
           Session ID: {{ user_session.stdout }}
           XDG_RUNTIME_DIR: {{ runtime_dir.stdout }}
 
-    - name: Set GNOME dark mode using gsettings with manual DBUS_SESSION_BUS_ADDRESS
-      ansible.builtin.shell: |
-        sudo -u {{ user }} \
-          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
-          DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
-          gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-      args:
-        executable: /bin/bash
-      changed_when: true
-
       #######################
       # Wallpaper
       #######################
