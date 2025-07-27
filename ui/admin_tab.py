@@ -236,20 +236,17 @@ class AdminTab(Gtk.Box):
             
             repo_url_entry = Gtk.Entry()
             repo_url_entry.set_text(local_config.get('external_playbook_repo_url', ''))
-            repo_url_entry.set_tooltip_text("Enter the URL of your external playbook repository (e.g., https://github.com/username/repo.git)")
+            repo_url_entry.set_placeholder_text("https://github.com/crimsonclyde/CrimsonCFG-Playbooks.git")
+            repo_url_entry.set_tooltip_text("ℹ️ Enter the URL of your external playbook repository (e.g., https://github.com/username/repo.git)")
             external_repo_box.pack_start(repo_url_entry, False, False, 0)
-            
-            # Refresh playbooks button
-            refresh_btn = Gtk.Button(label="Refresh Playbooks")
-            refresh_btn.set_tooltip_text("Pull latest changes from external repository and refresh playbooks from all sources")
-            external_repo_box.pack_start(refresh_btn, False, False, 0)
             
             # Status label
             repo_status_label = Gtk.Label(label="")
             external_repo_box.pack_start(repo_status_label, False, False, 0)
             
             # Save external repo settings
-            save_repo_btn = Gtk.Button(label="Save External Repository Settings")
+            save_repo_btn = Gtk.Button(label="Save External Repository URL")
+            save_repo_btn.set_tooltip_text("ℹ️ Save the repository URL and clone the external repository")
             def on_save_repo(btn):
                 repo_url = repo_url_entry.get_text().strip()
                 local_config['external_playbook_repo_url'] = repo_url
@@ -270,6 +267,10 @@ class AdminTab(Gtk.Box):
             save_repo_btn.connect("clicked", on_save_repo)
             external_repo_box.pack_start(save_repo_btn, False, False, 0)
             
+            # Refresh playbooks button
+            refresh_btn = Gtk.Button(label="Refresh Playbooks")
+            refresh_btn.set_tooltip_text("ℹ️ Pull latest changes from external repository and refresh playbooks from all sources")
+            
             # Refresh playbooks handler
             def on_refresh_playbooks(btn):
                 try:
@@ -289,6 +290,7 @@ class AdminTab(Gtk.Box):
                     repo_status_label.set_text(f"Error refreshing playbooks: {e}")
             
             refresh_btn.connect("clicked", on_refresh_playbooks)
+            external_repo_box.pack_start(refresh_btn, False, False, 0)
             
             admin_notebook.append_page(external_repo_box, Gtk.Label(label="External Repository"))
             self.show_all()
