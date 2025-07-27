@@ -1,7 +1,5 @@
 # CrimsonCFG - System Configuration Manager
 
-A modern, user-friendly GUI application for managing system configuration and application installation using Ansible playbooks.
-
 ![Main Window Screenshot](/files/screenshots/com.crimson.cfg_main.png)
 
 > **Note:**  
@@ -12,6 +10,9 @@ A modern, user-friendly GUI application for managing system configuration and ap
 > 
 > Use at your own risk!
 
+## Exordium
+
+CrimsonCFG is a powerful, user-friendly system configuration manager designed to help you get your system up and running quickly—especially after a fresh install or on new machines. With CrimsonCFG, you can prepare your Ansible playbooks in advance and apply them with just a few clicks, automating the setup of essential applications, settings, and customizations in no time. It's ideal for both personal use and managed desktop (MDM) environments, making it easy to standardize and streamline system provisioning across multiple devices.
 
 ## 🚀 Quick Start
 
