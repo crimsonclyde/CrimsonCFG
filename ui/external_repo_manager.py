@@ -80,4 +80,11 @@ def update_external_repo_async(sudo_password=None):
         return
     thread = threading.Thread(target=_clone_or_pull_repo, args=(repo_url, sudo_password))
     thread.daemon = True
-    thread.start() 
+    thread.start()
+
+def update_external_repo_sync(sudo_password=None):
+    """Clone or pull the external repo synchronously."""
+    repo_url = get_external_repo_url()
+    if not repo_url:
+        return True
+    return _clone_or_pull_repo(repo_url, sudo_password) is not None 

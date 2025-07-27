@@ -324,4 +324,16 @@ class CrimsonCFGGUI:
     def on_auth_success(self):
         # Check and create admin password if needed
         self.auth_manager.check_and_create_admin_password()
+        
+        # Update external repository if configured
+        if self.debug:
+            print("[DEBUG] Updating external repository...")
+        try:
+            external_repo_manager.update_external_repo_sync(self.sudo_password)
+            if self.debug:
+                print("[DEBUG] External repository updated successfully")
+        except Exception as e:
+            if self.debug:
+                print(f"[DEBUG] Error updating external repository: {e}")
+        
         self.gui_builder.show_main_interface() 

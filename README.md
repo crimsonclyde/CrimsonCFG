@@ -71,7 +71,7 @@ CrimsonCFG allows you to use your own external repository for custom and apps pl
 2. **Open the 'External Repository' tab.**
 3. **Paste the URL of your Git repository** (e.g., `https://github.com/yourusername/your-playbooks-repo.git`) into the field provided.
 4. **Click 'Save External Repository Settings'** to save the URL and clone the repository.
-5. **Click 'Refresh Playbooks'** to update the playbook list and load your playbooks.
+5. **Click 'Refresh Playbooks'** to pull latest changes and update the playbook list.
 
 > **Warning:** Only use repositories you own and trust. Running untrusted playbooks can compromise your system.
 
@@ -111,6 +111,7 @@ files/
 
 - Only the `apps` and `customisation` categories are loaded from your external repo. Built-in `basics` and `security` playbooks remain protected.
 - External playbooks are stored in `/opt/CrimsonCFG/external_src/` and are automatically cloned/pulled when you save the repository URL.
+- External repositories are automatically updated (git pull) when CrimsonCFG starts and when you click "Refresh Playbooks".
 - Templates in external repositories are automatically available to your playbooks via the `templates_directory` variable.
 
 ### Example

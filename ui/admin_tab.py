@@ -241,7 +241,7 @@ class AdminTab(Gtk.Box):
             
             # Refresh playbooks button
             refresh_btn = Gtk.Button(label="Refresh Playbooks")
-            refresh_btn.set_tooltip_text("Refresh playbooks from all sources (including external repository)")
+            refresh_btn.set_tooltip_text("Pull latest changes from external repository and refresh playbooks from all sources")
             external_repo_box.pack_start(refresh_btn, False, False, 0)
             
             # Status label
@@ -274,6 +274,13 @@ class AdminTab(Gtk.Box):
             def on_refresh_playbooks(btn):
                 try:
                     repo_status_label.set_text("Refreshing playbooks from all sources...")
+                    
+                    # Update external repository if configured
+                    from . import external_repo_manager
+                    sudo_password = getattr(self.main_window, 'sudo_password', None)
+                    external_repo_manager.update_external_repo_sync(sudo_password)
+                    
+                    # Regenerate config and update playbook list
                     self.main_window.config_manager.regenerate_gui_config()
                     self.main_window.config = self.main_window.config_manager.load_config()
                     self.main_window.update_playbook_list()
