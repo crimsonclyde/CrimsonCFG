@@ -26,6 +26,18 @@ cd ~ && sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && sudo bash /opt/C
 cd /opt/CrimsonCFG/ && sudo git pull
 ```
 
+### Debug
+
+Enabling debug but changing:
+
+1. Open`~/.config/com.crimson.cfg/local.yml`
+2. Set debug to 1
+3. Start CrimsonCFG in a terminal
+
+  ```bash
+  cd /opt/CrimsonCFG && python3 crimson.cfg.main.py
+  ```
+
 ## ✨ Features
 
 - **Modern GTK3 Interface**: Clean, dark-themed UI with Material Design elements
