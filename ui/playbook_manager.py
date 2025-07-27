@@ -269,7 +269,8 @@ class PlaybookManager:
                             "path": playbook["path"],
                             "description": playbook.get("description", ""),
                             "essential": playbook.get("essential", False),
-                            "essential_order": essential_order
+                            "essential_order": essential_order,
+                            "source": playbook.get("source", "Built-in")
                         })
                         break
         return selected
