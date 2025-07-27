@@ -42,12 +42,16 @@
       ansible.builtin.shell: |
         set -o pipefail
         loginctl list-sessions --no-legend | grep '{{ user }}' | awk '{print $1}'
+      args:
+        executable: /bin/bash
       register: user_session
       changed_when: false
 
     - name: Get XDG_RUNTIME_DIR for user
       ansible.builtin.shell: |
         echo /run/user/$(id -u {{ user }})
+      args:
+        executable: /bin/bash
       register: runtime_dir
       changed_when: false
 
