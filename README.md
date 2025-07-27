@@ -22,14 +22,6 @@ cd ~ && sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && sudo bash /opt/C
 
 ### Update
 
-First time:
-
-```bash
-git config --global --add safe.directory /opt/CrimsonCFG
-```
-
-Now you can simply run a git pull to update the application
-
 ```bash
 cd /opt/CrimsonCFG/ && sudo git pull
 ```
