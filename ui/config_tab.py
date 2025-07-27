@@ -237,11 +237,18 @@ class ConfigTab(Gtk.Box):
         config_notebook.append_page(app_tab, Gtk.Label(label="Application"))
 
         # --- Web Browser Tab (playbook-only) ---
+        # Create a scrolled window for the browser tab content
+        browser_scrolled = Gtk.ScrolledWindow()
+        browser_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        browser_scrolled.set_vexpand(True)
+        browser_scrolled.set_hexpand(True)
+        
         browser_tab = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         browser_tab.set_margin_start(10)
         browser_tab.set_margin_end(10)
         browser_tab.set_margin_top(10)
         browser_tab.set_margin_bottom(10)
+        
         browser_info = Gtk.InfoBar()
         browser_info.set_message_type(Gtk.MessageType.INFO)
         browser_info_label = Gtk.Label(label="This setting is only applied when the corresponding playbook is run: App/Chromium")
@@ -267,7 +274,148 @@ class ConfigTab(Gtk.Box):
         def on_profile1_changed(widget):
             self._set_config_value("chromium_profile1_name", profile1_entry.get_text())
         profile1_entry.connect("changed", on_profile1_changed)
-        config_notebook.append_page(browser_tab, Gtk.Label(label="Web Browser (Chromium)"))
+        
+        # Configure Chromium Policies (Collapsible)
+        policies_header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        policies_header_box.set_margin_bottom(5)
+        
+        policies_toggle_btn = Gtk.ToggleButton(label="Configure chromium_policy")
+        policies_toggle_btn.set_active(False)  # Start collapsed
+        policies_header_box.pack_start(policies_toggle_btn, False, False, 0)
+        
+        # Add a small arrow indicator
+        policies_arrow_label = Gtk.Label(label="▼")
+        policies_arrow_label.set_margin_start(5)
+        policies_header_box.pack_start(policies_arrow_label, False, False, 0)
+        
+        browser_tab.pack_start(policies_header_box, False, False, 0)
+        
+        # Create the revealer for policies
+        policies_revealer = Gtk.Revealer()
+        policies_revealer.set_reveal_child(False)  # Start hidden
+        browser_tab.pack_start(policies_revealer, False, False, 0)
+        
+        policies_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        policies_box.set_margin_start(10)
+        policies_box.set_margin_end(10)
+        policies_box.set_margin_top(10)
+        policies_box.set_margin_bottom(10)
+        policies_revealer.add(policies_box)
+        
+        # Handle policies toggle button clicks
+        def on_policies_toggle(button):
+            is_active = button.get_active()
+            policies_revealer.set_reveal_child(is_active)
+            policies_arrow_label.set_text("▲" if is_active else "▼")
+        
+        policies_toggle_btn.connect("toggled", on_policies_toggle)
+        
+        # Chromium Policies Editor
+        policies_label = Gtk.Label(label="Chromium Policies (JSON):")
+        policies_label.set_xalign(0)
+        policies_box.pack_start(policies_label, False, False, 0)
+        
+        # Create scrolled window for policies editor
+        policies_scrolled = Gtk.ScrolledWindow()
+        policies_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        policies_scrolled.set_size_request(-1, 300)  # Fixed height to prevent UI expansion
+        
+        policies_buffer = Gtk.TextBuffer()
+        # Load current policies content
+        policies_content = self._get_chromium_policies_content()
+        policies_buffer.set_text(policies_content)
+        
+        policies_view = Gtk.TextView(buffer=policies_buffer)
+        policies_view.set_monospace(True)
+        policies_view.set_wrap_mode(Gtk.WrapMode.NONE)
+        policies_view.set_hexpand(True)
+        policies_view.set_vexpand(True)
+        
+        policies_scrolled.add(policies_view)
+        policies_box.pack_start(policies_scrolled, True, True, 0)
+        
+        # Save button for policies
+        policies_save_btn = Gtk.Button(label="Save Chromium Policies")
+        def on_policies_save(btn):
+            start, end = policies_buffer.get_bounds()
+            content = policies_buffer.get_text(start, end, True)
+            self._save_chromium_policies_content(content)
+        policies_save_btn.connect("clicked", on_policies_save)
+        policies_box.pack_start(policies_save_btn, False, False, 0)
+        
+        # Configure Master Preferences (Collapsible)
+        master_prefs_header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        master_prefs_header_box.set_margin_top(5)  # Small gap from previous section
+        master_prefs_header_box.set_margin_bottom(5)
+        
+        master_prefs_toggle_btn = Gtk.ToggleButton(label="Configure master_preferences")
+        master_prefs_toggle_btn.set_active(False)  # Start collapsed
+        master_prefs_header_box.pack_start(master_prefs_toggle_btn, False, False, 0)
+        
+        # Add a small arrow indicator
+        master_prefs_arrow_label = Gtk.Label(label="▼")
+        master_prefs_arrow_label.set_margin_start(5)
+        master_prefs_header_box.pack_start(master_prefs_arrow_label, False, False, 0)
+        
+        browser_tab.pack_start(master_prefs_header_box, False, False, 0)
+        
+        # Create the revealer for master preferences
+        master_prefs_revealer = Gtk.Revealer()
+        master_prefs_revealer.set_reveal_child(False)  # Start hidden
+        browser_tab.pack_start(master_prefs_revealer, False, False, 0)
+        
+        master_prefs_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        master_prefs_box.set_margin_start(10)
+        master_prefs_box.set_margin_end(10)
+        master_prefs_box.set_margin_top(10)
+        master_prefs_box.set_margin_bottom(10)
+        master_prefs_revealer.add(master_prefs_box)
+        
+        # Handle master preferences toggle button clicks
+        def on_master_prefs_toggle(button):
+            is_active = button.get_active()
+            master_prefs_revealer.set_reveal_child(is_active)
+            master_prefs_arrow_label.set_text("▲" if is_active else "▼")
+        
+        master_prefs_toggle_btn.connect("toggled", on_master_prefs_toggle)
+        
+        # Master Preferences Editor
+        master_prefs_label = Gtk.Label(label="Master Preferences (JSON):")
+        master_prefs_label.set_xalign(0)
+        master_prefs_box.pack_start(master_prefs_label, False, False, 0)
+        
+        # Create scrolled window for master preferences editor
+        master_prefs_scrolled = Gtk.ScrolledWindow()
+        master_prefs_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        master_prefs_scrolled.set_size_request(-1, 200)  # Smaller height for master preferences
+        
+        master_prefs_buffer = Gtk.TextBuffer()
+        # Load current master preferences content
+        master_prefs_content = self._get_master_preferences_content()
+        master_prefs_buffer.set_text(master_prefs_content)
+        
+        master_prefs_view = Gtk.TextView(buffer=master_prefs_buffer)
+        master_prefs_view.set_monospace(True)
+        master_prefs_view.set_wrap_mode(Gtk.WrapMode.NONE)
+        master_prefs_view.set_hexpand(True)
+        master_prefs_view.set_vexpand(True)
+        
+        master_prefs_scrolled.add(master_prefs_view)
+        master_prefs_box.pack_start(master_prefs_scrolled, True, True, 0)
+        
+        # Save button for master preferences
+        master_prefs_save_btn = Gtk.Button(label="Save Master Preferences")
+        def on_master_prefs_save(btn):
+            start, end = master_prefs_buffer.get_bounds()
+            content = master_prefs_buffer.get_text(start, end, True)
+            self._save_master_preferences_content(content)
+        master_prefs_save_btn.connect("clicked", on_master_prefs_save)
+        master_prefs_box.pack_start(master_prefs_save_btn, False, False, 0)
+        
+        # Add the browser tab content to the scrolled window
+        browser_scrolled.add(browser_tab)
+        
+        config_notebook.append_page(browser_scrolled, Gtk.Label(label="Web Browser (Chromium)"))
 
         # --- SSH Tab (playbook-only) ---
         ssh_tab = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -511,6 +659,74 @@ class ConfigTab(Gtk.Box):
         # Refresh playbook list to update requirement status
         if hasattr(self.main_window, 'playbook_manager'):
             self.main_window.playbook_manager.update_playbook_list()
+
+    def _get_chromium_policies_content(self):
+        """Load the current chromium policies template content"""
+        try:
+            template_path = os.path.join(os.path.dirname(__file__), '../templates/chromium_policies.j2')
+            if os.path.exists(template_path):
+                with open(template_path, 'r') as f:
+                    return f.read()
+            else:
+                return "// Template file not found"
+        except Exception as e:
+            return f"// Error loading template: {e}"
+
+    def _save_chromium_policies_content(self, content):
+        """Save the chromium policies content back to the template file"""
+        try:
+            template_path = os.path.join(os.path.dirname(__file__), '../templates/chromium_policies.j2')
+            with open(template_path, 'w') as f:
+                f.write(content)
+            if self.main_window.debug:
+                print(f"ConfigTab: Saved chromium policies to {template_path}")
+        except Exception as e:
+            if self.main_window.debug:
+                print(f"ConfigTab: Error saving chromium policies: {e}")
+            # Show error dialog to user
+            dialog = Gtk.MessageDialog(
+                transient_for=self.main_window.window,
+                message_type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.OK,
+                text="Error Saving Chromium Policies",
+                secondary_text=f"Failed to save the policies file: {e}"
+            )
+            dialog.run()
+            dialog.destroy()
+
+    def _get_master_preferences_content(self):
+        """Load the current master preferences template content"""
+        try:
+            template_path = os.path.join(os.path.dirname(__file__), '../templates/master_preferences')
+            if os.path.exists(template_path):
+                with open(template_path, 'r') as f:
+                    return f.read()
+            else:
+                return "// Template file not found"
+        except Exception as e:
+            return f"// Error loading template: {e}"
+
+    def _save_master_preferences_content(self, content):
+        """Save the master preferences content back to the template file"""
+        try:
+            template_path = os.path.join(os.path.dirname(__file__), '../templates/master_preferences')
+            with open(template_path, 'w') as f:
+                f.write(content)
+            if self.main_window.debug:
+                print(f"ConfigTab: Saved master preferences to {template_path}")
+        except Exception as e:
+            if self.main_window.debug:
+                print(f"ConfigTab: Error saving master preferences: {e}")
+            # Show error dialog to user
+            dialog = Gtk.MessageDialog(
+                transient_for=self.main_window.window,
+                message_type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.OK,
+                text="Error Saving Master Preferences",
+                secondary_text=f"Failed to save the master preferences file: {e}"
+            )
+            dialog.run()
+            dialog.destroy()
 
     def _reload_main_config(self):
         self.main_window.config = self.main_window.config_manager.load_config()
