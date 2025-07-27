@@ -15,7 +15,7 @@ A modern, user-friendly GUI application for managing system configuration and ap
 
 ## 🚀 Quick Start
 
-### Installation
+### 📦 Installation
 
 Run as your normal user:
 
@@ -23,21 +23,21 @@ Run as your normal user:
 cd ~ && wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/setup.sh -O setup.sh && chmod +x setup.sh && bash setup.sh
 ```
 
-### Uninstall
+### 🗑️ Uninstall
 
 ```bash
 cd ~ && sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && sudo bash /opt/CrimsonCFG/uninstall/uninstall.sh
 ```
 
-### Update
+### 🔄 Update
 
 ```bash
 cd /opt/CrimsonCFG/ && sudo git pull
 ```
 
-### Debug
+### 🐛 Debug
 
-1. Open`~/.config/com.crimson.cfg/local.yml`
+1. Open `~/.config/com.crimson.cfg/local.yml`
 2. Set debug to 1
 3. Start CrimsonCFG in a terminal
 
@@ -47,25 +47,25 @@ cd /opt/CrimsonCFG/ && sudo git pull
 
 ## Bugs / Todo / Improve
 
-### Bugs
+### 🐛 Bugs
 
-- Main Window "Select None" removes all including our essential apps
-  They shall only be removed when pressing "Remove essentials" because there is a warning!
+- Main Window "Select None" removes all apps including essential ones  
+  Essential apps should only be removed when pressing "Remove essentials" because there is a warning!  
   Rename to "Remove all keep essentials"
-- "Deselect" behaves weird
-  Improve by double click on a singel app removes the app from "Selected playbooks"
-- "Select All" means select all in the current categorie selected
+- "Deselect" behaves unexpectedly  
+  Improve by making double-click on a single app remove it from "Selected playbooks"  
+- "Select All" missleading since it selects all from the current choosesn category
 
-### Todo
+### 📝 Todo
 
 - Secure SSH private key
-- Fix debug messages
+- Fix debug messages  
+  `[Debug] Filename - Group - Message`
 
-### Improve
-
+### 🔧 Improve
+  
 - Debug Messages  
-  `[Debug] Filename - Group - Message`  
-  Additionally debug shall be visible in the log window right now you have them only on CLI
+  Debug messages should be visible in the log window - currently they only appear on CLI
 
 ## ✨ Features
 
