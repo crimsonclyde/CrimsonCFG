@@ -4,6 +4,15 @@ A modern, user-friendly GUI application for managing system configuration and ap
 
 ![Main Window Screenshot](/files/screenshots/com.crimson.cfg_main.png)
 
+> **Note:**  
+> CrimsonCFG is currently in early beta. You may encounter bugs or incomplete features.
+> 
+> **Disclaimer:**  
+> This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**; without even the implied warranty of **MERCHANTABILITY** or **FITNESS FOR A PARTICULAR PURPOSE**. See the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html) for more details.
+> 
+> Use at your own risk!
+
+
 ## 🚀 Quick Start
 
 ### Installation
