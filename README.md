@@ -17,7 +17,7 @@ cd ~ && wget https://github.com/crimsonclyde/CrimsonCFG/raw/main/setup.sh -O set
 ### Uninstall
 
 ```bash
-cd ~ && chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && bash /opt/CrimsonCFG/uninstall/uninstall.sh
+cd ~ && sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && sudo bash /opt/CrimsonCFG/uninstall/uninstall.sh
 ```
 
 ### Update
