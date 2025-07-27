@@ -37,8 +37,6 @@ cd /opt/CrimsonCFG/ && sudo git pull
 
 ### Debug
 
-Enabling debug but changing:
-
 1. Open`~/.config/com.crimson.cfg/local.yml`
 2. Set debug to 1
 3. Start CrimsonCFG in a terminal
