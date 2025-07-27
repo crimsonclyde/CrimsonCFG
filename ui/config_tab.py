@@ -256,6 +256,17 @@ class ConfigTab(Gtk.Box):
         def on_browser_changed(widget):
             self._set_config_value("chromium_homepage_url", chromium_entry.get_text())
         chromium_entry.connect("changed", on_browser_changed)
+        
+        # Chromium Profile 1 Name
+        profile1_label = Gtk.Label(label="Chromium Profile 1 Name:")
+        profile1_label.set_xalign(0)
+        profile1_entry = Gtk.Entry()
+        profile1_entry.set_text(self._get_config_value("chromium_profile1_name", "downloads"))
+        browser_tab.pack_start(profile1_label, False, False, 0)
+        browser_tab.pack_start(profile1_entry, False, False, 0)
+        def on_profile1_changed(widget):
+            self._set_config_value("chromium_profile1_name", profile1_entry.get_text())
+        profile1_entry.connect("changed", on_profile1_changed)
         config_notebook.append_page(browser_tab, Gtk.Label(label="Web Browser (Chromium)"))
 
         # --- SSH Tab (playbook-only) ---

@@ -1,0 +1,304 @@
+# CrimsonCFG-Name: Chromium
+# CrimsonCFG-Description: Install Chromium web browser
+# CrimsonCFG-Essential: false
+---
+- name: Install and configure Chromium with custom profiles
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+
+    ## Info for future /me
+    ## Don't add `set -o pipefail` to jd or kill it breaks the playbook!
+
+  tasks:
+    ## ----------------------------------------------------
+    ## 1) Install Chromium
+    ## ----------------------------------------------------
+    - name: Ensure Chromium is installed (snap)
+      ansible.builtin.apt:
+        name: chromium-browser
+        state: present
+      tags: chromium
+
+    ## ----------------------------------------------------
+    ## 2) Set default browser
+    ## ----------------------------------------------------
+    - name: Ensure Chromium is default web browser (GNOME / XDG)
+      ansible.builtin.shell: |
+        xdg-settings set default-web-browser chromium-browser.desktop
+        gio mime x-scheme-handler/http chromium-browser.desktop
+        gio mime x-scheme-handler/https chromium-browser.desktop
+      become_user: "{{ user }}"
+      changed_when: false
+
+    ## ----------------------------------------------------
+    ## 3) Create Chromium managed policy folder (if needed)
+    ## ----------------------------------------------------
+    - name: Ensure Chromium policies directory exists
+      ansible.builtin.file:
+        path: /var/snap/chromium/current/policies/managed
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    ## ----------------------------------------------------
+    ## 4) Render your Chromium policy file (if you have one)
+    ## ----------------------------------------------------
+    - name: Render chromium_policies.j2 to temp file
+      ansible.builtin.template:
+        src: "{{ templates_directory }}/chromium_policies.j2"
+        dest: /tmp/chromium_policies_raw.json
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0644"
+
+    - name: Remove comments from policies file
+      ansible.builtin.shell: |
+        grep -vE '^\s*\/\/' /tmp/chromium_policies_raw.json > {{ working_directory }}/templates/chromium_policies.json
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Deploy policies.json to Chromium managed folder
+      ansible.builtin.copy:
+        src: "{{ templates_directory }}/chromium_policies.json"
+        dest: /var/snap/chromium/current/policies/managed/policies.json
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Clean up temp policy files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/chromium_policies_raw.json
+        - "{{ templates_directory }}/chromium_policies.json"
+
+    ## ----------------------------------------------------
+    ## 5) Launch Chromium using loginctl inside the user’s real session
+    ## ----------------------------------------------------
+
+    ## Get Wayland Session environment
+    - name: Find active session ID for user
+      ansible.builtin.shell: |
+        set -o pipefail
+        loginctl list-sessions --no-legend | grep '{{ user }}' | awk '{print $1}'
+      register: user_session
+      changed_when: false
+      args:
+        executable: /bin/bash
+
+    - name: Get XDG_RUNTIME_DIR for user
+      ansible.builtin.shell: |
+        echo /run/user/$(id -u {{ user }})
+      register: runtime_dir
+      changed_when: false
+
+    - name: Get user WAYLAND_DISPLAY
+      ansible.builtin.shell: |
+        sudo -u {{ user }} echo $WAYLAND_DISPLAY
+      register: user_wayland_display
+      changed_when: false
+
+    - name: Debug gathered session env
+      ansible.builtin.debug:
+        msg: |
+          Session ID: {{ user_session.stdout }}
+          XDG_RUNTIME_DIR: {{ runtime_dir.stdout }}
+          WAYLAND_DISPLAY: {{ user_wayland_display.stdout }}
+
+    ## Create Profile: Default
+    - name: Launch Chromium in real user session
+      ansible.builtin.shell: |
+        sudo -u {{ user }} \
+          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
+          WAYLAND_DISPLAY={{ user_wayland_display.stdout }} \
+          snap run chromium --no-first-run --no-default-browser-check https://example.com &
+        sleep 20
+      args:
+        executable: /bin/bash
+      changed_when: false
+      failed_when: false
+
+    - name: Wait for Default profile Preferences file to exist
+      ansible.builtin.wait_for:
+        path: "{{ user_home }}/snap/chromium/common/chromium/Default/Preferences"
+        state: present
+        timeout: 60
+
+    - name: Kill Chromium after creating Default profile
+      ansible.builtin.shell: |
+        sudo -u {{ user }} pkill chrome || true
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    ## Create Profile: Profile 1
+    - name: Launch Chromium in real user session for Profile 1
+      ansible.builtin.shell: |
+        sudo -u {{ user }} \
+          XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
+          WAYLAND_DISPLAY={{ user_wayland_display.stdout }} \
+          snap run chromium --no-first-run --no-default-browser-check \
+            --profile-directory="Profile 1" https://example.com &
+        sleep 20
+      args:
+        executable: /bin/bash
+      changed_when: false
+      failed_when: false
+
+    - name: Wait for Profile 1 Preferences file to exist
+      ansible.builtin.wait_for:
+        path: "{{ user_home }}/snap/chromium/common/chromium/Profile 1/Preferences"
+        state: present
+        timeout: 60
+
+    - name: Kill Chromium after creating Profile 1
+      ansible.builtin.shell: |
+        sudo -u {{ user }} pkill chrome || true
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    ## ----------------------------------------------------
+    ## 6) Patch Local State with correct names + icons
+    ## ----------------------------------------------------
+    - name: Rename Default profile in Local State
+      ansible.builtin.shell: |
+        jq '
+          .profile.info_cache.Default.name = "{{ user }}" |
+          .profile.info_cache.Default.is_using_default_name = false |
+          .profile.info_cache.Default.avatar_icon = "chrome://theme/IDR_PROFILE_AVATAR_31"
+        ' "{{ user_home }}/snap/chromium/common/chromium/Local State" > /tmp/LocalState.tmp && \
+        mv /tmp/LocalState.tmp "{{ user_home }}/snap/chromium/common/chromium/Local State"
+      become_user: "{{ user }}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Rename Profile 1 in Local State
+      ansible.builtin.shell: |
+        jq '
+          .profile.info_cache["Profile 1"].name = "{{ chromium_profile1_name }}" |
+          .profile.info_cache["Profile 1"].is_using_default_name = false |
+          .profile.info_cache["Profile 1"].avatar_icon = "chrome://theme/IDR_PROFILE_AVATAR_41"
+        ' "{{ user_home }}/snap/chromium/common/chromium/Local State" > /tmp/LocalState.tmp && \
+        mv /tmp/LocalState.tmp "{{ user_home }}/snap/chromium/common/chromium/Local State"
+      become_user: "{{ user }}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    ## ----------------------------------------------------
+    ## 7) Patch Preferences in each profile for consistency
+    ## ----------------------------------------------------
+    - name: Rename Default Preferences
+      ansible.builtin.shell: |
+        jq '.profile.name = "{{ user }}" |
+            .profile.avatar_index = 31 |
+            .profile.color_variant2 = 1 |
+            .profile.user_color2 = -336013' \
+          "{{ user_home }}/snap/chromium/common/chromium/Default/Preferences" > /tmp/Preferences.tmp && \
+        mv /tmp/Preferences.tmp "{{ user_home }}/snap/chromium/common/chromium/Default/Preferences"
+      become_user: "{{ user }}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Rename Profile 1 Preferences
+      ansible.builtin.shell: |
+        jq '.profile.name = "{{ chromium_profile1_name }}" |
+            .profile.avatar_index = 41 |
+            .profile.color_variant2 = 1 |
+            .profile.user_color2 = -336013' \
+          "{{ user_home }}/snap/chromium/common/chromium/Profile 1/Preferences" > /tmp/Preferences.tmp && \
+        mv /tmp/Preferences.tmp "{{ user_home }}/snap/chromium/common/chromium/Profile 1/Preferences"
+      become_user: "{{ user }}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    ## ----------------------------------------------------
+    ## 8) Pin extension
+    ## ----------------------------------------------------
+
+    - name: Pin Bitwarden in Default profile
+      ansible.builtin.shell: |
+        jq '
+          .extensions.toolbar = [{"id": "nngceckbapebfimnlniiiahkandclblb"}] |
+          .extensions.pinned_extensions = ["nngceckbapebfimnlniiiahkandclblb"]
+        ' "{{ user_home }}/snap/chromium/common/chromium/Default/Preferences" > /tmp/Preferences.tmp && \
+        mv /tmp/Preferences.tmp "{{ user_home }}/snap/chromium/common/chromium/Default/Preferences"
+      become_user: "{{ user }}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    ## ----------------------------------------------------
+    ## 9) Final permissions fix for profile folders
+    ## ----------------------------------------------------
+    - name: Fix ownership of Default
+      ansible.builtin.file:
+        path: "{{ user_home }}/snap/chromium/common/chromium/Default"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        recurse: true
+
+    - name: Fix ownership of Profile 1
+      ansible.builtin.file:
+        path: "{{ user_home }}/snap/chromium/common/chromium/Profile 1"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        recurse: true
+
+    ## ----------------------------------------------------
+    ## Pin App to GNOME dock
+    ## ----------------------------------------------------
+    - name: Ensure python3-psutil is installed for dconf module
+      ansible.builtin.apt:
+        name: python3-psutil
+        state: present
+
+    - name: Get current GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        state: read
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      register: current_favorites
+
+    - name: Normalize GNOME favorites value to a list
+      ansible.builtin.set_fact:
+        gnome_favorites_list: >-
+          {{
+            (current_favorites.value
+              | default([])
+              | from_yaml
+              if (current_favorites.value is string)
+              else (current_favorites.value | default([]) | list)
+            )
+          }}
+
+    - name: Pin app to GNOME dock favorites
+      community.general.dconf:
+        key: /org/gnome/shell/favorite-apps
+        value: >-
+          {{
+            (gnome_favorites_list +
+              ([app_desktop_file] if app_desktop_file not in gnome_favorites_list else [])
+            ) | to_json
+          }}
+        state: present
+      become: true
+      become_user: "{{ user }}"
+      environment:
+        HOME: "{{ user_home }}"
+      vars:
+        app_desktop_file: "chromium_chromium.desktop"
+      when: app_desktop_file not in gnome_favorites_list
