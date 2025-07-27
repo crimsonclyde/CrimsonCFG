@@ -12,6 +12,9 @@ import subprocess
 import yaml
 from pathlib import Path
 import threading
+import secrets
+import string
+from ruamel.yaml import YAML
 
 class AuthManager:
     def __init__(self, main_window, on_success=None):
@@ -19,6 +22,166 @@ class AuthManager:
         self.debug = getattr(main_window, 'debug', False)
         self.on_success = on_success
         
+    def check_and_create_admin_password(self):
+        """Check if admin_password is set in local.yml, create one if not, and show to user"""
+        if self.debug:
+            print("check_and_create_admin_password: Starting...")
+            
+        # Load local.yml
+        config_dir = Path.home() / ".config/com.crimson.cfg"
+        local_file = config_dir / "local.yml"
+        
+        if not local_file.exists():
+            if self.debug:
+                print("check_and_create_admin_password: local.yml does not exist")
+            return False
+            
+        try:
+            # Use ruamel.yaml to preserve comments and formatting
+            yaml_ruamel = YAML()
+            yaml_ruamel.preserve_quotes = True
+            
+            with open(local_file, 'r') as f:
+                local_config = yaml_ruamel.load(f) or {}
+                
+            admin_password = local_config.get('admin_password', '')
+            
+            # Check if admin_password is set and not the default
+            if not admin_password or admin_password == '3HeaddedMonkey':
+                if self.debug:
+                    print("check_and_create_admin_password: Admin password not set or is default, creating new one")
+                
+                # Generate a secure password
+                new_password = self._generate_secure_password()
+                
+                # Update local.yml with new password
+                local_config['admin_password'] = new_password
+                
+                with open(local_file, 'w') as f:
+                    yaml_ruamel.dump(local_config, f)
+                
+                if self.debug:
+                    print("check_and_create_admin_password: New admin password saved to local.yml")
+                
+                # Show password to user
+                self._show_admin_password_dialog(new_password)
+                return True
+            else:
+                if self.debug:
+                    print("check_and_create_admin_password: Admin password already set")
+                return False
+                
+        except Exception as e:
+            if self.debug:
+                print(f"check_and_create_admin_password: Error: {e}")
+            return False
+    
+    def _generate_secure_password(self, length=12):
+        """Generate a secure random password"""
+        # Use a mix of letters, digits, and symbols
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+        password = ''.join(secrets.choice(alphabet) for _ in range(length))
+        return password
+    
+    def _show_admin_password_dialog(self, password):
+        """Show dialog with the new admin password"""
+        if self.debug:
+            print("_show_admin_password_dialog: Creating dialog...")
+            
+        # Create dialog
+        dialog = Gtk.Dialog(title="Admin Password Created", parent=self.main_window.window)
+        dialog.set_modal(True)
+        dialog.set_size_request(500, 300)
+        dialog.set_resizable(False)
+        
+        # Get content area
+        content_area = dialog.get_content_area()
+        content_area.set_spacing(20)
+        content_area.set_margin_start(20)
+        content_area.set_margin_end(20)
+        content_area.set_margin_top(20)
+        content_area.set_margin_bottom(20)
+        
+        # Title
+        title_label = Gtk.Label()
+        title_label.set_markup("<span size='large' weight='bold'>Admin Password Created</span>")
+        title_label.set_halign(Gtk.Align.CENTER)
+        content_area.pack_start(title_label, False, False, 0)
+        
+        # Description
+        desc_label = Gtk.Label()
+        desc_label.set_markup(
+            "A new admin password has been created for CrimsonCFG.\n"
+            "Please write it down in a secure location.\n"
+            "You can change this password later in the Admin menu."
+        )
+        desc_label.set_line_wrap(True)
+        desc_label.set_halign(Gtk.Align.CENTER)
+        desc_label.set_justify(Gtk.Justification.CENTER)
+        content_area.pack_start(desc_label, False, False, 0)
+        
+        # Password frame
+        password_frame = Gtk.Frame()
+        password_frame.set_margin_top(20)
+        password_frame.set_margin_bottom(20)
+        
+        password_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        password_box.set_margin_start(15)
+        password_box.set_margin_end(15)
+        password_box.set_margin_top(15)
+        password_box.set_margin_bottom(15)
+        
+        password_label = Gtk.Label(label="Your Admin Password:")
+        password_label.set_halign(Gtk.Align.CENTER)
+        password_box.pack_start(password_label, False, False, 0)
+        
+        # Password entry (read-only)
+        password_entry = Gtk.Entry()
+        password_entry.set_text(password)
+        password_entry.set_editable(False)
+        password_entry.set_can_focus(False)
+        password_entry.set_size_request(300, -1)
+        password_entry.set_halign(Gtk.Align.CENTER)
+        password_box.pack_start(password_entry, False, False, 0)
+        
+        # Copy button
+        copy_button = Gtk.Button(label="Copy to Clipboard")
+        copy_button.set_halign(Gtk.Align.CENTER)
+        def on_copy_clicked(button):
+            clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            clipboard.set_text(password, -1)
+            copy_button.set_label("Copied!")
+            # Reset button label after 2 seconds
+            def reset_label():
+                copy_button.set_label("Copy to Clipboard")
+            from gi.repository import GLib
+            GLib.timeout_add(2000, reset_label)
+        copy_button.connect("clicked", on_copy_clicked)
+        password_box.pack_start(copy_button, False, False, 0)
+        
+        password_frame.add(password_box)
+        content_area.pack_start(password_frame, False, False, 0)
+        
+        # Warning
+        warning_label = Gtk.Label()
+        warning_label.set_markup("<span foreground='orange'><b>Important:</b> Write this password down now!</span>")
+        warning_label.set_halign(Gtk.Align.CENTER)
+        content_area.pack_start(warning_label, False, False, 0)
+        
+        # OK button
+        ok_button = Gtk.Button(label="I've Written It Down")
+        ok_button.set_halign(Gtk.Align.CENTER)
+        ok_button.connect("clicked", lambda w: dialog.response(Gtk.ResponseType.OK))
+        content_area.pack_start(ok_button, False, False, 0)
+        
+        # Show dialog
+        dialog.show_all()
+        dialog.run()
+        dialog.destroy()
+        
+        if self.debug:
+            print("_show_admin_password_dialog: Dialog closed")
+
     def show_sudo_prompt(self):
         """Show sudo password prompt in the main window"""
         if self.debug:

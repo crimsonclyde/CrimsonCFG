@@ -6,6 +6,7 @@ from gi.repository import Gtk
 import getpass
 import yaml
 from pathlib import Path
+from ruamel.yaml import YAML
 
 class AdminTab(Gtk.Box):
     def __init__(self, main_window):
@@ -33,8 +34,10 @@ class AdminTab(Gtk.Box):
             config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
                 with open(local_file, 'r') as f:
-                    local_config = yaml.safe_load(f) or {}
+                    local_config = yaml_ruamel.load(f) or {}
             admin_notebook = Gtk.Notebook()
             self.pack_start(admin_notebook, True, True, 0)
             # --- Default Apps Tab (APT) ---
@@ -80,8 +83,10 @@ class AdminTab(Gtk.Box):
                     if row[0].strip():  # Only add non-empty packages
                         apt_packages.append(row[0].strip())
                 local_config['apt_packages'] = apt_packages
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
                 with open(local_file, 'w') as f:
-                    yaml.safe_dump(local_config, f)
+                    yaml_ruamel.dump(local_config, f)
                 # Refresh playbook list to update requirement status
                 if hasattr(self.main_window, 'playbook_manager'):
                     self.main_window.playbook_manager.update_playbook_list()
@@ -121,14 +126,98 @@ class AdminTab(Gtk.Box):
                 local_config['app_name'] = title_entry.get_text()
                 local_config['app_subtitle'] = subtitle_entry.get_text()
                 local_config['app_logo'] = logo_chooser.get_filename() or ''
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
                 with open(local_file, 'w') as f:
-                    yaml.safe_dump(local_config, f)
+                    yaml_ruamel.dump(local_config, f)
                 # Refresh playbook list to update requirement status
                 if hasattr(self.main_window, 'playbook_manager'):
                     self.main_window.playbook_manager.update_playbook_list()
             save_btn.connect("clicked", on_save_ci)
             ci_box.pack_start(save_btn, False, False, 0)
             admin_notebook.append_page(ci_box, Gtk.Label(label="Corporate Identity"))
+
+            # --- Admin Password Tab ---
+            password_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            password_box.set_margin_start(10)
+            password_box.set_margin_end(10)
+            password_box.set_margin_top(10)
+            password_box.set_margin_bottom(10)
+            
+            password_label = Gtk.Label(label="Admin Password Management:")
+            password_box.pack_start(password_label, False, False, 0)
+            
+            # Current password display
+            current_password_label = Gtk.Label(label="Current Admin Password:")
+            password_box.pack_start(current_password_label, False, False, 0)
+            
+            current_password_entry = Gtk.Entry()
+            current_password_entry.set_visibility(False)
+            current_password_entry.set_text(local_config.get('admin_password', ''))
+            current_password_entry.set_editable(False)
+            current_password_entry.set_can_focus(False)
+            password_box.pack_start(current_password_entry, False, False, 0)
+            
+            # New password section
+            new_password_label = Gtk.Label(label="New Admin Password:")
+            password_box.pack_start(new_password_label, False, False, 0)
+            
+            new_password_entry = Gtk.Entry()
+            new_password_entry.set_visibility(False)
+            new_password_entry.set_placeholder_text("Enter new password")
+            password_box.pack_start(new_password_entry, False, False, 0)
+            
+            # Confirm new password
+            confirm_password_label = Gtk.Label(label="Confirm New Password:")
+            password_box.pack_start(confirm_password_label, False, False, 0)
+            
+            confirm_password_entry = Gtk.Entry()
+            confirm_password_entry.set_visibility(False)
+            confirm_password_entry.set_placeholder_text("Confirm new password")
+            password_box.pack_start(confirm_password_entry, False, False, 0)
+            
+            # Status label
+            password_status_label = Gtk.Label(label="")
+            password_box.pack_start(password_status_label, False, False, 0)
+            
+            # Change password button
+            change_password_btn = Gtk.Button(label="Change Admin Password")
+            def on_change_password(btn):
+                new_password = new_password_entry.get_text()
+                confirm_password = confirm_password_entry.get_text()
+                
+                if not new_password:
+                    password_status_label.set_text("Please enter a new password.")
+                    return
+                
+                if new_password != confirm_password:
+                    password_status_label.set_text("Passwords do not match.")
+                    return
+                
+                if len(new_password) < 8:
+                    password_status_label.set_text("Password must be at least 8 characters long.")
+                    return
+                
+                # Update local.yml with new password
+                local_config['admin_password'] = new_password
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
+                with open(local_file, 'w') as f:
+                    yaml_ruamel.dump(local_config, f)
+                
+                # Update the current password display
+                current_password_entry.set_text(new_password)
+                
+                # Clear the new password fields
+                new_password_entry.set_text("")
+                confirm_password_entry.set_text("")
+                
+                password_status_label.set_text("Admin password updated successfully!")
+                
+            change_password_btn.connect("clicked", on_change_password)
+            password_box.pack_start(change_password_btn, False, False, 0)
+            
+            admin_notebook.append_page(password_box, Gtk.Label(label="Admin Password"))
             self.show_all()
 
         def show_password_prompt():
@@ -152,8 +241,10 @@ class AdminTab(Gtk.Box):
                 local_file = config_dir / "local.yml"
                 admin_password = None
                 if local_file.exists():
+                    yaml_ruamel = YAML()
+                    yaml_ruamel.preserve_quotes = True
                     with open(local_file, 'r') as f:
-                        local_config = yaml.safe_load(f) or {}
+                        local_config = yaml_ruamel.load(f) or {}
                         admin_password = local_config.get('admin_password', None)
                 if entry.get_text() == (admin_password or ""):
                     self._admin_authenticated = True

@@ -335,4 +335,6 @@ class CrimsonCFGGUI:
             self.show_error_dialog(f"Failed to refresh playbooks: {e}") 
 
     def on_auth_success(self):
+        # Check and create admin password if needed
+        self.auth_manager.check_and_create_admin_password()
         self.gui_builder.show_main_interface() 
