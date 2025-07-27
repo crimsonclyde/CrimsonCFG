@@ -110,12 +110,18 @@ class MainTab(Gtk.Box):
         col1 = Gtk.TreeViewColumn("Playbook", renderer)
         col1.set_cell_data_func(renderer, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][0]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col1.set_expand(True)
+        col1.set_resizable(True)
+        col1.set_min_width(150)
+        col1.set_fixed_width(200)
         self.main_window.playbook_tree.append_column(col1)
         
         renderer2 = Gtk.CellRendererText()
         col2 = Gtk.TreeViewColumn("Essential", renderer2)
         col2.set_cell_data_func(renderer2, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][1]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col2.set_expand(False)
+        col2.set_resizable(True)
+        col2.set_min_width(60)
+        col2.set_fixed_width(80)
         self.main_window.playbook_tree.append_column(col2)
 
         # Require Config Icon column
@@ -129,20 +135,28 @@ class MainTab(Gtk.Box):
                 cell.set_property('icon-name', None)
         col_icon.set_cell_data_func(renderer_icon, icon_data_func)
         col_icon.set_expand(False)
+        col_icon.set_resizable(True)
+        col_icon.set_min_width(80)
+        col_icon.set_fixed_width(100)
         self.main_window.playbook_tree.append_column(col_icon)
-        
-        renderer3 = Gtk.CellRendererText()
-        col3 = Gtk.TreeViewColumn("Description", renderer3)
-        col3.set_cell_data_func(renderer3, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][2]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
-        col3.set_expand(True)
-        self.main_window.playbook_tree.append_column(col3)
         
         # Source column
         renderer4 = Gtk.CellRendererText()
         col4 = Gtk.TreeViewColumn("Source", renderer4)
         col4.set_cell_data_func(renderer4, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][6]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
         col4.set_expand(False)
+        col4.set_resizable(True)
+        col4.set_min_width(70)
+        col4.set_fixed_width(90)
         self.main_window.playbook_tree.append_column(col4)
+        
+        renderer3 = Gtk.CellRendererText()
+        col3 = Gtk.TreeViewColumn("Description", renderer3)
+        col3.set_cell_data_func(renderer3, lambda col, cell, model, iter, data: cell.set_property('text', model[iter][2]) or cell.set_property('foreground', '#888' if model[iter][4] else None))
+        col3.set_expand(True)
+        col3.set_resizable(True)
+        col3.set_min_width(200)
+        self.main_window.playbook_tree.append_column(col3)
         
         # Selection
         self.main_window.playbook_tree.get_selection().connect("changed", self.main_window.on_playbook_selection_changed)
