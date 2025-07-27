@@ -21,6 +21,11 @@
         msg: "user variable is not set in local.yml."
       when: user is not defined or user|length == 0
 
+    - name: Validate theme_mode value
+      ansible.builtin.fail:
+        msg: "theme_mode must be set to 'light' or 'dark' in local.yml. Current value: {{ theme_mode }}"
+      when: theme_mode not in ['light', 'dark']
+
   tasks:
 
       #######################
@@ -44,27 +49,27 @@
         msg: |
           Session ID: {{ user_session.stdout }}
           XDG_RUNTIME_DIR: {{ runtime_dir.stdout }}
+          Theme Mode: {{ theme_mode }}
 
-    - name: Set GNOME dark mode using gsettings with manual DBUS_SESSION_BUS_ADDRESS
+      #######################
+      # Set Theme Based on theme_mode
+      #######################
+
+    - name: Set GNOME color scheme based on theme_mode
       ansible.builtin.shell: |
         sudo -u {{ user }} \
           XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
           DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
-          gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+          gsettings set org.gnome.desktop.interface color-scheme '{{ "prefer-dark" if theme_mode == "dark" else "default" }}'
       args:
         executable: /bin/bash
 
-
-      #######################
-      # Activate Dark Mode
-      #######################
-
-    - name: Also set legacy gtk-theme for fallback (optional)
+    - name: Set GNOME GTK theme based on theme_mode
       ansible.builtin.shell: |
         sudo -u {{ user }} \
           XDG_RUNTIME_DIR={{ runtime_dir.stdout }} \
           DBUS_SESSION_BUS_ADDRESS=unix:path={{ runtime_dir.stdout }}/bus \
-          gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+          gsettings set org.gnome.desktop.interface gtk-theme '{{ "Adwaita-dark" if theme_mode == "dark" else "Adwaita" }}'
       args:
         executable: /bin/bash
 
