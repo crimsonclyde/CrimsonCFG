@@ -86,19 +86,30 @@ localhost
                 GLib.idle_add(self.main_window.logger.log_message, f"Error: Inventory file not found at {self.main_window.inventory_file}")
                 return False
                 
-            # Check if playbook file exists (in original location)
+            # Check if playbook file exists (determine path based on source)
             playbook_path = playbook['path']
-            # If the playbook path is not absolute, prepend working_directory/playbooks
+            source = playbook.get('source', 'Built-in')
+            
+            # Determine the correct playbook path based on source
             if not os.path.isabs(playbook_path):
                 # Remove leading 'playbooks/' if present
                 if playbook_path.startswith('playbooks/'):
                     playbook_path = playbook_path[len('playbooks/'):]
-                playbook_path = os.path.join(self.main_window.working_directory, 'playbooks', playbook_path)
+                
+                if source == 'External':
+                    # External playbooks are in external_src/playbooks
+                    playbook_path = os.path.join(self.main_window.working_directory, 'external_src', 'playbooks', playbook_path)
+                else:
+                    # Built-in playbooks are in playbooks
+                    playbook_path = os.path.join(self.main_window.working_directory, 'playbooks', playbook_path)
+            
             # Expand Jinja2 variables if present
             if "{{ working_directory }}" in playbook_path:
                 playbook_path = playbook_path.replace("{{ working_directory }}", self.main_window.working_directory)
+            
             if not os.path.exists(playbook_path):
                 GLib.idle_add(self.main_window.logger.log_message, f"Error: Playbook file not found at {playbook_path}")
+                GLib.idle_add(self.main_window.logger.log_message, f"Source: {source}")
                 return False
                 
             cmd = [
