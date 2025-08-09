@@ -17,13 +17,16 @@ set -e
 ##################
 # Variables
 ##################
-# Load local.yml
-# Determine the real user (not root) and their home directory
-REAL_USER="${SUDO_USER:-$USER}"
-REAL_USER_HOME=$(eval echo "~$REAL_USER")
-LOCAL_YML="$REAL_USER_HOME/.config/com.crimson.cfg/local.yml"
+# Determine the local.yml location based on the invoking user (supports sudo)
+INVOKING_HOME=$(eval echo "~${SUDO_USER:-$USER}")
+LOCAL_YML="$INVOKING_HOME/.config/com.crimson.cfg/local.yml"
+ALT_LOCAL_YML="$INVOKING_HOME/.config/com.mdm.manager.cfg/local.yml"
+
+# Values sourced from local.yml
 USER_HOME=""
 WORKING_DIRECTORY=""
+USER_CONFIG_DIRECTORY=""
+USER_DESKTOP_DIRECTORY=""
 
 ##################
 # Functions
@@ -62,29 +65,35 @@ print_error() {
 }
 
 load_local_yml() {
-if [ -f "$LOCAL_YML" ]; then
+    # Select primary or alternate local.yml
+    if [ ! -f "$LOCAL_YML" ] && [ -f "$ALT_LOCAL_YML" ]; then
+        print_warning "local.yml not found at $LOCAL_YML. Using $ALT_LOCAL_YML instead."
+        LOCAL_YML="$ALT_LOCAL_YML"
+    fi
+
+    if [ ! -f "$LOCAL_YML" ]; then
+        print_error "local.yml not found. Expected at $LOCAL_YML or $ALT_LOCAL_YML"
+        exit 1
+    fi
+
+    # Read required values strictly from local.yml (no hardcoded fallbacks)
     USER_HOME=$(grep -E '^user_home:' "$LOCAL_YML" | awk '{print $2}' | sed 's/^"//;s/"$//')
-    if [ -z "$USER_HOME" ]; then
-        print_warning "user_home not set in local.yml. Defaulting to /home/$(logname)"
-        USER_HOME="/home/$(logname)"
-    fi
     WORKING_DIRECTORY=$(grep -E '^working_directory:' "$LOCAL_YML" | awk '{print $2}' | sed 's/^"//;s/"$//')
-    if [ -z "$WORKING_DIRECTORY" ]; then
-        print_warning "working_directory not set in local.yml."
-    fi
-else
-    print_warning "local.yml not found. Defaulting to /home/$(logname)"
-    USER_HOME="/home/$(logname)"
-fi
+    USER_CONFIG_DIRECTORY=$(grep -E '^user_config_directory:' "$LOCAL_YML" | awk '{print $2}' | sed 's/^"//;s/"$//')
+    USER_DESKTOP_DIRECTORY=$(grep -E '^user_desktop_directory:' "$LOCAL_YML" | awk '{print $2}' | sed 's/^"//;s/"$//')
 }
 
 validate_vars() {
-    if [ -z "$USER_HOME" ]; then
-        print_error "USER_HOME is empty. Aborting to prevent dangerous operations."
-        exit 1
-    fi
     if [ -z "$WORKING_DIRECTORY" ]; then
         print_error "WORKING_DIRECTORY is empty. Aborting to prevent dangerous operations."
+        exit 1
+    fi
+    if [ -z "$USER_CONFIG_DIRECTORY" ]; then
+        print_error "USER_CONFIG_DIRECTORY is empty. Aborting to prevent dangerous operations."
+        exit 1
+    fi
+    if [ -z "$USER_DESKTOP_DIRECTORY" ]; then
+        print_error "USER_DESKTOP_DIRECTORY is empty. Aborting to prevent dangerous operations."
         exit 1
     fi
 }
@@ -102,6 +111,12 @@ if [ "$EUID" -ne 0 ]; then
     exec sudo bash "$0" "$@"
 fi
 
+# Load local.yml (we need variables ready before any actions)
+load_local_yml
+
+# Validate critical variables before proceeding
+validate_vars
+
 # Ask for confirmation
 read -p "If you uninstall me, at least take me out to dinner first (y/n): " confirm
 if [ "$confirm" != "y" ]; then
@@ -109,16 +124,10 @@ if [ "$confirm" != "y" ]; then
     exit 1
 fi
 
-# Load local.yml (we need that before we uninstall anything)
-load_local_yml
-
-# Validate critical variables before proceeding
-validate_vars
-
 # Remove the application
 print_status "Removing application..."
 
-INSTALL_DIR="/opt/CrimsonCFG"
+INSTALL_DIR="$WORKING_DIRECTORY"
 
 if [ -n "$INSTALL_DIR" ] && [ "$INSTALL_DIR" != "/" ] && [ -d "$INSTALL_DIR" ]; then
     if sudo rm -rf "$INSTALL_DIR/"; then
@@ -130,26 +139,26 @@ else
     print_warning "INSTALL_DIR is not set correctly or does not exist. Skipping."
 fi
 
-# Remove config directory
-if [ -d "$USER_HOME/.config/com.crimson.cfg/" ]; then
-    if sudo rm -r "$USER_HOME/.config/com.crimson.cfg/"; then
-        print_success "Removed $USER_HOME/.config/com.crimson.cfg/"
+# Remove config directory (from local.yml)
+if [ -d "$USER_CONFIG_DIRECTORY/" ]; then
+    if sudo rm -r "$USER_CONFIG_DIRECTORY/"; then
+        print_success "Removed $USER_CONFIG_DIRECTORY/"
     else
-        print_error "Failed to remove $USER_HOME/.config/com.crimson.cfg/"
+        print_error "Failed to remove $USER_CONFIG_DIRECTORY/"
     fi
 else
-    print_warning "$USER_HOME/.config/com.crimson.cfg/ does not exist. Skipping."
+    print_warning "$USER_CONFIG_DIRECTORY/ does not exist. Skipping."
 fi
 
 # Remove desktop entry
-if [ -f "$USER_HOME/.local/share/applications/com.crimson.cfg.desktop" ]; then
-    if sudo rm -f "$USER_HOME/.local/share/applications/com.crimson.cfg.desktop"; then
-        print_success "Removed $USER_HOME/.local/share/applications/com.crimson.cfg.desktop"
+if [ -f "$USER_DESKTOP_DIRECTORY/com.crimson.cfg.desktop" ]; then
+    if sudo rm -f "$USER_DESKTOP_DIRECTORY/com.crimson.cfg.desktop"; then
+        print_success "Removed $USER_DESKTOP_DIRECTORY/com.crimson.cfg.desktop"
     else
-        print_error "Failed to remove $USER_HOME/.local/share/applications/com.crimson.cfg.desktop"
+        print_error "Failed to remove $USER_DESKTOP_DIRECTORY/com.crimson.cfg.desktop"
     fi
 else
-    print_warning "$USER_HOME/.local/share/applications/com.crimson.cfg.desktop does not exist. Skipping."
+    print_warning "$USER_DESKTOP_DIRECTORY/com.crimson.cfg.desktop does not exist. Skipping."
 fi
 
 print_success "CrimsonCFG has been uninstalled"
