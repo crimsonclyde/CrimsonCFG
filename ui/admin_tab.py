@@ -2,9 +2,10 @@
 """
 AdminTab: Encapsulates the Administration tab UI and logic for CrimsonCFG
 """
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 import getpass
 import yaml
+import os
 from pathlib import Path
 from ruamel.yaml import YAML
 
@@ -31,7 +32,7 @@ class AdminTab(Gtk.Box):
             for child in self.get_children():
                 self.remove(child)
             local_config = {}
-            config_dir = Path.home() / ".config/com.crimson.cfg"
+            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
                 yaml_ruamel = YAML()
@@ -293,6 +294,319 @@ class AdminTab(Gtk.Box):
             external_repo_box.pack_start(refresh_btn, False, False, 0)
             
             admin_notebook.append_page(external_repo_box, Gtk.Label(label="External Repository"))
+
+            # --- Application Tab ---
+            application_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+            application_box.set_margin_start(15)
+            application_box.set_margin_end(15)
+            application_box.set_margin_top(15)
+            application_box.set_margin_bottom(15)
+            
+            # === Working Directory Frame ===
+            working_dir_frame = Gtk.Frame()
+            working_dir_frame.set_label("Working Directory")
+            working_dir_frame.set_label_widget(Gtk.Label(label="Working Directory"))
+            
+            working_dir_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+            working_dir_box.set_margin_start(15)
+            working_dir_box.set_margin_end(15)
+            working_dir_box.set_margin_top(15)
+            working_dir_box.set_margin_bottom(15)
+            
+            # Working directory label and entry
+            wd_label = Gtk.Label(label="Working Directory (user override, see docs):")
+            wd_label.set_xalign(0)
+            wd_entry = Gtk.Entry()
+            wd_entry.set_text(local_config.get('working_directory', '/opt/MDM-Manager'))
+            
+            # Add changed signal to save working directory instantly
+            def on_wd_changed(widget):
+                new_wd = widget.get_text()
+                if self.main_window.debug:
+                    print(f"AdminTab: Working directory changed to: '{new_wd}'")
+                local_config['working_directory'] = new_wd
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
+                with open(local_file, 'w') as f:
+                    yaml_ruamel.dump(local_config, f)
+            wd_entry.connect("changed", on_wd_changed)
+            
+            working_dir_box.pack_start(wd_label, False, False, 0)
+            working_dir_box.pack_start(wd_entry, False, False, 0)
+            
+            working_dir_frame.add(working_dir_box)
+            application_box.pack_start(working_dir_frame, False, False, 0)
+            
+            # === Application Management Frame ===
+            app_management_frame = Gtk.Frame()
+            app_management_frame.set_label("Application Management")
+            app_management_frame.set_label_widget(Gtk.Label(label="Application Management"))
+            
+            app_management_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+            app_management_box.set_margin_start(15)
+            app_management_box.set_margin_end(15)
+            app_management_box.set_margin_top(15)
+            app_management_box.set_margin_bottom(15)
+            
+            # Folder and config buttons in a grid for better layout
+            buttons_grid = Gtk.Grid()
+            buttons_grid.set_column_spacing(10)
+            buttons_grid.set_row_spacing(10)
+            
+            # Show Config Folder button
+            show_config_btn = Gtk.Button(label="Show Config Folder")
+            show_config_btn.set_tooltip_text("ℹ️ Open the configuration folder in file manager")
+            def on_show_config_folder(btn):
+                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                if config_dir.exists():
+                    os.system(f"xdg-open '{config_dir}'")
+                else:
+                    # Create directory if it doesn't exist
+                    config_dir.mkdir(parents=True, exist_ok=True)
+                    os.system(f"xdg-open '{config_dir}'")
+            show_config_btn.connect("clicked", on_show_config_folder)
+            buttons_grid.attach(show_config_btn, 0, 0, 1, 1)
+            
+            # Show Application Folder button
+            show_app_btn = Gtk.Button(label="Show Application Folder")
+            show_app_btn.set_tooltip_text("ℹ️ Open the application folder in file manager")
+            def on_show_app_folder(btn):
+                app_dir = "/opt/MDM-Manager"
+                if os.path.exists(app_dir):
+                    os.system(f"xdg-open '{app_dir}'")
+            show_app_btn.connect("clicked", on_show_app_folder)
+            buttons_grid.attach(show_app_btn, 1, 0, 1, 1)
+            
+            # Edit local settings button
+            edit_local_btn = Gtk.Button(label="Edit Local Settings")
+            edit_local_btn.set_tooltip_text("ℹ️ Open local.yml configuration file in text editor")
+            def on_edit_local_settings(btn):
+                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                local_file = config_dir / "local.yml"
+                if local_file.exists():
+                    # Try to open with default text editor
+                    os.system(f"xdg-open '{local_file}'")
+                else:
+                    # Create the file if it doesn't exist
+                    local_file.parent.mkdir(parents=True, exist_ok=True)
+                    with open(local_file, 'w') as f:
+                        f.write("# Local configuration file\n")
+                    os.system(f"xdg-open '{local_file}'")
+            edit_local_btn.connect("clicked", on_edit_local_settings)
+            buttons_grid.attach(edit_local_btn, 2, 0, 1, 1)
+            
+            app_management_box.pack_start(buttons_grid, False, False, 0)
+            app_management_frame.add(app_management_box)
+            application_box.pack_start(app_management_frame, False, False, 0)
+            
+            # === Update Management Frame ===
+            update_frame = Gtk.Frame()
+            update_frame.set_label("Update Management")
+            update_frame.set_label_widget(Gtk.Label(label="Update Management"))
+            
+            update_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+            update_box.set_margin_start(15)
+            update_box.set_margin_end(15)
+            update_box.set_margin_top(15)
+            update_box.set_margin_bottom(15)
+            
+            # Version information section
+            version_info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            
+            # Get version information
+            from . import version_manager
+            version_mgr = version_manager.VersionManager()
+            version_info = version_mgr.get_version_info()
+            
+            # Current version label
+            current_version_label = Gtk.Label(label=f"Current Version: {version_mgr.format_version_for_display(version_info['installed_version'])}")
+            current_version_label.set_xalign(0)
+            current_version_label.set_margin_bottom(5)
+            version_info_box.pack_start(current_version_label, False, False, 0)
+            
+            # Remote version label (will be updated when checking for updates)
+            remote_version_label = Gtk.Label(label="Remote Version: Checking...")
+            remote_version_label.set_xalign(0)
+            remote_version_label.set_margin_bottom(15)
+            version_info_box.pack_start(remote_version_label, False, False, 0)
+            
+            # Function to check for updates automatically
+            def check_for_updates_auto():
+                # Import update manager
+                from . import update_manager
+                
+                # Get config from main window
+                config = getattr(self.main_window, 'config', {})
+                
+                # Create update manager
+                update_mgr = update_manager.UpdateManager(config, self.main_window)
+                
+                # Check for updates
+                update_info = update_mgr.check_for_updates()
+                
+                if update_info.get('error'):
+                    remote_version_label.set_text("Remote Version: Error")
+                    return
+                
+                latest_version = update_info.get('latest_version', 'Unknown')
+                
+                # Update remote version label
+                remote_version_label.set_text(f"Remote Version: {version_mgr.format_version_for_display(latest_version)}")
+            
+            # Check for updates automatically after a short delay
+            GLib.timeout_add_seconds(1, check_for_updates_auto)
+            
+            update_box.pack_start(version_info_box, False, False, 0)
+            
+            # Update buttons
+            update_buttons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            
+            # Check for updates button
+            check_update_btn = Gtk.Button(label="Check for Updates")
+            check_update_btn.set_tooltip_text("ℹ️ Check if a newer version is available")
+            
+            # Update button
+            update_btn = Gtk.Button(label="Update Application")
+            update_btn.set_tooltip_text("ℹ️ Download and install the latest version of the application")
+            
+            # Progress bar for update
+            update_progress = Gtk.ProgressBar()
+            update_progress.set_visible(False)
+            
+            # Status label for update
+            update_status_label = Gtk.Label(label="")
+            update_status_label.set_visible(False)
+            
+            def on_update_progress(percentage, message):
+                update_progress.set_fraction(percentage / 100.0)
+                update_status_label.set_text(message)
+                update_progress.set_visible(True)
+                update_status_label.set_visible(True)
+                return False
+            
+            def on_update_complete(success, message):
+                update_status_label.set_text(message)
+                update_progress.set_visible(False)
+                if success:
+                    update_status_label.set_text("Update completed successfully! Please restart the application.")
+                return False
+            
+            def on_check_for_updates(btn):
+                # Import update manager
+                from . import update_manager
+                
+                # Get config from main window
+                config = getattr(self.main_window, 'config', {})
+                
+                # Create update manager
+                update_mgr = update_manager.UpdateManager(config, self.main_window)
+                
+                # Show checking status
+                update_status_label.set_text("Checking for updates...")
+                remote_version_label.set_text("Remote Version: Checking...")
+                
+                # Check for updates
+                update_info = update_mgr.check_for_updates()
+                
+                if update_info.get('error'):
+                    update_status_label.set_text(f"Error checking for updates: {update_info['error']}")
+                    remote_version_label.set_text("Remote Version: Error")
+                    return
+                
+                current_version = update_info.get('current_version', 'Unknown')
+                latest_version = update_info.get('latest_version', 'Unknown')
+                
+                # Update remote version label
+                remote_version_label.set_text(f"Remote Version: {version_mgr.format_version_for_display(latest_version)}")
+                
+                if update_info.get('is_reinstall'):
+                    update_status_label.set_text(f"Current version: {current_version}. Same version available for reinstall.")
+                elif update_info.get('available'):
+                    update_status_label.set_text(f"Update available: {current_version} → {latest_version}")
+                else:
+                    update_status_label.set_text(f"Current version: {current_version}. No updates available.")
+            
+            def on_update_application(btn):
+                # Import update manager
+                from . import update_manager
+                
+                # Get config from main window
+                config = getattr(self.main_window, 'config', {})
+                
+                # Create update manager
+                update_mgr = update_manager.UpdateManager(config, self.main_window)
+                
+                # Check for updates first
+                update_info = update_mgr.check_for_updates()
+                
+                if update_info.get('error'):
+                    update_status_label.set_text(f"Error checking for updates: {update_info['error']}")
+                    return
+                
+                if not update_info.get('available') and not update_info.get('is_reinstall'):
+                    update_status_label.set_text("No updates available. You have the latest version.")
+                    return
+                
+                # Prepare confirmation message
+                current_version = update_info.get('current_version', 'Unknown')
+                latest_version = update_info.get('latest_version', 'Unknown')
+                
+                if update_info.get('is_reinstall'):
+                    message = f"Reinstall version {latest_version}?\n\nThis will reinstall the same version. Your settings will not be affected."
+                    title = "Reinstall Application"
+                else:
+                    message = f"Update from version {current_version} to {latest_version}?\n\nThis will install the latest version. Your settings will not be affected."
+                    title = "Update Application"
+                
+                # Show confirmation dialog
+                dialog = Gtk.MessageDialog(
+                    transient_for=self.get_toplevel(),
+                    flags=Gtk.DialogFlags.MODAL,
+                    message_type=Gtk.MessageType.QUESTION,
+                    buttons=Gtk.ButtonsType.YES_NO,
+                    text=title,
+                    secondary_text=message
+                )
+                
+                response = dialog.run()
+                dialog.destroy()
+                
+                if response == Gtk.ResponseType.YES:
+                    # Start update process
+                    update_mgr.download_update(
+                        progress_callback=on_update_progress,
+                        completion_callback=on_update_complete
+                    )
+                    
+                    # Disable button during update
+                    update_btn.set_sensitive(False)
+                    update_btn.set_label("Updating...")
+                    
+                    # Re-enable button after completion
+                    def re_enable_button():
+                        update_btn.set_sensitive(True)
+                        update_btn.set_label("Update Application")
+                    
+                    # Schedule re-enabling after 5 seconds
+                    GLib.timeout_add_seconds(5, re_enable_button)
+                else:
+                    update_status_label.set_text("Update cancelled.")
+            
+            check_update_btn.connect("clicked", on_check_for_updates)
+            update_btn.connect("clicked", on_update_application)
+            
+            update_buttons_box.pack_start(check_update_btn, True, True, 0)
+            update_buttons_box.pack_start(update_btn, True, True, 0)
+            update_box.pack_start(update_buttons_box, False, False, 0)
+            
+            # Progress and status
+            update_box.pack_start(update_progress, False, False, 0)
+            update_box.pack_start(update_status_label, False, False, 0)
+            
+            update_frame.add(update_box)
+            application_box.pack_start(update_frame, False, False, 0)
+            
+            admin_notebook.append_page(application_box, Gtk.Label(label="Application"))
             self.show_all()
 
         def show_password_prompt():
@@ -312,7 +626,7 @@ class AdminTab(Gtk.Box):
             prompt_box.pack_start(status_label, False, False, 0)
             btn = Gtk.Button(label="Unlock")
             def on_unlock(_btn=None):
-                config_dir = Path.home() / ".config/com.crimson.cfg"
+                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
                 local_file = config_dir / "local.yml"
                 admin_password = None
                 if local_file.exists():

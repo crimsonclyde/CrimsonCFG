@@ -28,7 +28,7 @@ class AuthManager:
             print("check_and_create_admin_password: Starting...")
             
         # Load local.yml
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         local_file = config_dir / "local.yml"
         
         if not local_file.exists():
@@ -226,7 +226,7 @@ class AuthManager:
         try:
             # Load local.yml
             local_config = {}
-            config_dir = Path.home() / ".config/com.crimson.cfg"
+            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
                 with open(local_file, 'r') as f:

@@ -2,7 +2,7 @@
 """
 ConfigTab: Refactored for new structure and instant/apply/save logic
 """
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 from ruamel.yaml import YAML
 import getpass
 from pathlib import Path
@@ -142,52 +142,128 @@ class ConfigTab(Gtk.Box):
         app_tab.set_margin_end(10)
         app_tab.set_margin_top(10)
         app_tab.set_margin_bottom(10)
-        wd_label = Gtk.Label(label="Working Directory (user override, see docs):")
-        wd_label.set_xalign(0)
-        wd_entry = Gtk.Entry()
-        wd_entry.set_text(self._get_config_value("working_directory", ""))
-        
-        # Add changed signal to save working directory instantly
-        def on_wd_changed(widget):
-            new_wd = widget.get_text()
-            if self.main_window.debug:
-                print(f"ConfigTab: Working directory changed to: '{new_wd}'")
-            self._set_config_value("working_directory", new_wd)
-        wd_entry.connect("changed", on_wd_changed)
-        
-        app_tab.pack_start(wd_label, False, False, 0)
-        app_tab.pack_start(wd_entry, False, False, 0)
-        # Background Image (optional)
-        bg_label = Gtk.Label(label="Background Image (optional):")
+        # Application Background Image Section
+        bg_label = Gtk.Label(label="Application Background Image:")
         bg_label.set_xalign(0)
-        bg_file_chooser = Gtk.FileChooserButton(title="Select Background Image", action=Gtk.FileChooserAction.OPEN)
-        bg_file_chooser.set_width_chars(40)
-        bg_filename = self._get_config_value("app_background_image", "")
-        if self.main_window.debug:
-            print(f"ConfigTab: Setting background filename to: '{bg_filename}'")
-        if bg_filename and os.path.exists(bg_filename):
-            bg_file_chooser.set_filename(bg_filename)
-            # Also set the current folder to help with display
-            bg_file_chooser.set_current_folder(os.path.dirname(bg_filename))
-        else:
-            bg_file_chooser.unselect_all()
+        app_tab.pack_start(bg_label, False, False, 0)
         
-        # Add file-set signal to save instantly
-        def on_bg_file_set(widget):
-            selected_path = widget.get_filename() or ""
-            if self.main_window.debug:
-                print(f"ConfigTab: Background file selected: '{selected_path}'")
-            self._set_config_value("app_background_image", selected_path)
+        # Background previews - using FlowBox for dynamic layout
+        bg_scroll = Gtk.ScrolledWindow()
+        bg_scroll.set_min_content_height(150)
+        bg_scroll.set_max_content_height(200)
+        
+        # Use FlowBox for dynamic grid layout
+        bg_flowbox = Gtk.FlowBox()
+        bg_flowbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        bg_flowbox.set_min_children_per_line(3)
+        bg_flowbox.set_homogeneous(True)
+        bg_flowbox.set_row_spacing(8)
+        bg_flowbox.set_column_spacing(8)
+        
+        bg_scroll.add(bg_flowbox)
+        app_tab.pack_start(bg_scroll, True, True, 0)
+        
+        # Load background images from working_directory/files/app/background
+        working_directory = self._get_config_value("working_directory", "/opt/MDM-Manager")
+        bg_images_dir = os.path.join(working_directory, "files", "app", "background")
+        bg_image_files = []
+        if os.path.exists(bg_images_dir):
+            for file in os.listdir(bg_images_dir):
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    bg_image_files.append(file)
+        
+        # Create clickable previews for background images
+        current_bg_image = self._get_config_value("app_background_image", "")
+        selected_bg_path = None
+        bg_buttons = []
+        
+        def on_bg_image_clicked(widget, bg_path, button_index):
+            nonlocal selected_bg_path
+            selected_bg_path = bg_path
+            self._set_config_value("app_background_image", bg_path)
+            
+            # Update visual selection - highlight selected button
+            for i, btn in enumerate(bg_buttons):
+                if i == button_index:
+                    btn.get_style_context().add_class("selected")
+                else:
+                    btn.get_style_context().remove_class("selected")
+            
+            # Reload config and apply CSS
             self._reload_main_config()
             self.main_window.gui_builder.apply_css()
-        bg_file_chooser.connect("file-set", on_bg_file_set)
+            
+            print(f"Selected background image: {bg_path}")
         
-        app_tab.pack_start(bg_label, False, False, 0)
-        app_tab.pack_start(bg_file_chooser, False, False, 0)
-        # Restore Clear Background Image button
+        # Also handle FlowBox selection changes
+        def on_bg_flowbox_selection_changed(flowbox):
+            selected_child = flowbox.get_selected_child()
+            if selected_child:
+                # Find the button index
+                for i, btn in enumerate(bg_buttons):
+                    if btn == selected_child.get_child():
+                        on_bg_image_clicked(btn, bg_buttons[i], i)
+                        break
+        
+        # Create grid of background image previews
+        for i, bg_file in enumerate(bg_image_files):
+            bg_path = os.path.join(bg_images_dir, bg_file)
+            
+            # Create container for button content
+            button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            button_box.set_margin_start(4)
+            button_box.set_margin_end(4)
+            button_box.set_margin_top(4)
+            button_box.set_margin_bottom(4)
+            
+            # Create clickable button with preview
+            bg_button = Gtk.Button()
+            bg_button.set_relief(Gtk.ReliefStyle.NONE)
+            bg_button.set_can_focus(False)
+            
+            # Add some padding and styling
+            bg_button.set_margin_start(2)
+            bg_button.set_margin_end(2)
+            bg_button.set_margin_top(2)
+            bg_button.set_margin_bottom(2)
+            
+            # Create image preview
+            try:
+                # Larger preview for better visibility
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(bg_path, 140, 95)
+                image = Gtk.Image.new_from_pixbuf(pixbuf)
+                button_box.pack_start(image, False, False, 0)
+            except Exception as e:
+                # Fallback if image can't be loaded
+                fallback_label = Gtk.Label(label=bg_file[:15] + "..." if len(bg_file) > 15 else bg_file)
+                button_box.pack_start(fallback_label, False, False, 0)
+            
+            # Add filename label
+            filename_label = Gtk.Label(label=bg_file[:20] + "..." if len(bg_file) > 20 else bg_file)
+            filename_label.set_line_wrap(True)
+            filename_label.set_line_wrap_mode(2)
+            filename_label.set_max_width_chars(20)
+            filename_label.set_justify(Gtk.Justification.CENTER)
+            button_box.pack_start(filename_label, False, False, 0)
+            
+            bg_button.add(button_box)
+            
+            # Check if this is the currently selected background image
+            if bg_path == current_bg_image:
+                bg_button.get_style_context().add_class("selected")
+            
+            bg_buttons.append(bg_button)
+            bg_button.connect("clicked", on_bg_image_clicked, bg_path, len(bg_buttons) - 1)
+            bg_flowbox.add(bg_button)
+        
+        # Connect FlowBox selection signal
+        bg_flowbox.connect("selected-children-changed", on_bg_flowbox_selection_changed)
+        
+
+        
+        # Clear Background Image button
         bg_clear_btn = Gtk.Button(label="Clear Background Image")
         def on_clear_bg(btn):
-            bg_file_chooser.unselect_all()
             if self.main_window.debug:
                 print(f"ConfigTab: Clearing background image")
             self._set_config_value("app_background_image", "")
@@ -530,15 +606,159 @@ class ConfigTab(Gtk.Box):
         gnome_info.get_content_area().pack_start(gnome_info_label, True, True, 0)
         gnome_info.show_all()
         gnome_tab.pack_start(gnome_info, False, False, 0)
-        gnome_bg_label = Gtk.Label(label="Gnome Background Image:")
-        gnome_bg_label.set_xalign(0)
-        gnome_bg_file_chooser = Gtk.FileChooserButton(title="Select Gnome Background Image", action=Gtk.FileChooserAction.OPEN)
-        gnome_bg_file_chooser.set_width_chars(40)
-        gnome_bg_file_chooser.set_filename(self._get_config_value("gnome_background_image", ""))
-        gnome_tab.pack_start(gnome_bg_label, False, False, 0)
+        
+        # Wallpaper Section
+        wallpaper_label = Gtk.Label(label="Gnome Wallpaper:")
+        wallpaper_label.set_xalign(0)
+        gnome_tab.pack_start(wallpaper_label, False, False, 0)
+        
+        # Wallpaper previews - using FlowBox for dynamic layout
+        wallpaper_scroll = Gtk.ScrolledWindow()
+        wallpaper_scroll.set_min_content_height(200)
+        wallpaper_scroll.set_max_content_height(300)
+        
+        # Use FlowBox for dynamic grid layout (like Android's RecyclerView)
+        wallpaper_flowbox = Gtk.FlowBox()
+        wallpaper_flowbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        wallpaper_flowbox.set_min_children_per_line(3)  # Minimum 3 per line
+        wallpaper_flowbox.set_homogeneous(True)  # All items same size
+        wallpaper_flowbox.set_row_spacing(8)
+        wallpaper_flowbox.set_column_spacing(8)
+        
+        wallpaper_scroll.add(wallpaper_flowbox)
+        gnome_tab.pack_start(wallpaper_scroll, True, True, 0)
+        
+        # Load wallpapers from working_directory/files/system/gnome/wallpapers
+        working_directory = self._get_config_value("working_directory", "/opt/MDM-Manager")
+        wallpapers_dir = os.path.join(working_directory, "files", "system", "gnome", "wallpapers")
+        wallpaper_files = []
+        if os.path.exists(wallpapers_dir):
+            for file in os.listdir(wallpapers_dir):
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    wallpaper_files.append(file)
+        
+        # Create clickable previews
+        current_wallpaper = self._get_config_value("gnome_background_image", "")
+        selected_wallpaper_path = None
+        wallpaper_buttons = []  # Store references to buttons for selection highlighting
+        
+        def on_wallpaper_clicked(widget, wallpaper_path, button_index):
+            nonlocal selected_wallpaper_path
+            selected_wallpaper_path = wallpaper_path
+            self._set_config_value("gnome_background_image", wallpaper_path)
+            
+            # Update visual selection - highlight selected button
+            for i, btn in enumerate(wallpaper_buttons):
+                if i == button_index:
+                    btn.get_style_context().add_class("selected")
+                else:
+                    btn.get_style_context().remove_class("selected")
+            
+            # Update file chooser button text
+            update_file_chooser_text()
+            
+            print(f"Selected wallpaper: {wallpaper_path}")
+        
+        # Also handle FlowBox selection changes
+        def on_flowbox_selection_changed(flowbox):
+            selected_child = flowbox.get_selected_child()
+            if selected_child:
+                # Find the button index
+                for i, btn in enumerate(wallpaper_buttons):
+                    if btn == selected_child.get_child():
+                        on_wallpaper_clicked(btn, wallpaper_buttons[i], i)
+                        break
+        
+        # Create grid of wallpaper previews
+        # FlowBox will automatically calculate optimal layout
+        for i, wallpaper_file in enumerate(wallpaper_files):
+            wallpaper_path = os.path.join(wallpapers_dir, wallpaper_file)
+            
+            # Create container for button content
+            button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            button_box.set_margin_start(4)
+            button_box.set_margin_end(4)
+            button_box.set_margin_top(4)
+            button_box.set_margin_bottom(4)
+            
+            # Create clickable button with preview
+            wallpaper_button = Gtk.Button()
+            wallpaper_button.set_relief(Gtk.ReliefStyle.NONE)
+            wallpaper_button.set_can_focus(False)
+            
+            # Add some padding and styling
+            wallpaper_button.set_margin_start(2)
+            wallpaper_button.set_margin_end(2)
+            wallpaper_button.set_margin_top(2)
+            wallpaper_button.set_margin_bottom(2)
+            
+            # Create image preview
+            try:
+                # Larger preview for better visibility
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(wallpaper_path, 140, 95)
+                image = Gtk.Image.new_from_pixbuf(pixbuf)
+                button_box.pack_start(image, False, False, 0)
+            except Exception as e:
+                # Fallback if image can't be loaded
+                fallback_label = Gtk.Label(label=wallpaper_file[:15] + "..." if len(wallpaper_file) > 15 else wallpaper_file)
+                button_box.pack_start(fallback_label, False, False, 0)
+            
+            # Add filename label
+            filename_label = Gtk.Label(label=wallpaper_file[:20] + "..." if len(wallpaper_file) > 20 else wallpaper_file)
+            filename_label.set_line_wrap(True)
+            filename_label.set_line_wrap_mode(2)  # PANGO_WRAP_WORD_CHAR
+            filename_label.set_max_width_chars(20)
+            filename_label.set_justify(Gtk.Justification.CENTER)
+            button_box.pack_start(filename_label, False, False, 0)
+            
+            wallpaper_button.add(button_box)
+            
+            # Check if this is the currently selected wallpaper
+            if wallpaper_path == current_wallpaper:
+                wallpaper_button.get_style_context().add_class("selected")
+            
+            wallpaper_buttons.append(wallpaper_button)
+            wallpaper_button.connect("clicked", on_wallpaper_clicked, wallpaper_path, len(wallpaper_buttons) - 1)
+            wallpaper_flowbox.add(wallpaper_button)
+        
+        # Connect FlowBox selection signal
+        wallpaper_flowbox.connect("selected-children-changed", on_flowbox_selection_changed)
+        
+        # Custom wallpaper file chooser
+        gnome_bg_file_chooser = Gtk.FileChooserButton(title="Browse for Custom Wallpaper", action=Gtk.FileChooserAction.OPEN)
+        gnome_bg_file_chooser.set_width_chars(50)
+        
+        # Set the file chooser to open in user's Pictures directory
+        user_home = self._get_config_value("user_home", os.path.expanduser("~"))
+        pictures_dir = os.path.join(user_home, "Pictures")
+        if os.path.exists(pictures_dir):
+            gnome_bg_file_chooser.set_current_folder(pictures_dir)
+        
+        # Function to update button text based on current selection
+        def update_file_chooser_text():
+            current_selection = self._get_config_value("gnome_background_image", "")
+            if current_selection and os.path.exists(current_selection):
+                # Show just the filename, not the full path
+                filename = os.path.basename(current_selection)
+                gnome_bg_file_chooser.set_title(f"Custom: {filename}")
+            else:
+                gnome_bg_file_chooser.set_title("Browse for Custom Wallpaper")
+        
+        # Set current selection if exists
+        if current_wallpaper and os.path.exists(current_wallpaper):
+            gnome_bg_file_chooser.set_filename(current_wallpaper)
+            update_file_chooser_text()
+        
+        # Add label for custom wallpaper section
+        custom_wallpaper_label = Gtk.Label(label="Or choose a custom wallpaper:")
+        custom_wallpaper_label.set_xalign(0)
+        custom_wallpaper_label.set_margin_top(10)
+        gnome_tab.pack_start(custom_wallpaper_label, False, False, 0)
         gnome_tab.pack_start(gnome_bg_file_chooser, False, False, 0)
+        
         def on_gnome_bg_changed(widget):
             self._set_config_value("gnome_background_image", gnome_bg_file_chooser.get_filename() or "")
+            update_file_chooser_text()
         gnome_bg_file_chooser.connect("file-set", on_gnome_bg_changed)
         
         # Theme Mode Switch
@@ -570,8 +790,163 @@ class ConfigTab(Gtk.Box):
         
         config_notebook.append_page(gnome_tab, Gtk.Label(label="Gnome"))
 
+        # --- VPN Tab (playbook-only) ---
+        vpn_tab = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        vpn_tab.set_margin_start(10)
+        vpn_tab.set_margin_end(10)
+        vpn_tab.set_margin_top(10)
+        vpn_tab.set_margin_bottom(10)
+        vpn_info = Gtk.InfoBar()
+        vpn_info.set_message_type(Gtk.MessageType.INFO)
+        vpn_info_label = Gtk.Label(label="Pre-Requirement: Install Apps/Tailscale")
+        vpn_info.get_content_area().pack_start(vpn_info_label, True, True, 0)
+        vpn_info.show_all()
+        vpn_tab.pack_start(vpn_info, False, False, 0)
+        
+        # Tailscale Authentication Section
+        vpn_auth_frame = Gtk.Frame(label="Tailscale Authentication")
+        vpn_auth_frame.set_margin_bottom(8)
+        vpn_auth_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        vpn_auth_box.set_margin_start(8)
+        vpn_auth_box.set_margin_end(8)
+        vpn_auth_box.set_margin_top(8)
+        vpn_auth_box.set_margin_bottom(8)
+        
+        # Status label
+        self.vpn_status_label = Gtk.Label(label="Ready to authenticate with Tailscale")
+        self.vpn_status_label.set_halign(Gtk.Align.CENTER)
+        vpn_auth_box.pack_start(self.vpn_status_label, False, False, 0)
+        
+        # Authentication button
+        self.vpn_auth_button = Gtk.Button(label="Start Tailscale Authentication")
+        self.vpn_auth_button.connect("clicked", self.on_vpn_auth_clicked)
+        vpn_auth_box.pack_start(self.vpn_auth_button, False, False, 0)
+        
+        vpn_auth_frame.add(vpn_auth_box)
+        vpn_tab.pack_start(vpn_auth_frame, False, False, 0)
+        
+        config_notebook.append_page(vpn_tab, Gtk.Label(label="VPN"))
+
+    def on_vpn_auth_clicked(self, button):
+        """Handle VPN authentication button click"""
+        print("DEBUG: VPN authentication button clicked")
+        self.main_window.logger.log_message("DEBUG: VPN authentication button clicked")
+        
+        # Check if we have sudo password
+        if not hasattr(self.main_window, 'sudo_password') or not self.main_window.sudo_password:
+            print("DEBUG: No sudo password available")
+            self.main_window.logger.log_message("ERROR: No sudo password available. Please authenticate first.")
+            return
+        
+        print("DEBUG: Sudo password available, starting Tailscale")
+        self.main_window.logger.log_message("DEBUG: Sudo password available, starting Tailscale")
+        
+        # Update status
+        self.vpn_status_label.set_text("Starting Tailscale connection...")
+        self.vpn_auth_button.set_sensitive(False)
+        
+        # Run authentication in a separate thread
+        import threading
+        import subprocess
+        import re
+        
+        def run_auth():
+            try:
+                # Run tailscale up and capture the URL line by line (like the shell script)
+                self.main_window.logger.log_message("Running: sudo tailscale up")
+                
+                # Start the process
+                process = subprocess.Popen(
+                    ["sudo", "-S", "tailscale", "up"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,  # Combine stdout and stderr
+                    text=True,
+                    bufsize=1,  # Line buffered
+                    universal_newlines=True
+                )
+                
+                # Send password
+                process.stdin.write(f"{self.main_window.sudo_password}\n")
+                process.stdin.flush()
+                
+                # Read output line by line until we find the URL
+                auth_url = None
+                try:
+                    while True:
+                        line = process.stdout.readline()
+                        if not line:
+                            break
+                        
+                        # Log each line
+                        self.main_window.logger.log_message(f"Tailscale: {line.strip()}")
+                        
+                        # Check for login URL
+                        if "https://login.tailscale.com" in line:
+                            url_match = re.search(r'https://login\.tailscale\.com/[^\s]+', line)
+                            if url_match:
+                                auth_url = url_match.group(0)
+                                self.main_window.logger.log_message(f"FOUND LOGIN URL: {auth_url}")
+                                break
+                except Exception as e:
+                    self.main_window.logger.log_message(f"Error reading output: {e}")
+                
+                # Update UI with the result (on main thread)
+                def update_ui():
+                    if auth_url:
+                        self.vpn_status_label.set_text(f"Login URL: {auth_url}")
+                        self.vpn_auth_button.set_sensitive(True)
+                        self.vpn_auth_button.set_label("URL Found")
+                        
+                        # Open browser with the login URL
+                        try:
+                            self.main_window.logger.log_message(f"Opening browser with URL: {auth_url}")
+                            # Try Chromium first (pre-configured to avoid OOBE issues)
+                            subprocess.Popen(["snap", "run", "chromium", auth_url])
+                        except Exception as e:
+                            self.main_window.logger.log_message(f"Failed to open Chromium: {e}")
+                            # Fallback to microsoft-edge
+                            try:
+                                subprocess.Popen(["microsoft-edge", auth_url])
+                                self.main_window.logger.log_message("Opened with Microsoft Edge fallback")
+                            except Exception as e2:
+                                self.main_window.logger.log_message(f"Failed to open Microsoft Edge: {e2}")
+                                # Final fallback to xdg-open
+                                try:
+                                    subprocess.Popen(["xdg-open", auth_url])
+                                    self.main_window.logger.log_message("Opened with xdg-open fallback")
+                                except Exception as e3:
+                                    self.main_window.logger.log_message(f"Failed to open browser with all fallbacks: {e3}")
+                        
+                        # Let the process continue in background
+                        def background_auth():
+                            try:
+                                process.wait(timeout=60)  # Wait up to 60 seconds for completion
+                                self.main_window.logger.log_message("Tailscale authentication completed")
+                            except subprocess.TimeoutExpired:
+                                self.main_window.logger.log_message("Tailscale authentication still in progress")
+                            except Exception as e:
+                                self.main_window.logger.log_message(f"Background auth error: {e}")
+                        
+                        threading.Thread(target=background_auth, daemon=True).start()
+                    else:
+                        self.vpn_status_label.set_text("No login URL found - check logs for details")
+                        self.vpn_auth_button.set_sensitive(True)
+                        self.vpn_auth_button.set_label("Check Logs")
+                
+                GLib.idle_add(update_ui)
+                    
+            except Exception as e:
+                self.main_window.logger.log_message(f"ERROR: Tailscale exception: {str(e)}")
+                def update_error():
+                    self.vpn_status_label.set_text("Connection error occurred")
+                    self.vpn_auth_button.set_sensitive(True)
+                GLib.idle_add(update_error)
+        
+        threading.Thread(target=run_auth, daemon=True).start()
+
     def _get_config_value(self, key, default=None):
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         local_file = config_dir / "local.yml"
         if not local_file.exists():
             # If the file doesn't exist, create it from the template using ruamel.yaml to preserve comments
@@ -611,7 +986,7 @@ class ConfigTab(Gtk.Box):
     def _set_config_value(self, key, value):
         if self.main_window.debug:
             print(f"ConfigTab: _set_config_value called with key='{key}', value='{value}'")
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         local_file = config_dir / "local.yml"
         yaml_ruamel = YAML()
         yaml_ruamel.preserve_quotes = True

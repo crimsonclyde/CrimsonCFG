@@ -4,10 +4,9 @@ import subprocess
 import getpass
 from ruamel.yaml import YAML
 
-CONFIG_DIR = os.path.expanduser(os.path.join(os.path.expanduser("~"), ".config/com.crimson.cfg"))
+CONFIG_DIR = os.path.expanduser(os.path.join(os.path.expanduser("~"), ".config/com.mdm.manager.cfg"))
 LOCAL_YML_PATH = os.path.join(CONFIG_DIR, "local.yml")
-# Change EXTERNAL_REPO_DIR to /opt/CrimsonCFG/external_src
-EXTERNAL_REPO_DIR = "/opt/CrimsonCFG/external_src"
+EXTERNAL_REPO_DIR = "/opt/MDM-Manager/external_src"
 
 def get_local_yml_path():
     return LOCAL_YML_PATH
@@ -64,14 +63,32 @@ def ensure_external_repo_dir(sudo_password=None):
 
 def _clone_or_pull_repo(repo_url, sudo_password=None):
     if not repo_url:
-        return
+        return True
     if not ensure_external_repo_dir(sudo_password):
         print(f"Cannot clone external repo: insufficient permissions for {EXTERNAL_REPO_DIR}")
-        return
-    if not os.path.exists(EXTERNAL_REPO_DIR) or not os.listdir(EXTERNAL_REPO_DIR):
-        subprocess.run(['git', 'clone', repo_url, EXTERNAL_REPO_DIR], check=False)
-    else:
-        subprocess.run(['git', '-C', EXTERNAL_REPO_DIR, 'pull'], check=False)
+        return False
+    
+    try:
+        if not os.path.exists(EXTERNAL_REPO_DIR) or not os.listdir(EXTERNAL_REPO_DIR):
+            # Clone the repository
+            result = subprocess.run(['git', 'clone', repo_url, EXTERNAL_REPO_DIR], 
+                                  capture_output=True, text=True, check=True)
+            print(f"Successfully cloned repository: {repo_url}")
+            return True
+        else:
+            # Pull latest changes
+            result = subprocess.run(['git', '-C', EXTERNAL_REPO_DIR, 'pull'], 
+                                  capture_output=True, text=True, check=True)
+            print(f"Successfully pulled latest changes from repository")
+            return True
+    except subprocess.CalledProcessError as e:
+        print(f"Git operation failed: {e}")
+        print(f"Git stdout: {e.stdout}")
+        print(f"Git stderr: {e.stderr}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error during git operation: {e}")
+        return False
 
 def update_external_repo_async(sudo_password=None):
     """Clone or pull the external repo asynchronously."""
@@ -87,4 +104,4 @@ def update_external_repo_sync(sudo_password=None):
     repo_url = get_external_repo_url()
     if not repo_url:
         return True
-    return _clone_or_pull_repo(repo_url, sudo_password) is not None 
+    return _clone_or_pull_repo(repo_url, sudo_password) 

@@ -1,0 +1,17 @@
+# CrimsonCFG-Name: Bitwarden
+# CrimsonCFG-Description: Install Bitwarden (Password Manager)
+# CrimsonCFG-Essential: true
+# CrimsonCFG-RequiredVars: false
+# CrimsonCFG-Essential-Order: 12
+---
+- name: Install Bitwarden
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.mdm.manager.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install Bitwarden
+      ansible.builtin.snap:
+        name: bitwarden
+        state: present

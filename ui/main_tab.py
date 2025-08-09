@@ -33,10 +33,13 @@ class MainTab(Gtk.Box):
         
         if self.debug:
             print("MainTab: Creating left panel...")
-        # Left panel - Categories
+        # Left column container
+        left_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+        content_box.pack_start(left_column, False, False, 0)
+        
+        # Categories frame (80% height)
         left_frame = Gtk.Frame(label="Categories")
-        left_frame.set_margin_end(15)
-        content_box.pack_start(left_frame, False, False, 0)
+        left_column.pack_start(left_frame, True, True, 0)  # Expand and fill
         
         # Add background to categories
         left_background = Gtk.EventBox()
@@ -69,7 +72,9 @@ class MainTab(Gtk.Box):
             cat_info = self.main_window.config["categories"][category]
             
             # Category button - first one sets the group, others join it
-            btn = Gtk.RadioButton(label=category, group=radio_group)
+            # Display category name in uppercase for better UI presentation
+            display_name = category.upper() if category.startswith("dep:") else category
+            btn = Gtk.RadioButton(label=display_name, group=radio_group)
             if radio_group is None:
                 radio_group = btn
             btn.connect("toggled", self.main_window.on_category_changed, category)
@@ -158,14 +163,41 @@ class MainTab(Gtk.Box):
         col3.set_min_width(200)
         self.main_window.playbook_tree.append_column(col3)
         
-        # Selection
+        # Selection and double-click
         self.main_window.playbook_tree.get_selection().connect("changed", self.main_window.on_playbook_selection_changed)
+        self.main_window.playbook_tree.connect("row-activated", self.main_window.playbook_manager.on_playbook_row_activated)
         
         # Scrollable tree
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scrolled_window.add(self.main_window.playbook_tree)
+        scrolled_window.set_tooltip_text("Double-click on a playbook to add/remove it from selection")
         center_box.pack_start(scrolled_window, True, True, 0)
+        
+        # Playbook Management frame (20% height, at bottom)
+        management_frame = Gtk.Frame(label="Playbook Management")
+        left_column.pack_start(management_frame, False, False, 0)  # Don't expand, stay at bottom
+        
+        # Add background to playbook management
+        management_background = Gtk.EventBox()
+        management_background.set_visible_window(True)
+        management_background.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.24, 0.24, 0.24, 0.3))
+        management_frame.add(management_background)
+        
+        if self.debug:
+            print("MainTab: Playbook Management frame background set with 0.3 opacity")
+        
+        management_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        management_box.set_margin_start(15)
+        management_box.set_margin_end(15)
+        management_box.set_margin_top(15)
+        management_box.set_margin_bottom(15)
+        management_background.add(management_box)
+        
+        update_playbooks_btn = Gtk.Button(label="Update Playbooks")
+        update_playbooks_btn.set_tooltip_text("Pull latest changes from external repository and refresh playbooks from all sources")
+        update_playbooks_btn.connect("clicked", self.main_window.update_playbooks)
+        management_box.pack_start(update_playbooks_btn, False, False, 0)
         
         if self.debug:
             print("MainTab: Creating right panel...")
@@ -192,21 +224,15 @@ class MainTab(Gtk.Box):
         controls_box.set_margin_bottom(15)
         controls_background.add(controls_box)
         
-        select_all_btn = Gtk.Button(label="Select All")
-        select_all_btn.connect("clicked", self.main_window.select_all)
-        controls_box.pack_start(select_all_btn, False, False, 0)
+        remove_essential_btn = Gtk.Button(label="Remove Essentials")
+        remove_essential_btn.set_tooltip_text("Remove all essential playbooks (shows warning dialog)")
+        remove_essential_btn.connect("clicked", self.main_window.remove_essential)
+        controls_box.pack_start(remove_essential_btn, False, False, 0)
         
-        deselect_all_btn = Gtk.Button(label="Deselect All")
-        deselect_all_btn.connect("clicked", self.main_window.deselect_all)
-        controls_box.pack_start(deselect_all_btn, False, False, 0)
-        
-        select_essential_btn = Gtk.Button(label="Remove Essential")
-        select_essential_btn.connect("clicked", self.main_window.remove_essential)
-        controls_box.pack_start(select_essential_btn, False, False, 0)
-        
-        select_none_btn = Gtk.Button(label="Select None")
-        select_none_btn.connect("clicked", self.main_window.select_none)
-        controls_box.pack_start(select_none_btn, False, False, 0)
+        remove_non_essentials_btn = Gtk.Button(label="Remove non-essentials")
+        remove_non_essentials_btn.set_tooltip_text("Remove all non-essential playbooks from selection (keeps essential playbooks)")
+        remove_non_essentials_btn.connect("clicked", self.main_window.remove_all)
+        controls_box.pack_start(remove_non_essentials_btn, False, False, 0)
         
         right_box.pack_start(controls_frame, False, False, 0)
         
@@ -236,9 +262,13 @@ class MainTab(Gtk.Box):
         col4 = Gtk.TreeViewColumn("Selected Playbooks", renderer4, text=0)
         self.main_window.selected_tree.append_column(col4)
         
+        # Add double-click handler for selected items
+        self.main_window.selected_tree.connect("row-activated", self.main_window.playbook_manager.on_selected_item_row_activated)
+        
         selected_scrolled = Gtk.ScrolledWindow()
         selected_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         selected_scrolled.add(self.main_window.selected_tree)
+        selected_scrolled.set_tooltip_text("Double-click on a non-essential playbook to remove it from selection")
         selected_box.pack_start(selected_scrolled, True, True, 0)
         
         right_box.pack_start(selected_frame, True, True, 0)

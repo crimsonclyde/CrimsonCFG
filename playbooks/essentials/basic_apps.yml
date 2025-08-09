@@ -7,7 +7,7 @@
   hosts: localhost
   become: true
   vars_files:
-    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+    - "{{ lookup('env', 'HOME') + '/.config/com.mdm.manager.cfg/local.yml' }}"
   tasks:
 
     #######################

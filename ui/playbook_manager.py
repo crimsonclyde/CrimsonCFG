@@ -6,7 +6,7 @@ Handles playbook selection and management logic
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk  # type: ignore
+from gi.repository import Gtk, Gdk  # type: ignore
 from typing import Dict, List
 import json
 from pathlib import Path
@@ -79,7 +79,7 @@ class PlaybookManager:
         # Load local.yml config for checking required vars
         from ruamel.yaml import YAML
         from pathlib import Path
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         local_file = config_dir / "local.yml"
         local_config = {}
         if local_file.exists():
@@ -132,8 +132,14 @@ class PlaybookManager:
             ])
             
     def on_playbook_selection_changed(self, selection):
-        """Handle playbook selection change"""
-        model, treeiter = selection.get_selected()
+        """Handle playbook selection change (single click - just highlight)"""
+        # This method now only handles selection highlighting, not adding/removing
+        pass
+        
+    def on_playbook_row_activated(self, treeview, path, column):
+        """Handle row activation (double-click) on playbook to add/remove from selection"""
+        model = treeview.get_model()
+        treeiter = model.get_iter(path)
         if treeiter:
             playbook_name = model[treeiter][0]
             disabled = model[treeiter][4]
@@ -176,7 +182,7 @@ class PlaybookManager:
         
     def _get_installed_playbooks(self):
         """Return a set of installed playbook names from installed_playbooks.json."""
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         state_file = config_dir / "installed_playbooks.json"
         if state_file.exists():
             try:
@@ -235,6 +241,25 @@ class PlaybookManager:
         self.update_playbook_list()
         self.update_selected_display()
         
+    def remove_all(self, button):
+        """Remove all non-essential playbooks from selection"""
+        # Only remove non-essential playbooks, keep essential ones
+        playbooks_to_remove = set()
+        for playbook_key in self.main_window.selected_playbooks:
+            category, name = playbook_key.split(":", 1)
+            if category in self.main_window.config["categories"]:
+                for playbook in self.main_window.config["categories"][category]["playbooks"]:
+                    if playbook["name"] == name and not playbook.get("essential", False):
+                        playbooks_to_remove.add(playbook_key)
+                        break
+        
+        # Remove non-essential playbooks
+        for playbook_key in playbooks_to_remove:
+            self.main_window.selected_playbooks.discard(playbook_key)
+            
+        self.update_playbook_list()
+        self.update_selected_display()
+        
     def select_none(self, button):
         """Deselect all playbooks"""
         self.main_window.selected_playbooks.clear()
@@ -247,7 +272,34 @@ class PlaybookManager:
         
         for playbook_key in sorted(self.main_window.selected_playbooks):
             category, name = playbook_key.split(":", 1)
-            self.main_window.selected_store.append([f"{category}: {name}"])
+            # Display category name in uppercase for better UI presentation
+            display_category = category.upper() if category.startswith("dep:") else category
+            self.main_window.selected_store.append([f"{display_category}: {name}"])
+            
+    def on_selected_item_row_activated(self, treeview, path, column):
+        """Handle row activation (double-click) on selected item to remove it (only for non-essential)"""
+        model = treeview.get_model()
+        treeiter = model.get_iter(path)
+        if treeiter:
+            display_name = model[treeiter][0]  # Format: "category: name"
+            display_category, name = display_name.split(": ", 1)
+            # Convert display category back to original format for internal use
+            category = display_category.lower() if display_category.startswith("DEP:") else display_category
+            playbook_key = f"{category}:{name}"
+            
+            # Check if this is an essential playbook
+            is_essential = False
+            if category in self.main_window.config["categories"]:
+                for playbook in self.main_window.config["categories"][category]["playbooks"]:
+                    if playbook["name"] == name and playbook.get("essential", False):
+                        is_essential = True
+                        break
+            
+            # Only allow removal of non-essential playbooks
+            if not is_essential:
+                self.main_window.selected_playbooks.discard(playbook_key)
+                self.update_playbook_list()
+                self.update_selected_display()
             
     def get_selected_playbooks(self) -> List[Dict]:
         """Get list of selected playbooks with their details, including essential_order if present"""

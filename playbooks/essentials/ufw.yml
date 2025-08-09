@@ -1,7 +1,7 @@
 # CrimsonCFG-Name: Uncomplicated FireWall (UFW)
 # CrimsonCFG-Description: Ensures that UFW is installed and activates it
 # CrimsonCFG-Essential: true
-# CrimsonCFG-Essential-Order: 5
+# CrimsonCFG-Essential-Order: 4
 
 ---
 - name: Install basic applications

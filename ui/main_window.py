@@ -18,26 +18,36 @@ from .installer import Installer
 from .logger import Logger
 from .playbook_manager import PlaybookManager
 from . import external_repo_manager
+from .debug_manager import DebugManager
 
 class CrimsonCFGGUI:
-    def __init__(self, application):
-        # Load debug setting early from user's local.yml
+    def __init__(self, application, initial_config=None):
+        # Load debug setting early from user's local.yml and command line arguments
         self.debug = False
         try:
             import yaml
             from pathlib import Path
-            config_dir = Path.home() / ".config/com.crimson.cfg"
+            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
                 with open(local_file, 'r') as f:
                     local_config = yaml.safe_load(f) or {}
                     self.debug = local_config.get("debug", 0) == 1
+            
+            # Override with command line debug setting if present
+            if initial_config and 'settings' in initial_config:
+                cmdline_debug = initial_config['settings'].get('debug', 0)
+                if cmdline_debug == 1:
+                    self.debug = True
         except Exception as e:
-            print(f"Failed to load debug setting: {e}")
+            # We'll use DebugManager later when it's available
             self.debug = False
             
+        # Create debug manager
+        self.debug_manager = DebugManager()
+        
         if self.debug:
-            print("[DEBUG] CrimsonCFGGUI.__init__ starting")
+            self.debug_manager.print("CrimsonCFGGUI.__init__ starting")
         # Request dark theme for the application
         settings = Gtk.Settings.get_default()
         if settings is not None:
@@ -45,58 +55,22 @@ class CrimsonCFGGUI:
         self.application = application
         self.sudo_password = None
         
+        # Store initial config for use in icon setting
+        self.initial_config = initial_config
+        
         if self.debug:
-            print("Initializing CrimsonCFGGUI...")
-            print("Creating window...")
+            self.debug_manager.print("Initializing CrimsonCFGGUI...")
+            self.debug_manager.print("Creating window...")
         self.window = Gtk.ApplicationWindow(application=application)
         self.application.add_window(self.window)
         self.window.set_title("CrimsonCFG - App &amp; Customization Selector")
         self.window.set_default_size(1400, 900)
         self.window.set_position(Gtk.WindowPosition.CENTER)
         if self.debug:
-            print("Window created successfully")
+            self.debug_manager.print("Window created successfully")
         
-        # Set application icon
-        import yaml
-        from pathlib import Path
-        try:
-            # Load local.yml
-            local_config = {}
-            config_dir = Path.home() / ".config/com.crimson.cfg"
-            local_file = config_dir / "local.yml"
-            if local_file.exists():
-                with open(local_file, 'r') as f:
-                    local_config = yaml.safe_load(f) or {}
-            
-            # Use only local_config
-            app_name = local_config.get('app_name', 'CrimsonCFG')
-            app_subtitle = local_config.get('app_subtitle', 'System Configuration Manager')
-            app_logo = local_config.get('app_logo', None)
-        except Exception:
-            app_name = 'CrimsonCFG'
-            app_subtitle = 'System Configuration Manager'
-            app_logo = None
-        self.window.set_title(f"{app_name} - {app_subtitle}")
-        # Improved icon fallback logic
-        icon_set = False
-        if app_logo and os.path.exists(app_logo):
-            self.window.set_icon_from_file(app_logo)
-            icon_set = True
-        else:
-            # Try working_directory/files/app/com.crimson.cfg.icon.png
-            try:
-                working_dir = getattr(self, 'working_directory', '/opt/CrimsonCFG')
-                fallback_icon = os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png')
-                if os.path.exists(fallback_icon):
-                    self.window.set_icon_from_file(fallback_icon)
-                    icon_set = True
-                elif os.path.exists('/opt/CrimsonCFG/files/app/com.crimson.cfg.icon.png'):
-                    self.window.set_icon_from_file('/opt/CrimsonCFG/files/app/com.crimson.cfg.icon.png')
-                    icon_set = True
-            except Exception:
-                pass
-        if not icon_set:
-            self.window.set_icon_name("com.crimson.cfg")
+        # Set application icon using template-based config
+        self._set_application_icon()
         
         # Apply CSS class for styling
         style_context = self.window.get_style_context()
@@ -108,11 +82,11 @@ class CrimsonCFGGUI:
         
         # Load config
         if self.debug:
-            print("Loading config...")
+            self.debug_manager.print("Loading config...")
         self.config = self.config_manager.load_config()
         if self.debug:
-            print(f"Config loaded: {len(self.config.get('categories', {}))} categories")
-            print("Config loading completed")
+            self.debug_manager.print(f"Config loaded: {len(self.config.get('categories', {}))} categories")
+            self.debug_manager.print("Config loading completed")
         
         # Keep debug setting from early load (don't override it)
         self.config_manager.debug = self.debug  # Ensure debug flag is consistent
@@ -121,16 +95,16 @@ class CrimsonCFGGUI:
         self.auth_manager = AuthManager(self, on_success=self.on_auth_success)
         self.gui_builder = GUIBuilder(self)
         if self.debug:
-            print("[DEBUG] GUIBuilder initialized")
+            self.debug_manager.print("GUIBuilder initialized")
         self.installer = Installer(self)
         self.logger = Logger(self)
         self.playbook_manager = PlaybookManager(self)
         if self.debug:
-            print("[DEBUG] All managers initialized")
+            self.debug_manager.print("All managers initialized")
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
-        self.working_directory = self.config.get("settings", {}).get("working_directory", "/opt/CrimsonCFG")
+        self.working_directory = self.config.get("settings", {}).get("working_directory", "/opt/MDM-Manager")
         if "{{ user_home }}" in self.working_directory:
             self.working_directory = self.working_directory.replace("{{ user_home }}", self.user_home)
         self.inventory_file = f"{self.working_directory}/hosts.ini"
@@ -138,16 +112,16 @@ class CrimsonCFGGUI:
         self.installation_running = False
         
         if self.debug:
-            print("[DEBUG] About to show main interface")
+            self.debug_manager.print("About to show main interface")
         # Create main container and add to window before showing main interface
         self.main_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.window.add(self.main_container)
         if self.debug:
-            print("[DEBUG] main_container created and added to window")
+            self.debug_manager.print("main_container created and added to window")
         # Show the sudo prompt first
         self.auth_manager.show_sudo_prompt()
         if self.debug:
-            print("[DEBUG] Sudo prompt should now be visible")
+            self.debug_manager.print("Sudo prompt should now be visible")
         
         # Setup Ansible environment
         self.installer.setup_ansible_environment()
@@ -155,10 +129,74 @@ class CrimsonCFGGUI:
         # Connect window close signal
         self.window.connect("destroy", self.on_window_destroy)
         
+    def _set_application_icon(self):
+        """Set application icon using template-based config"""
+        if self.debug:
+            self.debug_manager.print("Setting application icon...")
+        
+        # Get app name and subtitle from initial config
+        app_name = 'CrimsonCFG'
+        app_subtitle = 'System Configuration Manager'
+        app_logo = None
+        
+        if self.initial_config and 'local_config' in self.initial_config:
+            local_config = self.initial_config['local_config']
+            app_name = local_config.get('app_name', 'CrimsonCFG')
+            app_subtitle = local_config.get('app_subtitle', 'System Configuration Manager')
+            app_logo = local_config.get('app_logo', None)
+        
+        self.window.set_title(f"{app_name} - {app_subtitle}")
+        
+        # Use template-based icon logic
+        icon_set = False
+        
+        # 1. Try app_logo from template (if exists and file exists)
+        if app_logo and os.path.exists(app_logo):
+            if self.debug:
+                self.debug_manager.print(f"Setting icon from template app_logo: {app_logo}")
+            self.window.set_icon_from_file(app_logo)
+            icon_set = True
+        else:
+            # Get working directory from template config
+            working_dir = "/opt/MDM-Manager"  # Default fallback
+            if self.initial_config and 'settings' in self.initial_config:
+                working_dir = self.initial_config['settings'].get('working_directory', '/opt/MDM-Manager')
+            
+            if self.debug:
+                self.debug_manager.print(f"Using working directory from template: {working_dir}")
+            
+            # 2. Try com.mdm.octorhino.icon.png (primary fallback)
+            try:
+                fallback_icon = os.path.join(working_dir, 'files', 'app', 'com.mdm.octorhino.icon.png')
+                if os.path.exists(fallback_icon):
+                    if self.debug:
+                        self.debug_manager.print(f"Setting icon from primary fallback: {fallback_icon}")
+                    self.window.set_icon_from_file(fallback_icon)
+                    icon_set = True
+                # 3. Try com.crimson.cfg.icon.png (worst case fallback)
+                elif os.path.exists(os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png')):
+                    if self.debug:
+                        self.debug_manager.print(f"Setting icon from worst case fallback: {os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png')}")
+                    self.window.set_icon_from_file(os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png'))
+                    icon_set = True
+            except Exception as e:
+                if self.debug:
+                    self.debug_manager.print(f"Error setting icon: {e}")
+                pass
+        
+        # 4. Final fallback to icon name
+        if not icon_set:
+            if self.debug:
+                self.debug_manager.print("Setting icon name fallback: com.crimson.cfg")
+            self.window.set_icon_name("com.crimson.cfg")
+        
+        if self.debug:
+            self.debug_manager.print("Application icon setting completed")
+        
     def on_window_delete_event(self, widget, event):
         """Handle window close event"""
         if self.debug:
-            print("Window close event received")
+            self.debug_manager.print("Window close event received")
         # Properly handle window close with application lifecycle
         # Remove the window from the application first
         self.application.remove_window(self.window)
@@ -169,7 +207,7 @@ class CrimsonCFGGUI:
     def on_window_destroy(self, widget):
         """Handle window destroy event"""
         if self.debug:
-            print("Window destroy event received")
+            self.debug_manager.print("Window destroy event received")
         # Signal the application to quit
         self.application.quit()
         
@@ -202,6 +240,9 @@ class CrimsonCFGGUI:
         
     def select_essential(self, button):
         return self.playbook_manager.select_essential(button)
+        
+    def remove_all(self, button):
+        return self.playbook_manager.remove_all(button)
         
     def select_none(self, button):
         return self.playbook_manager.select_none(button)
@@ -273,7 +314,9 @@ class CrimsonCFGGUI:
         self.logger.log_message(f"Selected playbooks ({len(selected_sorted)}):")
         for playbook in selected_sorted:
             essential_mark = " (Essential)" if playbook["essential"] else ""
-            self.logger.log_message(f"  • {playbook['category']}: {playbook['name']}{essential_mark}")
+            # Display category name in uppercase for better UI presentation
+            display_category = playbook['category'].upper() if playbook['category'].startswith("dep:") else playbook['category']
+            self.logger.log_message(f"  • {display_category}: {playbook['name']}{essential_mark}")
         self.logger.log_message("=== BEGINNING INSTALLATION ===")
         
         # Start installation in a separate thread
@@ -319,6 +362,47 @@ class CrimsonCFGGUI:
         else:
             self.logger.log_message("Debug mode disabled") 
 
+    def update_playbooks(self, button):
+        """Update playbooks from external repository and refresh the list"""
+        try:
+            if self.debug:
+                self.debug_manager.print("Update playbooks button clicked")
+            
+            # Check if external repository is configured
+            repo_url = external_repo_manager.get_external_repo_url()
+            if not repo_url:
+                self.status_label.set_text("No external repository configured. Use Administration tab to set one up.")
+                return
+            
+            # Show status message
+            self.status_label.set_text("Updating playbooks from external repository...")
+            
+            # Update external repository if configured
+            success = external_repo_manager.update_external_repo_sync(self.sudo_password)
+            
+            if not success:
+                self.status_label.set_text("Failed to update external repository. Check logs for details.")
+                if self.debug:
+                    self.debug_manager.print("Failed to update external repository")
+                return
+            
+            # Regenerate config and update playbook list
+            self.config_manager.regenerate_gui_config()
+            self.config = self.config_manager.load_config()
+            self.update_playbook_list()
+            
+            # Show success message
+            self.status_label.set_text("Playbooks updated successfully!")
+            
+            if self.debug:
+                self.debug_manager.print("Playbooks updated successfully")
+                
+        except Exception as e:
+            error_msg = f"Error updating playbooks: {e}"
+            self.status_label.set_text(error_msg)
+            if self.debug:
+                self.debug_manager.print(f"Error updating playbooks: {e}")
+
  
 
     def on_auth_success(self):
@@ -327,13 +411,13 @@ class CrimsonCFGGUI:
         
         # Update external repository if configured
         if self.debug:
-            print("[DEBUG] Updating external repository...")
+            self.debug_manager.print("[DEBUG] Updating external repository...")
         try:
             external_repo_manager.update_external_repo_sync(self.sudo_password)
             if self.debug:
-                print("[DEBUG] External repository updated successfully")
+                self.debug_manager.print("[DEBUG] External repository updated successfully")
         except Exception as e:
             if self.debug:
-                print(f"[DEBUG] Error updating external repository: {e}")
+                self.debug_manager.print(f"[DEBUG] Error updating external repository: {e}")
         
         self.gui_builder.show_main_interface() 

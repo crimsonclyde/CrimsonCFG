@@ -1,13 +1,14 @@
 # CrimsonCFG-Name: Chromium
-# CrimsonCFG-Description: Install Chromium web browser
-# CrimsonCFG-Essential: false
+# CrimsonCFG-Description: Install Chromium web browser with pre-configured profiles to prevent first-run OOBE issues
+# CrimsonCFG-Essential: true
+# CrimsonCFG-Essential-Order: 10
 # CrimsonCFG-RequiredVars: true
 ---
 - name: Install and configure Chromium with custom profiles
   hosts: all
   become: true
   vars_files:
-    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+    - "{{ lookup('env', 'HOME') + '/.config/com.mdm.manager.cfg/local.yml' }}"
 
 
     ## Info for future /me

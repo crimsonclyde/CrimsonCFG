@@ -1,6 +1,6 @@
 # CrimsonCFG - System Configuration Manager
 
-![Main Window Screenshot](/files/screenshots/com.crimson.cfg_main.png)
+![Main Window Screenshot](/files/screenshots/screenshot_app-main.png)
 
 > **Note:**  
 > CrimsonCFG is currently in early beta. You may encounter bugs or incomplete features.
@@ -22,7 +22,7 @@ GTK3 application for Gnome. Written with Python, YAML and Shell. Based on Ansibl
 
 |OS|Version|
 |---|---|
-|Ubuntu|22.04|
+|Ubuntu|24.04|
 
 ### Info
 
@@ -50,16 +50,53 @@ cd ~ && sudo chmod +x /opt/CrimsonCFG/uninstall/uninstall.sh && sudo bash /opt/C
 ```bash
 cd /opt/CrimsonCFG/ && sudo git pull
 ```
-
 ### 🐛 Debug
 
-1. Open `~/.config/com.crimson.cfg/local.yml`
+### CLI App Options
+```text
+python3 main.py --help 
+
+usage: main.py [-h] [--debug] [--version]
+
+CrimsonCFG - System Configuration Manager
+
+options:
+  -h, --help     show this help message and exit
+  --debug, -d    Enable debug mode (overrides local.yml debug setting)
+  --version, -v  show program's version number and exit
+
+Examples:
+  python3 main.py              # Start normally
+  python3 main.py --debug      # Start with debug mode enabled
+  python3 main.py -d           # Short form for debug mode
+```
+
+### Logs
+
+Logs are located in `/var/log/atix/`
+
+### Via debug option
+
+```bash
+cd /mnt/MDM-Manager && python3 main.py --debug
+```
+
+#### Via local settings
+
+1. Open `~/.config/com.mdm.manager.cfg/local.yml`
 2. Set debug to 1
-3. Start CrimsonCFG in a terminal
+3. Start MDM-Manager in a terminal
 
   ```bash
-  cd /opt/CrimsonCFG && python3 crimson.cfg.main.py
+  cd /opt/MDM-Manager && python3 main.py
   ```
+
+## Screenshots
+
+![Main Window Screenshot](/files/screenshots/screenshot_app-auth.png)
+![Main Window Screenshot](/files/screenshots/screenshot_app-log.png)
+![Main Window Screenshot](/files/screenshots/screenshot_app-upgrade.png)
+![Main Window Screenshot](/files/screenshots/screenshot_app-gnome-background.png)
 
 ## 🔗 External Playbook Repository
 
@@ -98,9 +135,12 @@ files/
 - Each playbook should start with CrimsonCFG metadata comments, for example:
 
 ```yaml
-# CrimsonCFG-Name: My Custom App
-# CrimsonCFG-Description: Installs my custom app
+# CrimsonCFG-Name: Chromium
+# CrimsonCFG-Description: Install Chromium web browser with pre-configured profiles to prevent first-run OOBE issues
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+# CrimsonCFG-Essential-Order: 10
+
 ---
 - name: Install my custom app
   hosts: all
@@ -109,9 +149,8 @@ files/
       ...
 ```
 
-- Only the `apps` and `customisation` categories are loaded from your external repo. Built-in `basics` and `security` playbooks remain protected.
-- External playbooks are stored in `/opt/CrimsonCFG/external_src/` and are automatically cloned/pulled when you save the repository URL.
-- External repositories are automatically updated (git pull) when CrimsonCFG starts and when you click "Refresh Playbooks".
+- External playbooks are stored in `/opt/MDM-Manager/external_src/` and are automatically cloned/pulled when you save the repository URL.
+- External repositories are automatically updated (git pull) when MDM-Manager starts and when you click "Refresh Playbooks".
 - Templates in external repositories are automatically available to your playbooks via the `templates_directory` variable.
 
 ### Example
@@ -125,7 +164,7 @@ my-playbooks-repo/
         └── my_customisation.yml
 ```
 
-After adding your repo and refreshing, your playbooks will appear in the CrimsonCFG UI under the appropriate categories with a "External" source indicator.
+After adding your repo and refreshing, your playbooks will appear in the MDM-Manager UI under the appropriate categories with a "External" source indicator.
 
 ### Example Repository
 

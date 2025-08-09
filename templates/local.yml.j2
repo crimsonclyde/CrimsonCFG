@@ -1,6 +1,6 @@
 # Debug Settings (Default: 0)
 debug: 0
-admin_password: 3HeaddedMonkey # Please change this to a secure password!
+admin_password: ''
 
 # User Configuration
 user: "{{ system_user }}"
@@ -9,7 +9,7 @@ user_shell: /bin/bash
 user_avatar: ''
 
 # Application Directories
-working_directory: /opt/CrimsonCFG
+working_directory: /opt/MDM-Manager
 playbooks_directory: "{{ working_directory }}/playbooks"
 basics_directory: "{{ working_directory }}/playbooks/basics"
 security_directory: "{{ working_directory }}/playbooks/security"
@@ -17,13 +17,12 @@ apps_directory: "{{ working_directory }}/playbooks/apps"
 templates_directory: "{{ working_directory }}/templates"
 files_directory: "{{ working_directory }}/files"
 app_directory: "{{ working_directory }}/app"
-wallpaper_directory: "{{ working_directory }}/files/wallpapers"
-applications_directory: "{{ working_directory }}/applications"
+wallpaper_directory: "{{ working_directory }}/files/system/gnome/wallpapers"
 inventory_file: "{{ working_directory }}/hosts.ini"
 log_directory: "{{ working_directory }}/log"
 
 # User Directories
-user_config_directory: "{{ user_home }}/.config/com.crimson.cfg"
+user_config_directory: "{{ user_home }}/.config/com.mdm.manager.cfg"
 user_desktop_directory: "{{ user_home }}/.local/share/applications"
 appimg_directory: "{{ user_home }}/AppImages"
 desktop_dotfile_folder: "{{ user_home }}/.local/share/applications"
@@ -33,9 +32,9 @@ gnome_background_image: ''
 theme_mode: ''
 
 # Corporate Identity (CI)
-app_name: CrimsonCFG
+app_name: OctoRhino
 app_subtitle: System Configuration Manager
-app_logo: '{{ working_directory }}/files/app/com.crimson.cfg.icon.png'
+app_logo: '{{ working_directory }}/files/app/com.mdm.octorhino.icon.png'
 background_color: "#181a20"
 app_background_image: ''
 
@@ -66,17 +65,12 @@ ssh_public_key_content: ""
 ssh_config_content: ""
 
 # Browser
-chromium_homepage_url: "" 
-chromium_profile1_name: downloads
+chromium_homepage_url: "https://home.corp.atix.de" 
+chromium_profile1_name: test
 
 # Fonts
 hack_nerd_font_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Hack.zip"
 meslo_nerd_font_url: "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
-
-# AppImage
-
-
-
 
 # ZSH
 

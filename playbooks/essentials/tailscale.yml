@@ -1,0 +1,75 @@
+# CrimsonCFG-Name: Tailscale Client
+# CrimsonCFG-Description: Install and configure Tailscale client with Microsoft 365 authentication
+# CrimsonCFG-Essential: true
+# CrimsonCFG-Essential-Order: 5
+---
+- name: Install and configure Tailscale client
+  hosts: localhost
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.mdm.manager.cfg/local.yml' }}"
+  tasks:
+
+    #######################
+    # Install Tailscale
+    #######################
+
+    - name: Download Tailscale GPG Key
+      ansible.builtin.uri:
+        dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+        url: https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg
+
+    - name: Add Tailscale repository
+      ansible.builtin.uri:
+        dest: /etc/apt/sources.list.d/tailscale.list
+        url: https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list
+
+    - name: Install Tailscale
+      ansible.builtin.apt:
+        name: tailscale
+        update_cache: true
+        state: present 
+
+    #######################
+    # Configure Tailscale as System Service
+    #######################
+
+    - name: Start and enable Tailscale service
+      systemd:
+        name: tailscaled
+        state: started
+        enabled: yes
+
+    - name: Wait for Tailscale service to be ready
+      wait_for:
+        timeout: 10
+
+    #######################
+    # Show Authentication Instructions
+    #######################
+
+    - name: Get current user information
+      set_fact:
+        current_user: "{{ lookup('pipe', 'ls /home | head -n 1') }}"
+        user_display: "{{ lookup('pipe', 'sudo -u ' + lookup('pipe', 'ls /home | head -n 1') + ' bash -c \"echo $DISPLAY\"') }}"
+        user_id: "{{ lookup('pipe', 'id -u ' + lookup('pipe', 'ls /home | head -n 1')) }}"
+
+    - name: Set fallback display if empty
+      set_fact:
+        user_display: ":0"
+      when: user_display == ""
+
+    - name: Display authentication instructions via zenity
+      command: >
+        sudo -u "{{ current_user }}" 
+        DISPLAY="{{ user_display }}" 
+        XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" 
+        zenity --info
+        --title="Tailscale Installation Complete"
+        --timeout=10
+        --text="Tailscale has been installed and activated as a system service.\n\nTo authenticate with Tailscale:\n1. Go to MDM Manager → Config → VPN tab\n2. Click the 'Start Tailscale Authentication' button\n3. Complete the authentication in your browser\n\nThe VPN service will be available after authentication."
+        --width=500
+        --height=300
+      register: zenity_result
+      changed_when: zenity_result.rc == 0
+      failed_when: zenity_result.rc != 0 and zenity_result.rc != 5

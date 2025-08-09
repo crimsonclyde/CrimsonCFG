@@ -13,31 +13,37 @@ import shutil
 import os
 from jinja2 import Template
 from . import external_repo_manager
+from .debug_manager import DebugManager
 
 # Import the playbook scanner
 try:
     from functions.playbook_scanner import PlaybookScanner  # type: ignore
-    print("PlaybookScanner imported successfully")
+    # Note: DebugManager not available yet during import, so we'll log this later
+    _playbook_scanner_imported = True
 except ImportError as e:
     # Fallback if scanner module is not available
-    print(f"PlaybookScanner import failed: {e}")
+    _playbook_scanner_imported = False
+    _playbook_scanner_error = str(e)
     PlaybookScanner = None
 
 class ConfigManager:
     def __init__(self):
-        self.debug = False  # Will be set by main window
+        self.debug_manager = DebugManager()
         self.yaml = YAML()
         self.yaml.preserve_quotes = True
         self.yaml.indent(mapping=2, sequence=4, offset=2)
+        self.debug = False  # Debug flag that can be set externally
         
     def load_config(self) -> Dict:
         """Load configuration from YAML files"""
         # Load local configuration (user-specific overrides)
         local_config = {}
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         local_file = config_dir / "local.yml"
+        
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
+            self.debug_manager.log_file_operation("created directory", str(config_dir))
         
         if not local_file.exists():
             # Load template and render with variables
@@ -46,15 +52,15 @@ class ConfigManager:
                 with open(template_file, 'r') as f:
                     template_content = f.read()
                 
-                # Prepare context with resolved values
+                # Prepare context with resolved values - use environment variables or defaults
                 context = {
                     "system_user": getpass.getuser(),
                     "user_home": os.path.expanduser("~"),
                     "git_username": self.get_git_config_value("user.name") or os.environ.get("GIT_USERNAME", getpass.getuser()),
                     "git_email": self.get_git_config_value("user.email") or os.environ.get("GIT_EMAIL", "user@example.com"),
-                    "working_directory": "/opt/CrimsonCFG",
-                    "appimg_directory": "/home/" + getpass.getuser() + "/AppImages",
-                    "app_directory": "/opt/CrimsonCFG/app"
+                    "working_directory": os.environ.get("CRIMSON_WORKING_DIR", "/opt/MDM-Manager"),
+                    "appimg_directory": f"/home/{getpass.getuser()}/AppImages",
+                    "app_directory": os.environ.get("CRIMSON_APP_DIR", "/opt/MDM-Manager/app")
                 }
                 
                 # Render template
@@ -64,40 +70,61 @@ class ConfigManager:
                 # Save as local.yml
                 with open(local_file, 'w') as f:
                     f.write(rendered)
+                
+                self.debug_manager.log_template_rendering(str(template_file), True)
+                self.debug_manager.log_file_operation("created", str(local_file), True)
             else:
                 # Fallback to empty config if template doesn't exist
                 initial_local_config = {}
-            
+                self.debug_manager.log_template_rendering(str(template_file), False)
+        
+        # local.yml should now exist
         if local_file.exists():
             with open(local_file, 'r') as f:
                 local_config = self.yaml.load(f) or {}
             
             # Process the loaded configuration to resolve any remaining template variables
             local_config = self._process_config_variables(local_config)
+            self.debug_manager.log_config_loading(str(local_file), True)
+        else:
+            # Fallback if local.yml doesn't exist (shouldn't happen with new startup flow)
+            self.debug_manager.print_warning("local.yml not found, using default configuration")
+            self.debug_manager.log_config_loading(str(local_file), False)
+        
+        # Log PlaybookScanner import status
+        if _playbook_scanner_imported:
+            self.debug_manager.print("App: PlaybookScanner imported successfully")
+        else:
+            self.debug_manager.print_warning(f"App: PlaybookScanner import failed: {_playbook_scanner_error}")
         
         # Get actual system user
         system_user = getpass.getuser()
         
-        # Convert to expected format
+        # Convert to expected format - use template variables
         config = {
             "categories": self.load_categories_from_yaml(),
             "settings": {
                 "default_user": system_user,
-                "working_directory": local_config.get("working_directory", "/opt/CrimsonCFG"),
-                "inventory_file": f"/opt/CrimsonCFG/hosts.ini",
-                "log_directory": f"/opt/CrimsonCFG/log",
+                "working_directory": local_config.get("working_directory", "/opt/MDM-Manager"),
+                "inventory_file": local_config.get("inventory_file", "/opt/MDM-Manager/hosts.ini"),
+                "log_directory": local_config.get("log_directory", "/opt/MDM-Manager/log"),
                 "debug": local_config.get("debug", 0),
                 "git_username": local_config.get("git_username", system_user),
                 "git_email": local_config.get("git_email", f"{system_user}@example.com")
-            }
+            },
+            "local_config": local_config  # Include the full local config
         }
+        
+        # Update debug manager with new config
+        self.debug_manager.update_from_config(config)
+        
         return config
             
     def regenerate_gui_config(self):
         """Regenerate gui_config.json from playbook metadata, supporting external repo."""
         try:
             if PlaybookScanner is not None:
-                config_dir = Path.home() / ".config/com.crimson.cfg"
+                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
                 user_gui_config = config_dir / "gui_config.json"
                 if not config_dir.exists():
                     config_dir.mkdir(parents=True, exist_ok=True)
@@ -106,22 +133,27 @@ class ConfigManager:
                 external_repo_path = None
                 if external_repo_url:
                     external_repo_path = external_repo_manager.get_external_playbooks_path()
-                success = PlaybookScanner().generate_config(str(user_gui_config), external_repo_path=external_repo_path)
+                    if self.debug:
+                        self.debug_manager.print(f"External repo URL: {external_repo_url}")
+                        self.debug_manager.print(f"External repo path: {external_repo_path}")
+                
+                # Use the debug setting from the config manager (set by main window)
+                success = PlaybookScanner(debug=self.debug).generate_config(str(user_gui_config), external_repo_path=external_repo_path)
                 if success:
                     # Reload the config
                     return self.load_config()
                 else:
-                    print("Failed to regenerate GUI config")
+                    self.debug_manager.print_warning("Failed to regenerate GUI config")
             else:
-                print("PlaybookScanner not available, skipping config regeneration")
+                self.debug_manager.print_warning("PlaybookScanner not available, skipping config regeneration")
         except Exception as e:
-            print(f"Error regenerating GUI config: {e}")
+            self.debug_manager.print_error(f"Error regenerating GUI config: {e}")
         return None
             
     def load_categories_from_yaml(self) -> Dict:
         """Load categories from gui_config.json (keeping the GUI structure separate)"""
         import shutil
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         user_gui_config = config_dir / "gui_config.json"
         default_gui_config = Path("conf/gui_config.json")
         if not config_dir.exists():
@@ -140,7 +172,7 @@ class ConfigManager:
         import getpass
         system_user = getpass.getuser()
         user_home = os.path.expanduser("~")
-        working_directory = "/opt/CrimsonCFG"
+        working_directory = "/opt/MDM-Manager"
         appimg_directory = f"/home/{system_user}/AppImages"
         app_directory = f"{working_directory}/app"
         

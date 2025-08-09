@@ -62,7 +62,7 @@ localhost
                 
     def _mark_playbook_installed(self, playbook_name: str):
         """Mark a playbook as installed in installed_playbooks.json with a timestamp."""
-        config_dir = Path.home() / ".config/com.crimson.cfg"
+        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
         state_file = config_dir / "installed_playbooks.json"
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
