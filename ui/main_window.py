@@ -27,7 +27,7 @@ class CrimsonCFGGUI:
         try:
             import yaml
             from pathlib import Path
-            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+            config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
                 with open(local_file, 'r') as f:

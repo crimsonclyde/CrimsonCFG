@@ -38,7 +38,7 @@ class ConfigManager:
         """Load configuration from YAML files"""
         # Load local configuration (user-specific overrides)
         local_config = {}
-        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+        config_dir = Path.home() / ".config/com.crimson.cfg"
         local_file = config_dir / "local.yml"
         
         if not config_dir.exists():
@@ -124,7 +124,7 @@ class ConfigManager:
         """Regenerate gui_config.json from playbook metadata, supporting external repo."""
         try:
             if PlaybookScanner is not None:
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 user_gui_config = config_dir / "gui_config.json"
                 if not config_dir.exists():
                     config_dir.mkdir(parents=True, exist_ok=True)
@@ -153,7 +153,7 @@ class ConfigManager:
     def load_categories_from_yaml(self) -> Dict:
         """Load categories from gui_config.json (keeping the GUI structure separate)"""
         import shutil
-        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+        config_dir = Path.home() / ".config/com.crimson.cfg"
         user_gui_config = config_dir / "gui_config.json"
         default_gui_config = Path("conf/gui_config.json")
         if not config_dir.exists():

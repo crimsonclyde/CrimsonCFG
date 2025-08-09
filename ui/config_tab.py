@@ -946,7 +946,7 @@ class ConfigTab(Gtk.Box):
         threading.Thread(target=run_auth, daemon=True).start()
 
     def _get_config_value(self, key, default=None):
-        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+        config_dir = Path.home() / ".config/com.crimson.cfg"
         local_file = config_dir / "local.yml"
         if not local_file.exists():
             # If the file doesn't exist, create it from the template using ruamel.yaml to preserve comments
@@ -986,7 +986,7 @@ class ConfigTab(Gtk.Box):
     def _set_config_value(self, key, value):
         if self.main_window.debug:
             print(f"ConfigTab: _set_config_value called with key='{key}', value='{value}'")
-        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+        config_dir = Path.home() / ".config/com.crimson.cfg"
         local_file = config_dir / "local.yml"
         yaml_ruamel = YAML()
         yaml_ruamel.preserve_quotes = True

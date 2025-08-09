@@ -37,7 +37,7 @@ class DebugManager:
         """Load debug setting from local.yml file"""
         try:
             import yaml
-            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+            config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             
             if local_file.exists():

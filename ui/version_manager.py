@@ -12,7 +12,7 @@ class VersionManager:
     def __init__(self, config=None):
         self.config = config or {}
         self.debug_manager = DebugManager(config)
-        self.version_file = Path.home() / ".config/com.mdm.manager.cfg/version.txt"
+        self.version_file = Path.home() / ".config/com.crimson.cfg/version.txt"
         
     def get_installed_version(self):
         """

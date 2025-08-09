@@ -79,7 +79,7 @@ class PlaybookManager:
         # Load local.yml config for checking required vars
         from ruamel.yaml import YAML
         from pathlib import Path
-        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+        config_dir = Path.home() / ".config/com.crimson.cfg"
         local_file = config_dir / "local.yml"
         local_config = {}
         if local_file.exists():
@@ -182,7 +182,7 @@ class PlaybookManager:
         
     def _get_installed_playbooks(self):
         """Return a set of installed playbook names from installed_playbooks.json."""
-        config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+        config_dir = Path.home() / ".config/com.crimson.cfg"
         state_file = config_dir / "installed_playbooks.json"
         if state_file.exists():
             try:

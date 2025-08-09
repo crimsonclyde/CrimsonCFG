@@ -205,7 +205,7 @@ class PlaybookScanner:
             import json
             from pathlib import Path
             if not output_path:
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 if not config_dir.exists():
                     config_dir.mkdir(parents=True, exist_ok=True)
                 output_path = str(config_dir / "gui_config.json")

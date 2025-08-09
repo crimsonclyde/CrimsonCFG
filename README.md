@@ -83,7 +83,7 @@ cd /mnt/MDM-Manager && python3 main.py --debug
 
 #### Via local settings
 
-1. Open `~/.config/com.mdm.manager.cfg/local.yml`
+1. Open `~/.config/com.crimson.cfg/local.yml`
 2. Set debug to 1
 3. Start MDM-Manager in a terminal
 

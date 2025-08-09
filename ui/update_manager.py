@@ -175,7 +175,7 @@ class UpdateManager:
             shutil.rmtree(temp_extract_dir, ignore_errors=True)
             
             # Update version.txt with new version
-            version_file = Path.home() / ".config/com.mdm.manager.cfg/version.txt"
+            version_file = Path.home() / ".config/com.crimson.cfg/version.txt"
             version_file.parent.mkdir(parents=True, exist_ok=True)
             with open(version_file, 'w') as f:
                 f.write(self.latest_version)

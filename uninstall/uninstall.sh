@@ -20,7 +20,7 @@ set -e
 # Determine the local.yml location based on the invoking user (supports sudo)
 INVOKING_HOME=$(eval echo "~${SUDO_USER:-$USER}")
 LOCAL_YML="$INVOKING_HOME/.config/com.crimson.cfg/local.yml"
-ALT_LOCAL_YML="$INVOKING_HOME/.config/com.mdm.manager.cfg/local.yml"
+ALT_LOCAL_YML="$INVOKING_HOME/.config/com.crimson.cfg/local.yml"
 
 # Values sourced from local.yml
 USER_HOME=""

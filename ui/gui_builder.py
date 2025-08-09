@@ -32,7 +32,7 @@ class GUIBuilder:
                 print("GUIBuilder: Starting apply_css...")
             
             # Load user config for background image and color
-            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+            config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             if not config_dir.exists():
                 config_dir.mkdir(parents=True, exist_ok=True)
@@ -250,7 +250,7 @@ class GUIBuilder:
             try:
                 # Load local.yml
                 local_config = {}
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 local_file = config_dir / "local.yml"
                 if local_file.exists():
                     with open(local_file, 'r') as f:
@@ -271,7 +271,7 @@ class GUIBuilder:
             try:
                 # Load local.yml
                 local_config = {}
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 local_file = config_dir / "local.yml"
                 if local_file.exists():
                     with open(local_file, 'r') as f:
@@ -299,7 +299,7 @@ class GUIBuilder:
         try:
             # Load local.yml
             local_config = {}
-            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+            config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
                 with open(local_file, 'r') as f:

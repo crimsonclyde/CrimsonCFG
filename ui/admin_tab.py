@@ -32,7 +32,7 @@ class AdminTab(Gtk.Box):
             for child in self.get_children():
                 self.remove(child)
             local_config = {}
-            config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+            config_dir = Path.home() / ".config/com.crimson.cfg"
             local_file = config_dir / "local.yml"
             if local_file.exists():
                 yaml_ruamel = YAML()
@@ -357,7 +357,7 @@ class AdminTab(Gtk.Box):
             show_config_btn = Gtk.Button(label="Show Config Folder")
             show_config_btn.set_tooltip_text("ℹ️ Open the configuration folder in file manager")
             def on_show_config_folder(btn):
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 if config_dir.exists():
                     os.system(f"xdg-open '{config_dir}'")
                 else:
@@ -381,7 +381,7 @@ class AdminTab(Gtk.Box):
             edit_local_btn = Gtk.Button(label="Edit Local Settings")
             edit_local_btn.set_tooltip_text("ℹ️ Open local.yml configuration file in text editor")
             def on_edit_local_settings(btn):
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 local_file = config_dir / "local.yml"
                 if local_file.exists():
                     # Try to open with default text editor
@@ -626,7 +626,7 @@ class AdminTab(Gtk.Box):
             prompt_box.pack_start(status_label, False, False, 0)
             btn = Gtk.Button(label="Unlock")
             def on_unlock(_btn=None):
-                config_dir = Path.home() / ".config/com.mdm.manager.cfg"
+                config_dir = Path.home() / ".config/com.crimson.cfg"
                 local_file = config_dir / "local.yml"
                 admin_password = None
                 if local_file.exists():

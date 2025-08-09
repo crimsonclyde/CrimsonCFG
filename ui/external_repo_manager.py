@@ -4,7 +4,7 @@ import subprocess
 import getpass
 from ruamel.yaml import YAML
 
-CONFIG_DIR = os.path.expanduser(os.path.join(os.path.expanduser("~"), ".config/com.mdm.manager.cfg"))
+CONFIG_DIR = os.path.expanduser(os.path.join(os.path.expanduser("~"), ".config/com.crimson.cfg"))
 LOCAL_YML_PATH = os.path.join(CONFIG_DIR, "local.yml")
 EXTERNAL_REPO_DIR = "/opt/MDM-Manager/external_src"
 
