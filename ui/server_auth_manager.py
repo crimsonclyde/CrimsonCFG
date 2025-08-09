@@ -12,7 +12,7 @@ class ServerAuthManager:
     def __init__(self, config=None):
         self.config = config or {}
         self.debug_manager = DebugManager(config)
-        self.auth_file = Path("/opt/MDM-Manager/.auth")
+        self.auth_file = Path("/opt/CrimsonCFG/.auth")
         
     def get_auth_credentials(self):
         """

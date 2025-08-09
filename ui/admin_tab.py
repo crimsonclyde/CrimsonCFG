@@ -317,7 +317,7 @@ class AdminTab(Gtk.Box):
             wd_label = Gtk.Label(label="Working Directory (user override, see docs):")
             wd_label.set_xalign(0)
             wd_entry = Gtk.Entry()
-            wd_entry.set_text(local_config.get('working_directory', '/opt/MDM-Manager'))
+            wd_entry.set_text(local_config.get('working_directory', '/opt/CrimsonCFG'))
             
             # Add changed signal to save working directory instantly
             def on_wd_changed(widget):
@@ -371,7 +371,7 @@ class AdminTab(Gtk.Box):
             show_app_btn = Gtk.Button(label="Show Application Folder")
             show_app_btn.set_tooltip_text("ℹ️ Open the application folder in file manager")
             def on_show_app_folder(btn):
-                app_dir = "/opt/MDM-Manager"
+                app_dir = "/opt/CrimsonCFG"
                 if os.path.exists(app_dir):
                     os.system(f"xdg-open '{app_dir}'")
             show_app_btn.connect("clicked", on_show_app_folder)

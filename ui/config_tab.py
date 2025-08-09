@@ -164,7 +164,7 @@ class ConfigTab(Gtk.Box):
         app_tab.pack_start(bg_scroll, True, True, 0)
         
         # Load background images from working_directory/files/app/background
-        working_directory = self._get_config_value("working_directory", "/opt/MDM-Manager")
+        working_directory = self._get_config_value("working_directory", "/opt/CrimsonCFG")
         bg_images_dir = os.path.join(working_directory, "files", "app", "background")
         bg_image_files = []
         if os.path.exists(bg_images_dir):
@@ -629,7 +629,7 @@ class ConfigTab(Gtk.Box):
         gnome_tab.pack_start(wallpaper_scroll, True, True, 0)
         
         # Load wallpapers from working_directory/files/system/gnome/wallpapers
-        working_directory = self._get_config_value("working_directory", "/opt/MDM-Manager")
+        working_directory = self._get_config_value("working_directory", "/opt/CrimsonCFG")
         wallpapers_dir = os.path.join(working_directory, "files", "system", "gnome", "wallpapers")
         wallpaper_files = []
         if os.path.exists(wallpapers_dir):

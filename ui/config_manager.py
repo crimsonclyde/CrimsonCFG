@@ -58,9 +58,9 @@ class ConfigManager:
                     "user_home": os.path.expanduser("~"),
                     "git_username": self.get_git_config_value("user.name") or os.environ.get("GIT_USERNAME", getpass.getuser()),
                     "git_email": self.get_git_config_value("user.email") or os.environ.get("GIT_EMAIL", "user@example.com"),
-                    "working_directory": os.environ.get("CRIMSON_WORKING_DIR", "/opt/MDM-Manager"),
+                    "working_directory": os.environ.get("CRIMSON_WORKING_DIR", "/opt/CrimsonCFG"),
                     "appimg_directory": f"/home/{getpass.getuser()}/AppImages",
-                    "app_directory": os.environ.get("CRIMSON_APP_DIR", "/opt/MDM-Manager/app")
+                    "app_directory": os.environ.get("CRIMSON_APP_DIR", "/opt/CrimsonCFG/app")
                 }
                 
                 # Render template
@@ -105,9 +105,9 @@ class ConfigManager:
             "categories": self.load_categories_from_yaml(),
             "settings": {
                 "default_user": system_user,
-                "working_directory": local_config.get("working_directory", "/opt/MDM-Manager"),
-                "inventory_file": local_config.get("inventory_file", "/opt/MDM-Manager/hosts.ini"),
-                "log_directory": local_config.get("log_directory", "/opt/MDM-Manager/log"),
+                "working_directory": local_config.get("working_directory", "/opt/CrimsonCFG"),
+                "inventory_file": local_config.get("inventory_file", "/opt/CrimsonCFG/hosts.ini"),
+                "log_directory": local_config.get("log_directory", "/opt/CrimsonCFG/log"),
                 "debug": local_config.get("debug", 0),
                 "git_username": local_config.get("git_username", system_user),
                 "git_email": local_config.get("git_email", f"{system_user}@example.com")
@@ -172,7 +172,7 @@ class ConfigManager:
         import getpass
         system_user = getpass.getuser()
         user_home = os.path.expanduser("~")
-        working_directory = "/opt/MDM-Manager"
+        working_directory = "/opt/CrimsonCFG"
         appimg_directory = f"/home/{system_user}/AppImages"
         app_directory = f"{working_directory}/app"
         

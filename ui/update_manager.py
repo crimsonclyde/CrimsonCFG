@@ -24,7 +24,7 @@ class UpdateManager:
         self.debug_manager = DebugManager(config)
         
         # Application paths
-        self.app_dir = "/opt/MDM-Manager"
+        self.app_dir = "/opt/CrimsonCFG"
         # Use the actual app directory for updates (requires sudo)
         self.working_dir = self.config.get('settings', {}).get('working_directory', self.app_dir)
         self.base_url = "https://setup.atix.dev/linux/mdmm"
@@ -37,7 +37,7 @@ class UpdateManager:
         # Available versions will be discovered dynamically
         self.latest_version = None
         self.available_versions = []
-        self.extracted_name = "mdm-manager-main"
+        self.extracted_name = "CrimsonCFG-main"
         
     def download_update(self, progress_callback=None, completion_callback=None):
         """
@@ -138,7 +138,7 @@ class UpdateManager:
             self._run_sudo_command(["mkdir", "-p", self.working_dir])
             
             # Create backup with sudo
-            backup_dir = f"/tmp/mdm-manager_backup_{int(time.time())}"
+            backup_dir = f"/tmp/CrimsonCFG_backup_{int(time.time())}"
             if os.path.exists(self.working_dir):
                 self._run_sudo_command(["cp", "-r", self.working_dir, backup_dir])
                 self.debug_manager.print(f"Created backup at: {backup_dir}")
@@ -152,7 +152,7 @@ class UpdateManager:
                 GLib.idle_add(progress_callback, 100, "Extracting files...")
             
             # Extract the zip file to temp location first
-            temp_extract_dir = f"/tmp/mdm-manager-extract-{int(time.time())}"
+            temp_extract_dir = f"/tmp/CrimsonCFG-extract-{int(time.time())}"
             with zipfile.ZipFile(download_path, 'r') as zip_ref:
                 zip_ref.extractall(temp_extract_dir)
             
@@ -276,7 +276,7 @@ class UpdateManager:
             
             # Parse HTML to find zip files
             import re
-            zip_pattern = r'mdm-manager-(\d+\.\d+\.\d+)\.zip'
+            zip_pattern = r'CrimsonCFG-(\d+\.\d+\.\d+)\.zip'
             matches = re.findall(zip_pattern, response.text)
             
             # Convert to version objects and sort
@@ -287,7 +287,7 @@ class UpdateManager:
                     versions.append({
                         'version': match,
                         'parts': version_parts,
-                        'package': f"mdm-manager-{match}.zip"
+                        'package': f"CrimsonCFG-{match}.zip"
                     })
                 except ValueError:
                     continue
@@ -323,8 +323,8 @@ class UpdateManager:
         """
         # Manual list of known versions - update this when new versions are released
         fallback_versions = [
-            {'version': '0.2.0', 'parts': [0, 2, 0], 'package': 'mdm-manager-0.2.0.zip'},
-            {'version': '0.1.0', 'parts': [0, 1, 0], 'package': 'mdm-manager-0.1.0.zip'},
+            {'version': '0.2.0', 'parts': [0, 2, 0], 'package': 'CrimsonCFG-0.2.0.zip'},
+            {'version': '0.1.0', 'parts': [0, 1, 0], 'package': 'CrimsonCFG-0.1.0.zip'},
         ]
         
         # Sort by version parts (newest first)

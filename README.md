@@ -78,17 +78,17 @@ Logs are located in `/var/log/atix/`
 ### Via debug option
 
 ```bash
-cd /mnt/MDM-Manager && python3 main.py --debug
+cd /mnt/CrimsonCFG && python3 main.py --debug
 ```
 
 #### Via local settings
 
 1. Open `~/.config/com.crimson.cfg/local.yml`
 2. Set debug to 1
-3. Start MDM-Manager in a terminal
+3. Start CrimsonCFG in a terminal
 
   ```bash
-  cd /opt/MDM-Manager && python3 main.py
+  cd /opt/CrimsonCFG && python3 main.py
   ```
 
 ## Screenshots
@@ -149,8 +149,8 @@ files/
       ...
 ```
 
-- External playbooks are stored in `/opt/MDM-Manager/external_src/` and are automatically cloned/pulled when you save the repository URL.
-- External repositories are automatically updated (git pull) when MDM-Manager starts and when you click "Refresh Playbooks".
+- External playbooks are stored in `/opt/CrimsonCFG/external_src/` and are automatically cloned/pulled when you save the repository URL.
+- External repositories are automatically updated (git pull) when CrimsonCFG starts and when you click "Refresh Playbooks".
 - Templates in external repositories are automatically available to your playbooks via the `templates_directory` variable.
 
 ### Example
@@ -164,7 +164,7 @@ my-playbooks-repo/
         └── my_customisation.yml
 ```
 
-After adding your repo and refreshing, your playbooks will appear in the MDM-Manager UI under the appropriate categories with a "External" source indicator.
+After adding your repo and refreshing, your playbooks will appear in the CrimsonCFG UI under the appropriate categories with a "External" source indicator.
 
 ### Example Repository
 

@@ -6,7 +6,7 @@ from ruamel.yaml import YAML
 
 CONFIG_DIR = os.path.expanduser(os.path.join(os.path.expanduser("~"), ".config/com.crimson.cfg"))
 LOCAL_YML_PATH = os.path.join(CONFIG_DIR, "local.yml")
-EXTERNAL_REPO_DIR = "/opt/MDM-Manager/external_src"
+EXTERNAL_REPO_DIR = "/opt/CrimsonCFG/external_src"
 
 def get_local_yml_path():
     return LOCAL_YML_PATH

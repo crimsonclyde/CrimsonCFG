@@ -104,7 +104,7 @@ class CrimsonCFGGUI:
         # Variables (after config is loaded)
         self.user = self.config.get("settings", {}).get("default_user", "user")
         self.user_home = f"/home/{self.user}"
-        self.working_directory = self.config.get("settings", {}).get("working_directory", "/opt/MDM-Manager")
+        self.working_directory = self.config.get("settings", {}).get("working_directory", "/opt/CrimsonCFG")
         if "{{ user_home }}" in self.working_directory:
             self.working_directory = self.working_directory.replace("{{ user_home }}", self.user_home)
         self.inventory_file = f"{self.working_directory}/hosts.ini"
@@ -158,9 +158,9 @@ class CrimsonCFGGUI:
             icon_set = True
         else:
             # Get working directory from template config
-            working_dir = "/opt/MDM-Manager"  # Default fallback
+            working_dir = "/opt/CrimsonCFG"  # Default fallback
             if self.initial_config and 'settings' in self.initial_config:
-                working_dir = self.initial_config['settings'].get('working_directory', '/opt/MDM-Manager')
+                working_dir = self.initial_config['settings'].get('working_directory', '/opt/CrimsonCFG')
             
             if self.debug:
                 self.debug_manager.print(f"Using working directory from template: {working_dir}")
