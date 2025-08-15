@@ -187,6 +187,7 @@ class MainTab(Gtk.Box):
         if self.debug:
             print("MainTab: Playbook Management frame background set with 0.3 opacity")
         
+        # Management buttons
         management_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         management_box.set_margin_start(15)
         management_box.set_margin_end(15)
@@ -195,7 +196,7 @@ class MainTab(Gtk.Box):
         management_background.add(management_box)
         
         update_playbooks_btn = Gtk.Button(label="Update Playbooks")
-        update_playbooks_btn.set_tooltip_text("Pull latest changes from external repository and refresh playbooks from all sources")
+        update_playbooks_btn.set_tooltip_text("Update playbooks from the repository")
         update_playbooks_btn.connect("clicked", self.main_window.update_playbooks)
         management_box.pack_start(update_playbooks_btn, False, False, 0)
         

@@ -54,7 +54,7 @@ class AuthManager:
                 # Generate a secure password
                 new_password = self._generate_secure_password()
                 
-                # Update local.yml with new password
+                # Update local.yml with new password, preserving existing configuration
                 local_config['admin_password'] = new_password
                 
                 with open(local_file, 'w') as f:

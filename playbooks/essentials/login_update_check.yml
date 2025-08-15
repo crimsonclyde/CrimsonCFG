@@ -1,0 +1,361 @@
+# CrimsonCFG-Name: Login Update Check
+# CrimsonCFG-Description: Check for updates when user logs in and prompt for installation (Self-contained - no dependencies)
+# CrimsonCFG-Essential: true
+# CrimsonCFG-Required: false
+# CrimsonCFG-Essential-Order: 7
+---
+- name: Setup Login Update Check
+  hosts: all
+  become: true
+  vars:
+    login_update_script_dir: /usr/local/bin
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Create Wazuh monitoring directory
+    #######################
+
+    - name: Create Wazuh monitoring directory
+      ansible.builtin.file:
+        path: /var/log/CrimsonCFG
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Create initial system update timestamp file for Wazuh
+      ansible.builtin.copy:
+        dest: /var/log/CrimsonCFG/system-last-updated
+        content: "{{ ansible_date_time.iso8601 }}"
+        mode: '0644'
+        owner: root
+        group: root
+
+    #######################
+    # Create login update check script
+    #######################
+
+    - name: Create login update check script
+      ansible.builtin.copy:
+        dest: "{{ login_update_script_dir }}/login-update-check.sh"
+        content: |
+          #!/bin/bash
+          # Login Update Check Script for MDM Manager
+          # This script checks for updates when user logs in
+          
+          # Wait a bit for the desktop to fully load
+          sleep 10
+          
+          # Check if we're in a graphical session
+          if [[ -z "$DISPLAY" ]]; then
+              exit 0
+          fi
+          
+          # Get user information
+          USER_ID=$(id -u)
+          USER_DISPLAY="$DISPLAY"
+          USER_DBUS="unix:path=/run/user/$USER_ID/bus"
+          XDG_RUNTIME_DIR="/run/user/$USER_ID"
+          
+          # Check if we should run the update check
+          # Only run once per day
+          LAST_CHECK_FILE="/tmp/last-update-check-$(date '+%Y-%m-%d')"
+          if [[ -f "$LAST_CHECK_FILE" ]]; then
+              exit 0
+          fi
+          
+          # Create the check file
+          touch "$LAST_CHECK_FILE"
+          
+          # Check for available updates
+          UPDATE_COUNT=0
+          UPDATE_MESSAGE=""
+          
+          # Check APT updates
+          if command -v apt-get >/dev/null 2>&1; then
+              APT_UPDATES=$(apt-get -s upgrade | grep -P '^\d+ upgraded' | cut -d" " -f1)
+              if [[ -n "$APT_UPDATES" && "$APT_UPDATES" -gt 0 ]]; then
+                  UPDATE_COUNT=$((UPDATE_COUNT + APT_UPDATES))
+                  UPDATE_MESSAGE="$UPDATE_MESSAGE\n• $APT_UPDATES APT package(s)"
+              fi
+          fi
+          
+          # Check Flatpak updates
+          if command -v flatpak >/dev/null 2>&1; then
+              FLATPAK_UPDATES=$(flatpak remote-ls --updates 2>/dev/null | wc -l)
+              if [[ "$FLATPAK_UPDATES" -gt 0 ]]; then
+                  UPDATE_COUNT=$((UPDATE_COUNT + FLATPAK_UPDATES))
+                  UPDATE_MESSAGE="$UPDATE_MESSAGE\n• $FLATPAK_UPDATES Flatpak package(s)"
+              fi
+          fi
+          
+          # Check Snap updates
+          if command -v snap >/dev/null 2>&1; then
+              SNAP_UPDATES=$(snap refresh --list 2>/dev/null | grep -c "refresh available" || echo "0")
+              if [[ "$SNAP_UPDATES" -gt 0 ]]; then
+                  UPDATE_COUNT=$((UPDATE_COUNT + SNAP_UPDATES))
+                  UPDATE_MESSAGE="$UPDATE_MESSAGE\n• $SNAP_UPDATES Snap package(s)"
+              fi
+          fi
+          
+          # If updates are available, show notification
+          if [[ "$UPDATE_COUNT" -gt 0 ]]; then
+              # Show notification with update count
+              zenity --question \
+                  --title="CrimsonCFG System Updates Available" \
+                  --text="System updates are available!" \
+                  --secondary-text="Found $UPDATE_COUNT update(s):$UPDATE_MESSAGE\n\nWould you like to install them now?" \
+                  --ok-label="Install Updates" \
+                  --cancel-label="Later" \
+                  --timeout=60
+              
+              if [[ $? -eq 0 ]]; then
+                  # User chose to install updates
+                  # Show progress dialog
+                  (
+                      echo "10"
+                      echo "# Starting system updates..."
+                      sleep 2
+                      echo "20"
+                      echo "# Updating APT packages..."
+                      
+                      # Update APT packages
+                      sudo apt-get update
+                      echo "40"
+                      echo "# Installing APT updates..."
+                      sudo apt-get full-upgrade -y
+                      echo "60"
+                      echo "# Cleaning up APT packages..."
+                      sudo apt-get autoremove -y
+                      sudo apt-get clean
+                      
+                      echo "70"
+                      echo "# Checking for Flatpak updates..."
+                      
+                      # Update Flatpak if available
+                      if command -v flatpak >/dev/null 2>&1; then
+                          echo "80"
+                          echo "# Updating Flatpak packages..."
+                          flatpak update -y
+                      fi
+                      
+                      echo "90"
+                      echo "# Checking for Snap updates..."
+                      
+                      # Update Snap if available
+                      if command -v snap >/dev/null 2>&1; then
+                          echo "95"
+                          echo "# Updating Snap packages..."
+                          sudo snap refresh
+                      fi
+                      
+                      echo "100"
+                      echo "# Update completed!"
+                      sleep 2
+                  ) | zenity --progress \
+                      --title="CrimsonCFG System Updates" \
+                      --text="Preparing updates..." \
+                      --percentage=0 \
+                      --auto-close \
+                      --auto-kill
+                  
+                  # Create timestamp file for Wazuh monitoring
+                  echo "$(date '+%Y-%m-%d %H:%M:%S')" | sudo tee /var/log/CrimsonCFG/system-last-updated > /dev/null
+                  
+                  # Check if reboot is required
+                  if [[ -f /var/run/reboot-required ]]; then
+                      zenity --warning \
+                          --title="CrimsonCFG System Updates" \
+                          --text="System updates completed successfully!\n\nA reboot is required to apply all updates.\n\nPlease reboot your system when convenient." \
+                          --timeout=30
+                  else
+                      zenity --info \
+                          --title="CrimsonCFG System Updates" \
+                          --text="System updates completed successfully!" \
+                          --timeout=10
+                  fi
+              fi
+          fi
+        mode: '0755'
+        owner: root
+        group: root
+
+    #######################
+    # Create autostart directory
+    #######################
+
+    - name: Ensure autostart directory exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.config/autostart"
+        state: directory
+        mode: '0700'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    #######################
+    # Create autostart desktop entry
+    #######################
+
+    - name: Create autostart desktop entry for update check
+      ansible.builtin.copy:
+        dest: "{{ user_home }}/.config/autostart/CrimsonCFG-update-check.desktop"
+        content: |
+          [Desktop Entry]
+          Type=Application
+          Name=CrimsonCFG Update Check
+          Comment=Check for system updates on login
+          Exec={{ login_update_script_dir }}/login-update-check.sh
+          Terminal=false
+          X-GNOME-Autostart-enabled=true
+          X-GNOME-Autostart-Delay=10
+        mode: '0644'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    #######################
+    # Create manual update launcher
+    #######################
+
+    - name: Create manual update launcher script
+      ansible.builtin.copy:
+        dest: "{{ login_update_script_dir }}/manual-update.sh"
+        content: |
+          #!/bin/bash
+          # Manual Update Launcher
+          # This script provides a GUI way to run updates manually
+          
+          # Check if we're in a graphical session
+          if [[ -z "$DISPLAY" ]]; then
+              echo "This script requires a graphical environment."
+              exit 1
+          fi
+          
+          # Get user information
+          USER_ID=$(id -u)
+          USER_DISPLAY="$DISPLAY"
+          XDG_RUNTIME_DIR="/run/user/$USER_ID"
+          
+          # Show confirmation dialog
+          zenity --question \
+              --title="CrimsonCFG Manual System Update" \
+              --text="This will update all system packages (APT, Flatpak, Snap)." \
+              --secondary-text="The process may take several minutes.\n\nDo you want to continue?" \
+              --ok-label="Start Update" \
+              --cancel-label="Cancel"
+          
+          if [[ $? -ne 0 ]]; then
+              exit 0
+          fi
+          
+          # Show progress dialog
+          (
+              echo "10"
+              echo "# Starting system update..."
+              sleep 2
+              echo "20"
+              echo "# Updating APT packages..."
+              
+              # Update APT packages
+              sudo apt-get update
+              echo "40"
+              echo "# Installing APT updates..."
+              sudo apt-get full-upgrade -y
+              echo "60"
+              echo "# Cleaning up APT packages..."
+              sudo apt-get autoremove -y
+              sudo apt-get clean
+              
+              echo "70"
+              echo "# Checking for Flatpak updates..."
+              
+              # Update Flatpak if available
+              if command -v flatpak >/dev/null 2>&1; then
+                  echo "80"
+                  echo "# Updating Flatpak packages..."
+                  flatpak update -y
+              fi
+              
+              echo "90"
+              echo "# Checking for Snap updates..."
+              
+              # Update Snap if available
+              if command -v snap >/dev/null 2>&1; then
+                  echo "95"
+                  echo "# Updating Snap packages..."
+                  sudo snap refresh
+              fi
+              
+              echo "100"
+              echo "# Update completed!"
+              sleep 2
+          ) | zenity --progress \
+              --title="CrimsonCFG System Update" \
+              --text="Preparing update..." \
+              --percentage=0 \
+              --auto-close \
+              --auto-kill
+          
+          # Create timestamp file for Wazuh monitoring
+          echo "$(date '+%Y-%m-%d %H:%M:%S')" | sudo tee /var/log/CrimsonCFG/system-last-updated > /dev/null
+          
+          # Check if reboot is required
+          if [[ -f /var/run/reboot-required ]]; then
+              zenity --warning \
+                  --title="CrimsonCFG System Update" \
+                  --text="System updates completed successfully!\n\nA reboot is required to apply all updates.\n\nPlease reboot your system when convenient." \
+                  --timeout=30
+          else
+              zenity --info \
+                  --title="CrimsonCFG System Update" \
+                  --text="System updates completed successfully!" \
+                  --timeout=10
+          fi
+        mode: '0755'
+        owner: root
+        group: root
+
+    #######################
+    # Create desktop shortcut for manual update
+    #######################
+
+    - name: Create desktop shortcut for manual update
+      ansible.builtin.copy:
+        dest: "{{ user_home }}/Desktop/CrimsonCFG Update.desktop"
+        content: |
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=CrimsonCFG System Update
+          Comment=Update system packages (APT, Flatpak, Snap)
+          Exec={{ login_update_script_dir }}/manual-update.sh
+          Icon=system-software-update
+          Terminal=false
+          StartupNotify=true
+          Categories=System;Settings;
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    #######################
+    # Display completion message
+    #######################
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: |
+          Login update check configured successfully!
+          
+          Features:
+          • Automatic update check on login (once per day)
+          • Manual update launcher with GUI
+          • Desktop shortcut for easy access
+          • Smart detection of available updates
+          
+          Files created:
+          • {{ login_update_script_dir }}/login-update-check.sh
+          • {{ login_update_script_dir }}/manual-update.sh
+          • {{ user_home }}/Desktop/CrimsonCFG Update.desktop 
+          • {{ user_home }}/.config/autostart/CrimsonCFG-update-check.desktop

@@ -66,6 +66,16 @@ class CrimsonCFGGUI:
         self.window.set_title("CrimsonCFG - App &amp; Customization Selector")
         self.window.set_default_size(1400, 900)
         self.window.set_position(Gtk.WindowPosition.CENTER)
+        # Set maximum height to prevent overflow on smaller screens
+        self.window.set_size_request(800, 600)  # Minimum size
+        self.window.set_resizable(True)
+        # Set maximum size using geometry hints
+        geometry = Gdk.Geometry()
+        geometry.max_width = 1600
+        geometry.max_height = 1000
+        geometry.min_width = 800
+        geometry.min_height = 600
+        self.window.set_geometry_hints(self.window, geometry, Gdk.WindowHints.MAX_SIZE | Gdk.WindowHints.MIN_SIZE)
         if self.debug:
             self.debug_manager.print("Window created successfully")
         
@@ -165,9 +175,9 @@ class CrimsonCFGGUI:
             if self.debug:
                 self.debug_manager.print(f"Using working directory from template: {working_dir}")
             
-            # 2. Try com.mdm.octorhino.icon.png (primary fallback)
+            # 2. Try com.crimson.cfg.icon.png (primary fallback)
             try:
-                fallback_icon = os.path.join(working_dir, 'files', 'app', 'com.mdm.octorhino.icon.png')
+                fallback_icon = os.path.join(working_dir, 'files', 'app', 'com.crimson.cfg.icon.png')
                 if os.path.exists(fallback_icon):
                     if self.debug:
                         self.debug_manager.print(f"Setting icon from primary fallback: {fallback_icon}")
@@ -307,7 +317,7 @@ class CrimsonCFGGUI:
 
         # Switch to logs tab to show installation progress
         if self.gui_builder.notebook is not None:
-            self.gui_builder.notebook.set_current_page(1)
+            self.gui_builder.notebook.set_current_page(4)  # Logs tab is now at index 4 (5th tab)
         
         # Log the selected playbooks
         self.logger.log_message("=== INSTALLATION STARTED ===")
@@ -420,4 +430,8 @@ class CrimsonCFGGUI:
             if self.debug:
                 self.debug_manager.print(f"[DEBUG] Error updating external repository: {e}")
         
-        self.gui_builder.show_main_interface() 
+        self.gui_builder.show_main_interface()
+        
+        # Refresh System tab button states after authentication
+        if hasattr(self, 'system_tab'):
+            self.system_tab.refresh_button_states() 

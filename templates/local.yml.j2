@@ -57,37 +57,9 @@ apt_packages:
 git_email: "{{ git_email }}"
 git_username: "{{ git_username }}"
 
-# SSH Settings
-ssh_private_key_name: id_rsa
-ssh_public_key_name: id_rsa.pub
-ssh_private_key_content: ""
-ssh_public_key_content: ""
-ssh_config_content: ""
-
 # Browser
-chromium_homepage_url: "" 
-chromium_profile1_name: test
-
-# Fonts
-hack_nerd_font_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Hack.zip"
-meslo_nerd_font_url: "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
-
-# ZSH
-
-## ZSH Plugins
-zsh_plugins:
-- name: zsh-autosuggestions
-  repo: https://github.com/zsh-users/zsh-autosuggestions.git
-- name: zsh-syntax-highlighting
-  repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
-- name: zsh-completions
-  repo: https://github.com/zsh-users/zsh-completions.git
-
-## Oh-my-ZSH
-oh_my_zsh_install_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-
-## Powerlevel10K
-powerlevel10k_repo: https://github.com/romkatv/powerlevel10k.git
+chromium_homepage_url: "http://192.168.23.42:3003" 
+chromium_profile1_name: downloads
 
 # External Playbook Repository
 # Set this to the URL of your own playbook repository to use custom and apps playbooks from there.

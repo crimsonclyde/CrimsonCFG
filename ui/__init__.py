@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
 """
-CrimsonCFG UI Package
-Main GTK3 GUI interface for CrimsonCFG
+UI Package Initialization
+Exports the main GUI class and other UI components
 """
 
 from .main_window import CrimsonCFGGUI

@@ -73,7 +73,7 @@ Examples:
 
 ### Logs
 
-Logs are located in `/var/log/atix/`
+Logs are located in `/var/log/CrimsonCFG/`
 
 ### Via debug option
 

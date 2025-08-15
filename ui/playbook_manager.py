@@ -28,10 +28,6 @@ class PlaybookManager:
                 "check": lambda config: (config.get("ssh_private_key_content", "") and 
                                        config.get("ssh_public_key_content", ""))
             },
-            "SSH Config": {
-                "variables": ["ssh_config_content"],
-                "check": lambda config: config.get("ssh_config_content", "")
-            },
             "Set GNOME Wallpaper": {
                 "variables": ["gnome_background_image"],
                 "check": lambda config: config.get("gnome_background_image", "")

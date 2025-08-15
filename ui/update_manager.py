@@ -27,7 +27,7 @@ class UpdateManager:
         self.app_dir = "/opt/CrimsonCFG"
         # Use the actual app directory for updates (requires sudo)
         self.working_dir = self.config.get('settings', {}).get('working_directory', self.app_dir)
-        self.base_url = "https://setup.atix.dev/linux/mdmm"
+        self.base_url = "https://setup.CrimsonCFG.dev/linux/mdmm"
         
         # Get current version from version manager
         from . import version_manager

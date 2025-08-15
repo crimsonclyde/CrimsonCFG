@@ -16,6 +16,7 @@ from .admin_tab import AdminTab
 from .logs_tab import LogsTab
 from .config_tab import ConfigTab
 from .main_tab import MainTab
+from .system_tab import SystemTab
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk  # type: ignore
 
@@ -60,7 +61,7 @@ class GUIBuilder:
                 }}
                 """
                 if self.debug:
-                    print(f"GUIBuilder: Applied background image CSS")
+                    print(f"GUIBuilder: Applied background image CSS: {app_background_image}")
             else:
                 css_data = f"""
                 window, .main-window {{
@@ -69,7 +70,7 @@ class GUIBuilder:
                 }}
                 """
                 if self.debug:
-                    print(f"GUIBuilder: Applied background color CSS")
+                    print(f"GUIBuilder: Applied background color CSS: {background_color}")
             
             css_data += """
             .main-window label {
@@ -166,6 +167,36 @@ class GUIBuilder:
                 border-radius: 12px;
                 border: 1px solid rgba(255, 255, 255, 0.2);
             }
+            .ssh-host-card {
+                background: linear-gradient(135deg, rgba(40, 40, 40, 0.95) 0%, rgba(50, 50, 50, 0.95) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 8px;
+            }
+            .ssh-host-card:hover {
+                background: linear-gradient(135deg, rgba(50, 50, 50, 0.98) 0%, rgba(60, 60, 60, 0.98) 100%);
+                border-color: rgba(255, 255, 255, 0.25);
+            }
+            .ssh-host-card label {
+                color: #ffffff;
+            }
+            .ssh-host-card menubutton {
+                background: transparent;
+                border: none;
+                color: #ffffff;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .ssh-host-card menubutton:hover {
+                color: #4a9eff;
+            }
+            .ssh-host-card menubutton:active {
+                color: #3a8eef;
+            }
+            .tip-frame {
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+            }
             """
             
             style_context = self.main_window.window.get_style_context()
@@ -182,6 +213,8 @@ class GUIBuilder:
             
             if self.debug:
                 print("GUIBuilder: CSS applied successfully")
+                print(f"GUIBuilder: CSS data length: {len(css_data)}")
+                print(f"GUIBuilder: CSS data preview: {css_data[:200]}...")
                 
         except Exception as e:
             print(f"CSS loading failed: {e}")
@@ -358,6 +391,13 @@ class GUIBuilder:
         main_tab = MainTab(self.main_window)
         self.notebook.append_page(main_tab, Gtk.Label(label="Main"))
         
+        # System tab - Use SystemTab class
+        system_tab = SystemTab(self.main_window)
+        self.notebook.append_page(system_tab, Gtk.Label(label="System"))
+        
+        # Store reference to system tab for main window
+        self.main_window.system_tab = system_tab
+        
         # Progress section (outside of tabs, in main container)
         progress_frame = Gtk.Frame(label="Progress")
         
@@ -385,10 +425,6 @@ class GUIBuilder:
         
         main_box.pack_start(progress_frame, False, False, 0)
         
-        # Logs tab - Use LogsTab class
-        logs_tab = LogsTab(self.main_window)
-        self.notebook.append_page(logs_tab, Gtk.Label(label="Logs"))
-        
         # Configuration tab - Use ConfigTab class
         config_tab = ConfigTab(self.main_window)
         self.notebook.append_page(config_tab, Gtk.Label(label="Configuration"))
@@ -396,6 +432,10 @@ class GUIBuilder:
         # Administration tab - Use AdminTab class
         admin_tab = AdminTab(self.main_window)
         self.notebook.append_page(admin_tab, Gtk.Label(label="Administration"))
+        
+        # Logs tab - Use LogsTab class
+        logs_tab = LogsTab(self.main_window)
+        self.notebook.append_page(logs_tab, Gtk.Label(label="Logs"))
         
         # Initialize the playbook list
         self.main_window.update_playbook_list()

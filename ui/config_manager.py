@@ -151,20 +151,18 @@ class ConfigManager:
         return None
             
     def load_categories_from_yaml(self) -> Dict:
-        """Load categories from gui_config.json (keeping the GUI structure separate)"""
-        import shutil
+        """Load categories from gui_config.json (dynamically generated from playbook metadata)"""
         config_dir = Path.home() / ".config/com.crimson.cfg"
         user_gui_config = config_dir / "gui_config.json"
-        default_gui_config = Path("conf/gui_config.json")
         if not config_dir.exists():
             config_dir.mkdir(parents=True, exist_ok=True)
-        if not user_gui_config.exists() and default_gui_config.exists():
-            shutil.copy(default_gui_config, user_gui_config)
         if user_gui_config.exists():
             with open(user_gui_config, 'r') as f:
                 json_config = json.load(f)
                 return json_config.get("categories", {})
         else:
+            # No fallback - if gui_config.json doesn't exist, the app should regenerate it
+            # or fail gracefully rather than using outdated config
             return {} 
 
     def _process_config_variables(self, config: Dict) -> Dict:

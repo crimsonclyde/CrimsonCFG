@@ -1,14 +1,29 @@
 # CrimsonCFG-Name: Tailscale Client
-# CrimsonCFG-Description: Install and configure Tailscale client with Microsoft 365 authentication
+# CrimsonCFG-Description: Install and configure Tailscale client with Microsoft 365 authentication and automatic tagging
 # CrimsonCFG-Essential: true
 # CrimsonCFG-Essential-Order: 5
 ---
-- name: Install and configure Tailscale client
+- name: Install and configure Tailscale client with Azure CLI and automatic tagging
   hosts: localhost
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
   tasks:
+
+    #######################
+    # Install Azure CLI
+    #######################
+
+    - name: Install Azure CLI
+      shell: |
+        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      args:
+        creates: /usr/bin/az
+      register: azure_cli_install
+
+    - name: Display Azure CLI installation result
+      debug:
+        msg: "Azure CLI installation: {{ azure_cli_install.stdout_lines | default('No output') }}"
 
     #######################
     # Install Tailscale
@@ -28,7 +43,7 @@
       ansible.builtin.apt:
         name: tailscale
         update_cache: true
-        state: present 
+        state: present
 
     #######################
     # Configure Tailscale as System Service
@@ -45,7 +60,7 @@
         timeout: 10
 
     #######################
-    # Show Authentication Instructions
+    # Get User Information for Authentication
     #######################
 
     - name: Get current user information
@@ -59,17 +74,268 @@
         user_display: ":0"
       when: user_display == ""
 
-    - name: Display authentication instructions via zenity
-      command: >
-        sudo -u "{{ current_user }}" 
-        DISPLAY="{{ user_display }}" 
-        XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" 
-        zenity --info
-        --title="Tailscale Installation Complete"
-        --timeout=10
-        --text="Tailscale has been installed and activated as a system service.\n\nTo authenticate with Tailscale:\n1. Go to MDM Manager → Config → VPN tab\n2. Click the 'Start Tailscale Authentication' button\n3. Complete the authentication in your browser\n\nThe VPN service will be available after authentication."
-        --width=500
-        --height=300
-      register: zenity_result
-      changed_when: zenity_result.rc == 0
-      failed_when: zenity_result.rc != 0 and zenity_result.rc != 5
+    #######################
+    # Azure Authentication and User Info Retrieval
+    #######################
+
+    - name: Create Azure authentication script
+      copy:
+        dest: /tmp/azure_auth.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          
+          # Function to display zenity dialog
+          show_zenity_dialog() {
+              local title="$1"
+              local text="$2"
+              local timeout="${3:-10}"
+              
+              sudo -u "{{ current_user }}" \
+                DISPLAY="{{ user_display }}" \
+                XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" \
+                zenity --info \
+                --title="$title" \
+                --timeout="$timeout" \
+                --text="$text" \
+                --width=500 \
+                --height=300
+          }
+          
+          # Function to open browser
+          open_browser() {
+              local url="$1"
+              
+              # Try Chromium first
+              if command -v chromium >/dev/null 2>&1; then
+                  sudo -u "{{ current_user }}" DISPLAY="{{ user_display }}" chromium "$url" &
+              elif command -v microsoft-edge >/dev/null 2>&1; then
+                  sudo -u "{{ current_user }}" DISPLAY="{{ user_display }}" microsoft-edge "$url" &
+              else
+                  sudo -u "{{ current_user }}" DISPLAY="{{ user_display }}" xdg-open "$url" &
+              fi
+          }
+          
+          echo "Starting Azure CLI authentication..."
+          
+          # Run az login with device code
+          echo "Running: az login --allow-no-subscriptions --use-device-code"
+          az_output=$(az login --allow-no-subscriptions --use-device-code 2>&1)
+          
+          # Extract the device login URL and code
+          device_url=$(echo "$az_output" | grep -o 'https://microsoft.com/devicelogin' | head -1)
+          device_code=$(echo "$az_output" | grep -o '[A-Z0-9]\{9\}' | head -1)
+          
+          if [ -n "$device_url" ] && [ -n "$device_code" ]; then
+              echo "Device URL: $device_url"
+              echo "Device Code: $device_code"
+              
+              # Show zenity dialog with instructions
+              show_zenity_dialog "Azure Authentication Required" \
+                "Please authenticate with Azure:\n\n1. A browser will open automatically\n2. Enter the code: $device_code\n3. Complete the authentication\n4. Return here and press Enter when done"
+              
+              # Open browser with device login URL
+              open_browser "$device_url"
+              
+              # Wait for user to complete authentication
+              echo "Waiting for user to complete authentication..."
+              read -p "Press Enter after completing authentication in the browser..."
+              
+              # Get user information from Microsoft Graph
+              echo "Retrieving user information from Microsoft Graph..."
+              user_info=$(az rest --method GET --url 'https://graph.microsoft.com/v1.0/me?$select=displayName,department' 2>/dev/null)
+              
+              if [ $? -eq 0 ] && [ -n "$user_info" ]; then
+                  echo "User info retrieved successfully"
+                  echo "$user_info" > /tmp/azure_user_info.json
+                  
+                  # Extract department and display name
+                  department=$(echo "$user_info" | grep -o '"department": "[^"]*"' | cut -d'"' -f4)
+                  display_name=$(echo "$user_info" | grep -o '"displayName": "[^"]*"' | cut -d'"' -f4)
+                  
+                  echo "Department: $department"
+                  echo "Display Name: $display_name"
+                  
+                  # Show success dialog
+                  show_zenity_dialog "Authentication Successful" \
+                    "Azure authentication completed successfully!\n\nUser: $display_name\nDepartment: $department\n\nProceeding with Tailscale setup..."
+                  
+                  exit 0
+              else
+                  echo "Failed to retrieve user information"
+                  show_zenity_dialog "Authentication Error" \
+                    "Failed to retrieve user information from Microsoft Graph.\n\nPlease check your authentication and try again."
+                  exit 1
+              fi
+          else
+              echo "Failed to extract device URL or code"
+              show_zenity_dialog "Authentication Error" \
+                "Failed to start Azure authentication.\n\nPlease check your internet connection and try again."
+              exit 1
+          fi
+
+    - name: Run Azure authentication script
+      shell: /tmp/azure_auth.sh
+      register: azure_auth_result
+      failed_when: azure_auth_result.rc != 0
+
+    - name: Read Azure user information
+      slurp:
+        src: /tmp/azure_user_info.json
+      register: azure_user_info_file
+      when: azure_auth_result.rc == 0
+
+    - name: Parse Azure user information
+      set_fact:
+        azure_user_info: "{{ (azure_user_info_file.content | b64decode | from_json) | default({}) }}"
+      when: azure_auth_result.rc == 0
+
+    - name: Extract user department and display name
+      set_fact:
+        user_department: "{{ azure_user_info.department | default('Unknown') }}"
+        user_display_name: "{{ azure_user_info.displayName | default('Unknown') }}"
+      when: azure_auth_result.rc == 0
+
+    #######################
+    # Configure Tailscale with Tags
+    #######################
+
+    - name: Create Tailscale configuration with tags
+      copy:
+        dest: /tmp/tailscale_config.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          
+          # Function to display zenity dialog
+          show_zenity_dialog() {
+              local title="$1"
+              local text="$2"
+              local timeout="${3:-10}"
+              
+              sudo -u "{{ current_user }}" \
+                DISPLAY="{{ user_display }}" \
+                XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" \
+                zenity --info \
+                --title="$title" \
+                --timeout="$timeout" \
+                --text="$text" \
+                --width=500 \
+                --height=300
+          }
+          
+          # Function to open browser
+          open_browser() {
+              local url="$1"
+              
+              # Try Chromium first
+              if command -v chromium >/dev/null 2>&1; then
+                  sudo -u "{{ current_user }}" DISPLAY="{{ user_display }}" chromium "$url" &
+              elif command -v microsoft-edge >/dev/null 2>&1; then
+                  sudo -u "{{ current_user }}" DISPLAY="{{ user_display }}" microsoft-edge "$url" &
+              else
+                  sudo -u "{{ current_user }}" DISPLAY="{{ user_display }}" xdg-open "$url" &
+              fi
+          }
+          
+          echo "Starting Tailscale authentication with tags..."
+          
+          # Prepare tags
+          tags="tag:user-endpoint,tag:{{ user_department | replace(' ', '-') | lower }}"
+          echo "Using tags: $tags"
+          
+          # Run tailscale up with tags
+          echo "Running: tailscale up --advertise-tags=$tags"
+          
+          # Start the process
+          tailscale_output=$(tailscale up --advertise-tags="$tags" 2>&1)
+          tailscale_rc=$?
+          
+          # Extract login URL if present
+          login_url=$(echo "$tailscale_output" | grep -o 'https://login\.tailscale\.com/[^\s]*' | head -1)
+          
+          if [ -n "$login_url" ]; then
+              echo "Login URL found: $login_url"
+              
+              # Show zenity dialog with instructions
+              show_zenity_dialog "Tailscale Authentication Required" \
+                "Please authenticate with Tailscale:\n\n1. A browser will open automatically\n2. Complete the authentication\n3. Your device will be tagged with:\n   - user-endpoint\n   - {{ user_department | lower }}\n\nUser: {{ user_display_name }}\nDepartment: {{ user_department }}"
+              
+              # Open browser with login URL
+              open_browser "$login_url"
+              
+              # Wait for authentication to complete
+              echo "Waiting for Tailscale authentication to complete..."
+              sleep 5
+              
+              # Check if authentication was successful
+              if tailscale status >/dev/null 2>&1; then
+                  echo "Tailscale authentication successful"
+                  
+                  # Get final status
+                  status_output=$(tailscale status)
+                  echo "$status_output"
+                  
+                  # Show success dialog
+                  show_zenity_dialog "Tailscale Setup Complete" \
+                    "Tailscale has been successfully configured!\n\nYour device is now connected and tagged with:\n- user-endpoint\n- {{ user_department | lower }}\n\nUser: {{ user_display_name }}\nDepartment: {{ user_department }}"
+                  
+                  exit 0
+              else
+                  echo "Tailscale authentication failed"
+                  show_zenity_dialog "Tailscale Error" \
+                    "Tailscale authentication failed.\n\nPlease check the logs and try again."
+                  exit 1
+              fi
+          else
+              echo "No login URL found in output"
+              echo "Tailscale output: $tailscale_output"
+              
+              if [ $tailscale_rc -eq 0 ]; then
+                  echo "Tailscale may already be authenticated"
+                  show_zenity_dialog "Tailscale Status" \
+                    "Tailscale appears to be already authenticated.\n\nYour device is tagged with:\n- user-endpoint\n- {{ user_department | lower }}"
+                  exit 0
+              else
+                  show_zenity_dialog "Tailscale Error" \
+                    "Failed to start Tailscale authentication.\n\nError: $tailscale_output"
+                  exit 1
+              fi
+          fi
+
+    - name: Run Tailscale configuration with tags
+      shell: /tmp/tailscale_config.sh
+      register: tailscale_config_result
+      failed_when: tailscale_config_result.rc != 0
+
+    #######################
+    # Cleanup
+    #######################
+
+    - name: Clean up temporary files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /tmp/azure_auth.sh
+        - /tmp/azure_user_info.json
+        - /tmp/tailscale_config.sh
+
+    #######################
+    # Final Status Display
+    #######################
+
+    - name: Display final status
+      shell: |
+        sudo -u "{{ current_user }}" \
+          DISPLAY="{{ user_display }}" \
+          XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" \
+          zenity --info \
+          --title="Tailscale Installation Complete" \
+          --timeout=15 \
+          --text="Tailscale installation and configuration completed successfully!\n\nDevice Information:\n- User: {{ user_display_name }}\n- Department: {{ user_department }}\n- Tags: user-endpoint, {{ user_department | lower }}\n\nYour device is now connected to the Tailscale network with appropriate tags for management and access control." \
+          --width=500 \
+          --height=400
+      register: final_status_result
+      changed_when: final_status_result.rc == 0
+      failed_when: final_status_result.rc != 0 and final_status_result.rc != 5
