@@ -212,26 +212,94 @@ class SystemTab(Gtk.Box):
             if response != Gtk.ResponseType.YES:
                 return
             
+            # Switch to logs tab and clear logs
+            self.switch_to_logs_and_clear("🚀 Starting Super Upgrade...")
+            self.main_window.logger.log_message("This process may take several minutes. Please wait...")
+            
             # Show status message
-            self.main_window.status_label.set_text("Running Super Upgrade... This may take several minutes.")
+            self.main_window.status_label.set_text("Running Super Upgrade... Check the Logs tab for progress.")
             
             # Run super upgrade in background thread
             def run_upgrade():
                 try:
                     # Execute the super-upgrade function using the cached sudo password
-                    cmd = f'echo "{self.main_window.sudo_password}" | sudo -S bash -c "source ~/.bashrc && super-upgrade"'
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                    # Try the new script-based approach first, fall back to old method
+                    import os
+                    user_home = os.path.expanduser("~")
+                    script_path = os.path.join(user_home, ".local", "bin", "super-upgrade.sh")
                     
-                    if result.returncode == 0:
+                    if os.path.exists(script_path):
+                        # New script-based approach - source the script directly
+                        cmd = f'echo "{self.main_window.sudo_password}" | sudo -S bash -c "source {script_path} && super-upgrade"'
+                    else:
+                        # Fall back to old approach (for backward compatibility)
+                        # Detect which shell config to use
+                        zshrc_path = os.path.join(user_home, ".zshrc")
+                        bashrc_path = os.path.join(user_home, ".bashrc")
+                        
+                        if os.path.exists(zshrc_path):
+                            cmd = f'echo "{self.main_window.sudo_password}" | sudo -S bash -c "source ~/.zshrc && super-upgrade"'
+                        else:
+                            cmd = f'echo "{self.main_window.sudo_password}" | sudo -S bash -c "source ~/.bashrc && super-upgrade"'
+                    
+                    # Use Popen to capture real-time output
+                    process = subprocess.Popen(
+                        cmd, 
+                        shell=True, 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True
+                    )
+                    
+                    # Read output in real-time
+                    for line in iter(process.stdout.readline, ''):
+                        if line:
+                            line = line.strip()
+                            if line:
+                                # Add some formatting for better readability
+                                if line.startswith('##############################'):
+                                    # Section headers
+                                    GLib.idle_add(self.main_window.logger.log_message, f"📋 {line}")
+                                elif line.startswith('# 🔄'):
+                                    # Progress indicators
+                                    GLib.idle_add(self.main_window.logger.log_message, f"🔄 {line[2:]}")
+                                elif line.startswith('# ✅'):
+                                    # Success messages
+                                    GLib.idle_add(self.main_window.logger.log_message, f"✅ {line[2:]}")
+                                elif line.startswith('# ⚠️'):
+                                    # Warning messages
+                                    GLib.idle_add(self.main_window.logger.log_message, f"⚠️ {line[2:]}")
+                                elif 'Reading package lists' in line or 'Building dependency tree' in line:
+                                    # APT progress
+                                    GLib.idle_add(self.main_window.logger.log_message, f"📦 {line}")
+                                elif 'flatpak' in line.lower():
+                                    # Flatpak messages
+                                    GLib.idle_add(self.main_window.logger.log_message, f"📱 {line}")
+                                elif 'snap' in line.lower():
+                                    # Snap messages
+                                    GLib.idle_add(self.main_window.logger.log_message, f"📦 {line}")
+                                else:
+                                    # Regular output
+                                    GLib.idle_add(self.main_window.logger.log_message, line)
+                    
+                    # Wait for process to complete
+                    return_code = process.wait()
+                    
+                    if return_code == 0:
+                        GLib.idle_add(self.main_window.logger.log_message, "✅ Super Upgrade completed successfully!")
                         GLib.idle_add(self.main_window.status_label.set_text, "Super Upgrade completed successfully!")
                         GLib.idle_add(self.main_window.show_success_dialog, "Super Upgrade completed successfully!\n\nAll system packages have been updated.")
                     else:
-                        error_msg = f"Super Upgrade failed. Error: {result.stderr}"
+                        error_msg = f"❌ Super Upgrade failed with return code: {return_code}"
+                        GLib.idle_add(self.main_window.logger.log_message, error_msg)
                         GLib.idle_add(self.main_window.status_label.set_text, "Super Upgrade failed. Check logs for details.")
-                        GLib.idle_add(self.main_window.show_error_dialog, f"Super Upgrade failed.\n\nError: {result.stderr}\n\nCheck the logs in /var/log/CrimsonCFG/super-upgrade/ for details.")
+                        GLib.idle_add(self.main_window.show_error_dialog, f"Super Upgrade failed.\n\nCheck the logs tab for details and the logs in /var/log/CrimsonCFG/super-upgrade/ for more information.")
                         
                 except Exception as e:
-                    error_msg = f"Error during super upgrade: {e}"
+                    error_msg = f"❌ Error during super upgrade: {e}"
+                    GLib.idle_add(self.main_window.logger.log_message, error_msg)
                     GLib.idle_add(self.main_window.status_label.set_text, error_msg)
                     GLib.idle_add(self.main_window.show_error_dialog, error_msg)
             
@@ -272,26 +340,64 @@ class SystemTab(Gtk.Box):
             if response != Gtk.ResponseType.YES:
                 return
             
+            # Switch to logs tab and clear logs
+            self.switch_to_logs_and_clear("⚡ Starting Quick Update (APT packages only)...")
+            
             # Show status message
-            self.main_window.status_label.set_text("Running Quick Update...")
+            self.main_window.status_label.set_text("Running Quick Update... Check the Logs tab for progress.")
             
             # Run quick update in background thread
             def run_update():
                 try:
                     # Execute APT update using the cached sudo password
                     cmd = f'echo "{self.main_window.sudo_password}" | sudo -S apt-get update && echo "{self.main_window.sudo_password}" | sudo -S apt-get full-upgrade -y'
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
                     
-                    if result.returncode == 0:
+                    # Use Popen to capture real-time output
+                    process = subprocess.Popen(
+                        cmd, 
+                        shell=True, 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True
+                    )
+                    
+                    # Read output in real-time
+                    for line in iter(process.stdout.readline, ''):
+                        if line:
+                            line = line.strip()
+                            if line:
+                                # Add some formatting for APT output
+                                if 'Reading package lists' in line or 'Building dependency tree' in line:
+                                    # APT progress
+                                    GLib.idle_add(self.main_window.logger.log_message, f"📦 {line}")
+                                elif 'The following packages will be upgraded:' in line:
+                                    # Package upgrade list
+                                    GLib.idle_add(self.main_window.logger.log_message, f"🔄 {line}")
+                                elif 'Setting up' in line or 'Unpacking' in line:
+                                    # Package installation
+                                    GLib.idle_add(self.main_window.logger.log_message, f"⚙️ {line}")
+                                else:
+                                    # Regular output
+                                    GLib.idle_add(self.main_window.logger.log_message, line)
+                    
+                    # Wait for process to complete
+                    return_code = process.wait()
+                    
+                    if return_code == 0:
+                        GLib.idle_add(self.main_window.logger.log_message, "✅ Quick Update completed successfully!")
                         GLib.idle_add(self.main_window.status_label.set_text, "Quick Update completed successfully!")
                         GLib.idle_add(self.main_window.show_success_dialog, "Quick Update completed successfully!\n\nAPT packages have been updated.")
                     else:
-                        error_msg = f"Quick Update failed. Error: {result.stderr}"
+                        error_msg = f"❌ Quick Update failed with return code: {return_code}"
+                        GLib.idle_add(self.main_window.logger.log_message, error_msg)
                         GLib.idle_add(self.main_window.status_label.set_text, "Quick Update failed. Check logs for details.")
-                        GLib.idle_add(self.main_window.show_error_dialog, f"Quick Update failed.\n\nError: {result.stderr}")
+                        GLib.idle_add(self.main_window.show_error_dialog, f"Quick Update failed.\n\nCheck the logs tab for details.")
                         
                 except Exception as e:
-                    error_msg = f"Error during quick update: {e}"
+                    error_msg = f"❌ Error during quick update: {e}"
+                    GLib.idle_add(self.main_window.logger.log_message, error_msg)
                     GLib.idle_add(self.main_window.status_label.set_text, error_msg)
                     GLib.idle_add(self.main_window.show_error_dialog, error_msg)
             
@@ -447,7 +553,16 @@ class SystemTab(Gtk.Box):
             self._create_system_info_ui(system_data)
             
             # Check super-upgrade function availability for button state
-            super_upgrade_available = subprocess.run(['bash', '-c', 'command -v super-upgrade'], capture_output=True).returncode == 0
+            # First check if the script file exists
+            import os
+            user_home = os.path.expanduser("~")
+            script_path = os.path.join(user_home, ".local", "bin", "super-upgrade.sh")
+            script_exists = os.path.exists(script_path)
+            
+            # Also check if the function is available in shell (for backward compatibility)
+            function_available = subprocess.run(['bash', '-c', 'command -v super-upgrade'], capture_output=True).returncode == 0
+            
+            super_upgrade_available = script_exists or function_available
             self.update_super_upgrade_status(super_upgrade_available)
             
             # Check sudo access for Quick Update
@@ -711,13 +826,35 @@ class SystemTab(Gtk.Box):
                 "<span size='small'>Please authenticate in the Administration tab to enable Quick Update</span>"
             )
     
+    def switch_to_logs_and_clear(self, initial_message=""):
+        """Switch to logs tab and clear logs with optional initial message"""
+        # Switch to logs tab
+        if self.main_window.gui_builder.notebook is not None:
+            self.main_window.gui_builder.notebook.set_current_page(4)  # Switch to Logs tab
+        
+        # Clear logs
+        self.main_window.logs_buffer.set_text("")
+        
+        # Add initial message if provided
+        if initial_message:
+            self.main_window.logger.log_message(initial_message)
+    
     def refresh_button_states(self):
         """Refresh button states when authentication status changes"""
         if self.debug:
             print("SystemTab: Refreshing button states...")
         
         # Check super-upgrade function availability
-        super_upgrade_available = subprocess.run(['bash', '-c', 'command -v super-upgrade'], capture_output=True).returncode == 0
+        # First check if the script file exists
+        import os
+        user_home = os.path.expanduser("~")
+        script_path = os.path.join(user_home, ".local", "bin", "super-upgrade.sh")
+        script_exists = os.path.exists(script_path)
+        
+        # Also check if the function is available in shell (for backward compatibility)
+        function_available = subprocess.run(['bash', '-c', 'command -v super-upgrade'], capture_output=True).returncode == 0
+        
+        super_upgrade_available = script_exists or function_available
         self.update_super_upgrade_status(super_upgrade_available)
         
         # Check sudo access

@@ -98,102 +98,58 @@
       when: not zshrc_exists.stat.exists
 
     #######################
-    # Add super-upgrade function to appropriate shell config
+    # Create super-upgrade script from template
     #######################
 
-    - name: Check if super-upgrade function already exists in shell config
-      ansible.builtin.shell: grep -q "super-upgrade()" "{{ shell_config_file }}"
-      register: super_upgrade_exists
+    - name: Create super-upgrade script directory
+      ansible.builtin.file:
+        path: "{{ user_home }}/.local/bin"
+        state: directory
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Create super-upgrade script from template
+      ansible.builtin.template:
+        src: "{{ templates_directory }}/super-upgrade.sh.j2"
+        dest: "{{ user_home }}/.local/bin/super-upgrade.sh"
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        backup: yes
+
+    #######################
+    # Add super-upgrade script to appropriate shell config
+    #######################
+
+    - name: Check if super-upgrade script is already sourced in shell config
+      ansible.builtin.shell: grep -q "super-upgrade.sh" "{{ shell_config_file }}"
+      register: super_upgrade_sourced
       failed_when: false
       changed_when: false
 
-    - name: Add super-upgrade function to shell config
+    - name: Add super-upgrade script source to shell config
       become: false
       ansible.builtin.lineinfile:
         path: "{{ shell_config_file }}"
         line: |
-          super-upgrade() {
-            # Clear the screen
-            clear
-
-            # Log directory in system location
-            LOG_DIR="{{ super_upgrade_log_dir }}"
-            mkdir -p "$LOG_DIR"
-
-            # Log file name with timestamp
-            LOG_FILE="$LOG_DIR/$(date '+%Y-%m-%d_%H-%M-%S').log"
-
-            {
-              echo "##############################"
-              echo "# 🔄 SUPER-UPGRADE"
-              echo "#"
-              echo "# Started at $(date)"
-              echo "# Kernel version: $(uname -r)"
-              echo "# User: $USER"
-              echo "# Hostname: $(hostname)"
-              echo "##############################"
-            } | sudo tee "$LOG_FILE"
-
-            {
-              echo "##############################"
-              echo "# 🔄 Updating APT packages..."
-              echo "##############################"
-              sudo apt-get update
-              sudo apt-get full-upgrade -y
-              sudo apt-get autoremove -y
-              sudo apt-get clean
-
-              echo "##############################"
-              echo "# 🔄 Checking for Flatpak..."
-              echo "##############################"
-              if command -v flatpak >/dev/null 2>&1; then
-                echo "Flatpak is installed. Updating Flatpak packages..."
-                flatpak update -y
-              else
-                echo "Flatpak is not installed. Skipping Flatpak updates."
-              fi
-
-              echo "##############################"
-              echo "# 🔄 Checking for Snap..."
-              echo "##############################"
-              if command -v snap >/dev/null 2>&1; then
-                echo "Snap is installed. Updating Snap packages..."
-                sudo snap refresh
-              else
-                echo "Snap is not installed. Skipping Snap updates."
-              fi
-
-              echo "##############################"
-              echo "# ✅ System fully updated at $(date)!"
-              echo "##############################"
-
-              # Create timestamp file for Wazuh monitoring
-              echo "$(date '+%Y-%m-%d %H:%M:%S')" | sudo tee /var/log/CrimsonCFG/system-last-updated > /dev/null
-
-              if [ -f /var/run/reboot-required ]; then
-                echo "##############################"
-                echo "# ⚠️  Reboot is required!"
-                echo "##############################"
-              fi
-            } | sudo tee -a "$LOG_FILE"
-
-            # Log rotation is now handled by logrotate
-            # Clean up old logs (keep last 10 files as backup)
-            ls -1t "$LOG_DIR"/*.log 2>/dev/null | tail -n +11 | xargs -r sudo rm -f
-          }
+          # CrimsonCFG Super Upgrade Script
+          if [ -f "{{ user_home }}/.local/bin/super-upgrade.sh" ]; then
+            source "{{ user_home }}/.local/bin/super-upgrade.sh"
+          fi
         insertafter: EOF
         state: present
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: '0644'
-      when: super_upgrade_exists.rc != 0
+      when: super_upgrade_sourced.rc != 0
 
     - name: Display success message for .zshrc
       ansible.builtin.debug:
-        msg: "Super-upgrade function has been added to .zshrc. Use 'super-upgrade' command in your terminal. Logs are now stored in {{ super_upgrade_log_dir }}/"
-      when: super_upgrade_exists.rc != 0 and zshrc_exists.stat.exists
+        msg: "Super-upgrade script has been created and sourced in .zshrc. Use 'super-upgrade' command in your terminal. Logs are stored in {{ super_upgrade_log_dir }}/"
+      when: super_upgrade_sourced.rc != 0 and zshrc_exists.stat.exists
 
     - name: Display success message for .bashrc
       ansible.builtin.debug:
-        msg: "Super-upgrade function has been added to .bashrc. Use 'super-upgrade' command in your terminal. Logs are now stored in {{ super_upgrade_log_dir }}/"
-      when: super_upgrade_exists.rc != 0 and not zshrc_exists.stat.exists
+        msg: "Super-upgrade script has been created and sourced in .bashrc. Use 'super-upgrade' command in your terminal. Logs are stored in {{ super_upgrade_log_dir }}/"
+      when: super_upgrade_sourced.rc != 0 and not zshrc_exists.stat.exists
