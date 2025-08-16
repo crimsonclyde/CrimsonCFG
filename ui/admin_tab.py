@@ -467,11 +467,7 @@ class AdminTab(Gtk.Box):
             
             # Update button
             update_btn = Gtk.Button(label="Update Application")
-            update_btn.set_tooltip_text("ℹ️ Pull latest changes from git repository")
-            
-            # Git pull button (simple direct pull)
-            git_pull_btn = Gtk.Button(label="Git Pull")
-            git_pull_btn.set_tooltip_text("ℹ️ Simple git pull to get latest changes")
+            update_btn.set_tooltip_text("ℹ️ Pull latest changes from git repository"
             
             # Progress bar for update
             update_progress = Gtk.ProgressBar()
@@ -599,49 +595,10 @@ class AdminTab(Gtk.Box):
             check_update_btn.connect("clicked", on_check_for_updates)
             update_btn.connect("clicked", on_update_application)
             
-            # Simple git pull handler
-            def on_git_pull(btn):
-                try:
-                    update_status_label.set_text("Performing git pull...")
-                    update_status_label.set_visible(True)
-                    
-                    # Get sudo password from main window
-                    sudo_password = getattr(self.main_window, 'sudo_password', None)
-                    if not sudo_password:
-                        update_status_label.set_text("Error: No sudo password available. Please provide sudo password in the admin tab.")
-                        return
-                    
-                    # Run git pull with sudo
-                    import subprocess
-                    result = subprocess.run(
-                        ["sudo", "-k", "-S", "git", "pull", "origin", "main"],
-                        input=f"{sudo_password}\n",
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
-                        cwd="/opt/CrimsonCFG"
-                    )
-                    
-                    if result.returncode == 0:
-                        update_status_label.set_text("Git pull completed successfully!")
-                        
-                        # Update commit information
-                        from . import version_manager
-                        version_mgr = version_manager.VersionManager()
-                        new_commit = version_mgr.get_installed_version()
-                        if new_commit:
-                            current_commit_label.set_text(f"Current Commit: {version_mgr.format_version_for_display(new_commit)}")
-                    else:
-                        update_status_label.set_text(f"Git pull failed: {result.stderr}")
-                        
-                except Exception as e:
-                    update_status_label.set_text(f"Error during git pull: {str(e)}")
-            
-            git_pull_btn.connect("clicked", on_git_pull)
+
             
             update_buttons_box.pack_start(check_update_btn, True, True, 0)
             update_buttons_box.pack_start(update_btn, True, True, 0)
-            update_buttons_box.pack_start(git_pull_btn, True, True, 0)
             update_box.pack_start(update_buttons_box, False, False, 0)
             
             # Progress and status

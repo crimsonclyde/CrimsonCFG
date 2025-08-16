@@ -233,16 +233,24 @@ class UpdateManager:
             )
             # Don't fail if this command fails, it might already be set
             
+            # Set git to work with the directory
+            env = os.environ.copy()
+            env['GIT_SAFE_DIRECTORY'] = self.working_dir
+            
             result = subprocess.run(
                 ["git"] + cmd_args,
                 capture_output=True,
                 text=True,
                 timeout=30,
-                cwd=self.working_dir
+                cwd=self.working_dir,
+                env=env
             )
             if result.returncode != 0:
                 self.debug_manager.print_error(f"Git command failed: git {' '.join(cmd_args)}")
                 self.debug_manager.print_error(f"Error: {result.stderr}")
+                # Try to provide more helpful error messages
+                if "fatal: unsafe repository" in result.stderr:
+                    self.debug_manager.print_error("Git safe directory issue detected. Try running: git config --global --add safe.directory /opt/CrimsonCFG")
                 return False
             return True
         except Exception as e:
