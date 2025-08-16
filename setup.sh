@@ -100,11 +100,19 @@ if [ ! -d "$REPO_NAME" ]; then
     print_status "Setting permissions on $INSTALL_DIR/$REPO_NAME..."
     sudo chown -R root:root "$INSTALL_DIR/$REPO_NAME"
     sudo chmod -R a+rX "$INSTALL_DIR/$REPO_NAME"
+    
+    # Configure git to trust this directory
+    print_status "Configuring git safe directory..."
+    git config --global --add safe.directory "$INSTALL_DIR/$REPO_NAME"
 else
     print_status "Repository already exists, pulling latest changes..."
     cd "$REPO_NAME"
     git pull
     cd ..
+    
+    # Configure git to trust this directory (in case it wasn't set before)
+    print_status "Configuring git safe directory..."
+    git config --global --add safe.directory "$INSTALL_DIR/$REPO_NAME"
 fi
 
 cd "$INSTALL_DIR/$REPO_NAME"

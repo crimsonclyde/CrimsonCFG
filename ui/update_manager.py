@@ -224,6 +224,15 @@ class UpdateManager:
             bool: True if command succeeded
         """
         try:
+            # First, ensure the directory is marked as safe
+            safe_result = subprocess.run(
+                ["git", "config", "--global", "--add", "safe.directory", self.working_dir],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            # Don't fail if this command fails, it might already be set
+            
             result = subprocess.run(
                 ["git"] + cmd_args,
                 capture_output=True,

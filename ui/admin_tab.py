@@ -507,7 +507,7 @@ class AdminTab(Gtk.Box):
                 
                 # Show checking status
                 update_status_label.set_text("Checking for updates...")
-                remote_version_label.set_text("Remote Version: Checking...")
+                remote_commit_label.set_text("Remote Commit: Checking...")
                 
                 # Check for updates
                 update_info = update_mgr.check_for_updates()
