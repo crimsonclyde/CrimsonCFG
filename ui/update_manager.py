@@ -215,7 +215,7 @@ class UpdateManager:
     
     def _run_git_command(self, cmd_args):
         """
-        Run a git command in the application directory
+        Run a git command in the application directory with sudo
         
         Args:
             cmd_args: List of git command arguments
@@ -224,6 +224,11 @@ class UpdateManager:
             bool: True if command succeeded
         """
         try:
+            # Check if we have sudo access
+            if not self.main_window or not hasattr(self.main_window, 'sudo_password') or not self.main_window.sudo_password:
+                self.debug_manager.print_error("No sudo password available for git operations")
+                return False
+            
             # First, ensure the directory is marked as safe
             safe_result = subprocess.run(
                 ["git", "config", "--global", "--add", "safe.directory", self.working_dir],
@@ -237,8 +242,10 @@ class UpdateManager:
             env = os.environ.copy()
             env['GIT_SAFE_DIRECTORY'] = self.working_dir
             
+            # Run git command with sudo
             result = subprocess.run(
-                ["git"] + cmd_args,
+                ["sudo", "-k", "-S"] + ["git"] + cmd_args,
+                input=f"{self.main_window.sudo_password}\n",
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -246,7 +253,7 @@ class UpdateManager:
                 env=env
             )
             if result.returncode != 0:
-                self.debug_manager.print_error(f"Git command failed: git {' '.join(cmd_args)}")
+                self.debug_manager.print_error(f"Git command failed: sudo git {' '.join(cmd_args)}")
                 self.debug_manager.print_error(f"Error: {result.stderr}")
                 # Try to provide more helpful error messages
                 if "fatal: unsafe repository" in result.stderr:
@@ -265,8 +272,14 @@ class UpdateManager:
             str: Commit hash or None if failed
         """
         try:
+            # Check if we have sudo access
+            if not self.main_window or not hasattr(self.main_window, 'sudo_password') or not self.main_window.sudo_password:
+                self.debug_manager.print_error("No sudo password available for git operations")
+                return None
+            
             result = subprocess.run(
-                ["git", "rev-parse", "HEAD"],
+                ["sudo", "-k", "-S", "git", "rev-parse", "HEAD"],
+                input=f"{self.main_window.sudo_password}\n",
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -287,8 +300,14 @@ class UpdateManager:
             str: Remote commit hash or None if failed
         """
         try:
+            # Check if we have sudo access
+            if not self.main_window or not hasattr(self.main_window, 'sudo_password') or not self.main_window.sudo_password:
+                self.debug_manager.print_error("No sudo password available for git operations")
+                return None
+            
             result = subprocess.run(
-                ["git", "rev-parse", f"origin/{self.branch}"],
+                ["sudo", "-k", "-S", "git", "rev-parse", f"origin/{self.branch}"],
+                input=f"{self.main_window.sudo_password}\n",
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -311,9 +330,15 @@ class UpdateManager:
             list: List of recent commits
         """
         try:
+            # Check if we have sudo access
+            if not self.main_window or not hasattr(self.main_window, 'sudo_password') or not self.main_window.sudo_password:
+                self.debug_manager.print_error("No sudo password available for git operations")
+                return []
+            
             # Get recent commits
             result = subprocess.run(
-                ["git", "log", "--oneline", "-10"],
+                ["sudo", "-k", "-S", "git", "log", "--oneline", "-10"],
+                input=f"{self.main_window.sudo_password}\n",
                 capture_output=True,
                 text=True,
                 timeout=10,

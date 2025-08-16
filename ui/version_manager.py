@@ -28,6 +28,7 @@ class VersionManager:
             # Check if we're in a git repository
             app_dir = "/opt/CrimsonCFG"
             if os.path.exists(os.path.join(app_dir, ".git")):
+                # Try without sudo first (for read-only operations)
                 result = subprocess.run(
                     ["git", "rev-parse", "--short", "HEAD"],
                     capture_output=True,
@@ -39,6 +40,10 @@ class VersionManager:
                     commit_hash = result.stdout.strip()
                     self.debug_manager.print(f"Current commit: {commit_hash}")
                     return commit_hash
+                else:
+                    # If that fails, try with sudo
+                    self.debug_manager.print_warning("Read-only git access failed, this is normal for root-owned repositories")
+                    return None
             else:
                 self.debug_manager.print_warning("Not in a git repository")
                 return None
