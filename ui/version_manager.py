@@ -16,29 +16,34 @@ class VersionManager:
         
     def get_installed_version(self):
         """
-        Get the currently installed version from version.txt
+        Get the current commit hash from git
         
         Returns:
-            str: Version string (e.g., "0.2.0") or None if not found
+            str: Commit hash or None if not found
         """
         try:
-            if self.version_file.exists():
-                with open(self.version_file, 'r') as f:
-                    version = f.read().strip()
-                    
-                    # Validate version format (should be like "0.2.0")
-                    import re
-                    if re.match(r'^\d+\.\d+\.\d+$', version):
-                        self.debug_manager.print(f"Installed version: {version}")
-                        return version
-                    else:
-                        self.debug_manager.print_warning(f"Invalid version format in file: {version}")
-                        return None
+            import subprocess
+            import os
+            
+            # Check if we're in a git repository
+            app_dir = "/opt/CrimsonCFG"
+            if os.path.exists(os.path.join(app_dir, ".git")):
+                result = subprocess.run(
+                    ["git", "rev-parse", "--short", "HEAD"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    cwd=app_dir
+                )
+                if result.returncode == 0:
+                    commit_hash = result.stdout.strip()
+                    self.debug_manager.print(f"Current commit: {commit_hash}")
+                    return commit_hash
             else:
-                self.debug_manager.print_warning("Version file not found")
+                self.debug_manager.print_warning("Not in a git repository")
                 return None
         except Exception as e:
-            self.debug_manager.print_error(f"Error reading version file: {str(e)}")
+            self.debug_manager.print_error(f"Error getting commit hash: {str(e)}")
             return None
     
     def get_version_info(self):
@@ -46,67 +51,47 @@ class VersionManager:
         Get comprehensive version information
         
         Returns:
-            dict: Version information including installed version and update info
+            dict: Version information including current commit
         """
-        installed_version = self.get_installed_version()
+        current_commit = self.get_installed_version()
         
         return {
-            'installed_version': installed_version,
-            'version_file_path': str(self.version_file),
-            'has_version_file': self.version_file.exists()
+            'installed_version': current_commit,
+            'is_git_repo': current_commit is not None
         }
     
-    def format_version_for_display(self, version):
+    def format_version_for_display(self, commit_hash):
         """
-        Format version for display purposes
+        Format commit hash for display purposes
         
         Args:
-            version (str): Version string
+            commit_hash (str): Commit hash string
             
         Returns:
-            str: Formatted version string
+            str: Formatted commit hash
         """
-        if not version:
+        if not commit_hash:
             return "Unknown"
         
-        # Clean the version string - remove any extra whitespace and ensure proper format
-        version = version.strip()
+        # Clean the commit hash string
+        commit_hash = commit_hash.strip()
         
-        # Remove any 'v' prefix if present, then add it back consistently
-        if version.startswith('v'):
-            version = version[1:]
-        
-        return f"v{version}"
+        return f"Commit: {commit_hash}"
     
-    def is_version_newer(self, new_version, current_version):
+    def is_commit_different(self, new_commit, current_commit):
         """
-        Compare two version strings to determine if new_version is newer
+        Compare two commit hashes to determine if they are different
         
         Args:
-            new_version (str): New version to compare
-            current_version (str): Current version to compare against
+            new_commit (str): New commit hash to compare
+            current_commit (str): Current commit hash to compare against
             
         Returns:
-            bool: True if new_version is newer than current_version
+            bool: True if commits are different
         """
-        if not current_version:
-            return True  # If no current version, any version is newer
+        if not current_commit:
+            return True  # If no current commit, any commit is different
         
-        try:
-            # Parse version strings (e.g., "0.2.0" -> [0, 2, 0])
-            def parse_version(v):
-                return [int(x) for x in v.split('.')]
-            
-            new_parts = parse_version(new_version)
-            current_parts = parse_version(current_version)
-            
-            # Pad with zeros if needed
-            max_len = max(len(new_parts), len(current_parts))
-            new_parts.extend([0] * (max_len - len(new_parts)))
-            current_parts.extend([0] * (max_len - len(current_parts)))
-            
-            return new_parts > current_parts
-            
-        except Exception as e:
-            self.debug_manager.print_error(f"Error comparing versions: {str(e)}")
-            return False 
+        return new_commit != current_commit
+    
+ 

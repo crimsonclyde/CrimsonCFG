@@ -418,17 +418,17 @@ class AdminTab(Gtk.Box):
             version_mgr = version_manager.VersionManager()
             version_info = version_mgr.get_version_info()
             
-            # Current version label
-            current_version_label = Gtk.Label(label=f"Current Version: {version_mgr.format_version_for_display(version_info['installed_version'])}")
-            current_version_label.set_xalign(0)
-            current_version_label.set_margin_bottom(5)
-            version_info_box.pack_start(current_version_label, False, False, 0)
+            # Current commit label
+            current_commit_label = Gtk.Label(label=f"Current Commit: {version_mgr.format_version_for_display(version_info['installed_version'])}")
+            current_commit_label.set_xalign(0)
+            current_commit_label.set_margin_bottom(5)
+            version_info_box.pack_start(current_commit_label, False, False, 0)
             
-            # Remote version label (will be updated when checking for updates)
-            remote_version_label = Gtk.Label(label="Remote Version: Checking...")
-            remote_version_label.set_xalign(0)
-            remote_version_label.set_margin_bottom(15)
-            version_info_box.pack_start(remote_version_label, False, False, 0)
+            # Remote commit label (will be updated when checking for updates)
+            remote_commit_label = Gtk.Label(label="Remote Commit: Checking...")
+            remote_commit_label.set_xalign(0)
+            remote_commit_label.set_margin_bottom(15)
+            version_info_box.pack_start(remote_commit_label, False, False, 0)
             
             # Function to check for updates automatically
             def check_for_updates_auto():
@@ -445,13 +445,13 @@ class AdminTab(Gtk.Box):
                 update_info = update_mgr.check_for_updates()
                 
                 if update_info.get('error'):
-                    remote_version_label.set_text("Remote Version: Error")
+                    remote_commit_label.set_text("Remote Commit: Error")
                     return
                 
-                latest_version = update_info.get('latest_version', 'Unknown')
+                remote_commit = update_info.get('remote_commit', 'Unknown')
                 
-                # Update remote version label
-                remote_version_label.set_text(f"Remote Version: {version_mgr.format_version_for_display(latest_version)}")
+                # Update remote commit label
+                remote_commit_label.set_text(f"Remote Commit: {remote_commit}")
             
             # Check for updates automatically after a short delay
             GLib.timeout_add_seconds(1, check_for_updates_auto)
@@ -467,7 +467,11 @@ class AdminTab(Gtk.Box):
             
             # Update button
             update_btn = Gtk.Button(label="Update Application")
-            update_btn.set_tooltip_text("ℹ️ Download and install the latest version of the application")
+            update_btn.set_tooltip_text("ℹ️ Pull latest changes from git repository")
+            
+            # Git pull button (simple direct pull)
+            git_pull_btn = Gtk.Button(label="Git Pull")
+            git_pull_btn.set_tooltip_text("ℹ️ Simple git pull to get latest changes")
             
             # Progress bar for update
             update_progress = Gtk.ProgressBar()
@@ -510,21 +514,21 @@ class AdminTab(Gtk.Box):
                 
                 if update_info.get('error'):
                     update_status_label.set_text(f"Error checking for updates: {update_info['error']}")
-                    remote_version_label.set_text("Remote Version: Error")
+                    remote_commit_label.set_text("Remote Commit: Error")
                     return
                 
-                current_version = update_info.get('current_version', 'Unknown')
-                latest_version = update_info.get('latest_version', 'Unknown')
+                current_commit = update_info.get('current_commit', 'Unknown')
+                remote_commit = update_info.get('remote_commit', 'Unknown')
                 
-                # Update remote version label
-                remote_version_label.set_text(f"Remote Version: {version_mgr.format_version_for_display(latest_version)}")
+                # Update remote commit label
+                remote_commit_label.set_text(f"Remote Commit: {remote_commit}")
                 
                 if update_info.get('is_reinstall'):
-                    update_status_label.set_text(f"Current version: {current_version}. Same version available for reinstall.")
+                    update_status_label.set_text(f"Current commit: {current_commit}. No new changes available.")
                 elif update_info.get('available'):
-                    update_status_label.set_text(f"Update available: {current_version} → {latest_version}")
+                    update_status_label.set_text(f"Update available: {current_commit} → {remote_commit}")
                 else:
-                    update_status_label.set_text(f"Current version: {current_version}. No updates available.")
+                    update_status_label.set_text(f"Current commit: {current_commit}. No updates available.")
             
             def on_update_application(btn):
                 # Import update manager
@@ -544,18 +548,18 @@ class AdminTab(Gtk.Box):
                     return
                 
                 if not update_info.get('available') and not update_info.get('is_reinstall'):
-                    update_status_label.set_text("No updates available. You have the latest version.")
+                    update_status_label.set_text("No updates available. You have the latest changes.")
                     return
                 
                 # Prepare confirmation message
-                current_version = update_info.get('current_version', 'Unknown')
-                latest_version = update_info.get('latest_version', 'Unknown')
+                current_commit = update_info.get('current_commit', 'Unknown')
+                remote_commit = update_info.get('remote_commit', 'Unknown')
                 
                 if update_info.get('is_reinstall'):
-                    message = f"Reinstall version {latest_version}?\n\nThis will reinstall the same version. Your settings will not be affected."
-                    title = "Reinstall Application"
+                    message = f"Pull latest changes?\n\nThis will pull the latest changes from the repository. Your settings will not be affected."
+                    title = "Pull Latest Changes"
                 else:
-                    message = f"Update from version {current_version} to {latest_version}?\n\nThis will install the latest version. Your settings will not be affected."
+                    message = f"Update from commit {current_commit} to {remote_commit}?\n\nThis will pull the latest changes from the repository. Your settings will not be affected."
                     title = "Update Application"
                 
                 # Show confirmation dialog
@@ -595,8 +599,49 @@ class AdminTab(Gtk.Box):
             check_update_btn.connect("clicked", on_check_for_updates)
             update_btn.connect("clicked", on_update_application)
             
+            # Simple git pull handler
+            def on_git_pull(btn):
+                try:
+                    update_status_label.set_text("Performing git pull...")
+                    update_status_label.set_visible(True)
+                    
+                    # Get sudo password from main window
+                    sudo_password = getattr(self.main_window, 'sudo_password', None)
+                    if not sudo_password:
+                        update_status_label.set_text("Error: No sudo password available. Please provide sudo password in the admin tab.")
+                        return
+                    
+                    # Run git pull with sudo
+                    import subprocess
+                    result = subprocess.run(
+                        ["sudo", "-k", "-S", "git", "pull", "origin", "main"],
+                        input=f"{sudo_password}\n",
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        cwd="/opt/CrimsonCFG"
+                    )
+                    
+                    if result.returncode == 0:
+                        update_status_label.set_text("Git pull completed successfully!")
+                        
+                        # Update commit information
+                        from . import version_manager
+                        version_mgr = version_manager.VersionManager()
+                        new_commit = version_mgr.get_installed_version()
+                        if new_commit:
+                            current_commit_label.set_text(f"Current Commit: {version_mgr.format_version_for_display(new_commit)}")
+                    else:
+                        update_status_label.set_text(f"Git pull failed: {result.stderr}")
+                        
+                except Exception as e:
+                    update_status_label.set_text(f"Error during git pull: {str(e)}")
+            
+            git_pull_btn.connect("clicked", on_git_pull)
+            
             update_buttons_box.pack_start(check_update_btn, True, True, 0)
             update_buttons_box.pack_start(update_btn, True, True, 0)
+            update_buttons_box.pack_start(git_pull_btn, True, True, 0)
             update_box.pack_start(update_buttons_box, False, False, 0)
             
             # Progress and status
