@@ -467,7 +467,7 @@ class AdminTab(Gtk.Box):
             
             # Update button
             update_btn = Gtk.Button(label="Update Application")
-            update_btn.set_tooltip_text("ℹ️ Pull latest changes from git repository"
+            update_btn.set_tooltip_text("ℹ️ Pull latest changes from git repository")
             
             # Progress bar for update
             update_progress = Gtk.ProgressBar()
