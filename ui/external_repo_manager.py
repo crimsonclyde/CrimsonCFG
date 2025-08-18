@@ -50,12 +50,16 @@ def ensure_external_repo_dir(sudo_password=None):
                     # Use the authenticated password
                     subprocess.run(['sudo', '-k', '-S', 'mkdir', '-p', EXTERNAL_REPO_DIR], 
                                  input=f"{sudo_password}\n", text=True, check=True)
-                    subprocess.run(['sudo', '-k', '-S', 'chown', f'{getpass.getuser()}:{getpass.getuser()}', EXTERNAL_REPO_DIR], 
+                    # Keep it owned by root for consistency with main repo
+                    subprocess.run(['sudo', '-k', '-S', 'chown', 'root:root', EXTERNAL_REPO_DIR], 
+                                 input=f"{sudo_password}\n", text=True, check=True)
+                    subprocess.run(['sudo', '-k', '-S', 'chmod', '755', EXTERNAL_REPO_DIR], 
                                  input=f"{sudo_password}\n", text=True, check=True)
                 else:
                     # Fallback to direct sudo (will prompt)
                     subprocess.run(['sudo', 'mkdir', '-p', EXTERNAL_REPO_DIR], check=True)
-                    subprocess.run(['sudo', 'chown', f'{getpass.getuser()}:{getpass.getuser()}', EXTERNAL_REPO_DIR], check=True)
+                    subprocess.run(['sudo', 'chown', 'root:root', EXTERNAL_REPO_DIR], check=True)
+                    subprocess.run(['sudo', 'chmod', '755', EXTERNAL_REPO_DIR], check=True)
             except Exception as e:
                 print(f"Failed to create {EXTERNAL_REPO_DIR} with sudo: {e}")
                 return False
@@ -69,22 +73,41 @@ def _clone_or_pull_repo(repo_url, sudo_password=None):
         return False
     
     try:
+        # Configure git safe directory for external repository
+        subprocess.run(['git', 'config', '--global', '--add', 'safe.directory', EXTERNAL_REPO_DIR], 
+                      capture_output=True, text=True, timeout=10)
+        
         if not os.path.exists(EXTERNAL_REPO_DIR) or not os.listdir(EXTERNAL_REPO_DIR):
             # Clone the repository
-            result = subprocess.run(['git', 'clone', repo_url, EXTERNAL_REPO_DIR], 
-                                  capture_output=True, text=True, check=True)
+            if sudo_password:
+                # Use sudo for cloning
+                result = subprocess.run(['sudo', '-k', '-S', 'git', 'clone', repo_url, EXTERNAL_REPO_DIR], 
+                                      input=f"{sudo_password}\n", capture_output=True, text=True, check=True)
+            else:
+                # Fallback to direct sudo (will prompt)
+                result = subprocess.run(['sudo', 'git', 'clone', repo_url, EXTERNAL_REPO_DIR], 
+                                      capture_output=True, text=True, check=True)
             print(f"Successfully cloned repository: {repo_url}")
             return True
         else:
             # Pull latest changes
-            result = subprocess.run(['git', '-C', EXTERNAL_REPO_DIR, 'pull'], 
-                                  capture_output=True, text=True, check=True)
+            if sudo_password:
+                # Use sudo for pulling - change to directory first, then run git pull
+                result = subprocess.run(['sudo', '-k', '-S', 'sh', '-c', f'cd {EXTERNAL_REPO_DIR} && git pull'], 
+                                      input=f"{sudo_password}\n", capture_output=True, text=True, check=True)
+            else:
+                # Fallback to direct sudo (will prompt)
+                result = subprocess.run(['sudo', 'sh', '-c', f'cd {EXTERNAL_REPO_DIR} && git pull'], 
+                                      capture_output=True, text=True, check=True)
             print(f"Successfully pulled latest changes from repository")
             return True
     except subprocess.CalledProcessError as e:
         print(f"Git operation failed: {e}")
         print(f"Git stdout: {e.stdout}")
         print(f"Git stderr: {e.stderr}")
+        # Check for specific git safe directory error
+        if "dubious ownership" in e.stderr or "unsafe repository" in e.stderr:
+            print(f"Git safe directory issue detected. Try running: git config --global --add safe.directory {EXTERNAL_REPO_DIR}")
         return False
     except Exception as e:
         print(f"Unexpected error during git operation: {e}")
@@ -104,4 +127,16 @@ def update_external_repo_sync(sudo_password=None):
     repo_url = get_external_repo_url()
     if not repo_url:
         return True
+    
+    # Fix permissions on existing external repository if it exists
+    if os.path.exists(EXTERNAL_REPO_DIR) and sudo_password:
+        try:
+            # Ensure proper ownership and permissions
+            subprocess.run(['sudo', '-k', '-S', 'chown', '-R', 'root:root', EXTERNAL_REPO_DIR], 
+                         input=f"{sudo_password}\n", text=True, check=True)
+            subprocess.run(['sudo', '-k', '-S', 'chmod', '-R', '755', EXTERNAL_REPO_DIR], 
+                         input=f"{sudo_password}\n", text=True, check=True)
+        except Exception as e:
+            print(f"Warning: Could not fix permissions on {EXTERNAL_REPO_DIR}: {e}")
+    
     return _clone_or_pull_repo(repo_url, sudo_password) 

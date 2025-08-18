@@ -104,6 +104,9 @@ if [ ! -d "$REPO_NAME" ]; then
     # Configure git to trust this directory
     print_status "Configuring git safe directory..."
     git config --global --add safe.directory "$INSTALL_DIR/$REPO_NAME"
+    
+    # Also configure external repository directory as safe
+    git config --global --add safe.directory "$INSTALL_DIR/$REPO_NAME/external_src"
 else
     print_status "Repository already exists, pulling latest changes..."
     cd "$REPO_NAME"
@@ -113,6 +116,9 @@ else
     # Configure git to trust this directory (in case it wasn't set before)
     print_status "Configuring git safe directory..."
     git config --global --add safe.directory "$INSTALL_DIR/$REPO_NAME"
+    
+    # Also configure external repository directory as safe
+    git config --global --add safe.directory "$INSTALL_DIR/$REPO_NAME/external_src"
 fi
 
 cd "$INSTALL_DIR/$REPO_NAME"
