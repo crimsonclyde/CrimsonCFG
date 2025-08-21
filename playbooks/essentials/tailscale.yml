@@ -11,21 +11,6 @@
   tasks:
 
     #######################
-    # Install Azure CLI
-    #######################
-
-    - name: Install Azure CLI
-      shell: |
-        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      args:
-        creates: /usr/bin/az
-      register: azure_cli_install
-
-    - name: Display Azure CLI installation result
-      debug:
-        msg: "Azure CLI installation: {{ azure_cli_install.stdout_lines | default('No output') }}"
-
-    #######################
     # Install Tailscale
     #######################
 
@@ -86,7 +71,7 @@
           zenity --info \
           --title="Tailscale Installation Complete" \
           --timeout=15 \
-          --text="Tailscale installation and configuration completed successfully!\n\nDevice Information:\n- User: {{ user_display_name }}\n- Department: {{ user_department }}\n- Tags: user-endpoint, {{ user_department | lower }}\n\nYour device is now connected to the Tailscale network with appropriate tags for management and access control." \
+          --text="Tailscale installation completed!\n\Tab Configuration/VPN you can connect to your tailscale account! " \
           --width=500 \
           --height=400
       register: final_status_result
