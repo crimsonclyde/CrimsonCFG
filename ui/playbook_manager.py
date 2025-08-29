@@ -81,7 +81,11 @@ class PlaybookManager:
         if local_file.exists():
             with open(local_file, 'r') as f:
                 local_config = YAML().load(f) or {}
-        for playbook in cat_info["playbooks"]:
+        
+        # Sort playbooks alphabetically by name
+        sorted_playbooks = sorted(cat_info["playbooks"], key=lambda x: x["name"].lower())
+        
+        for playbook in sorted_playbooks:
             # Parse CrimsonCFG-RequiredVars from playbook YAML header if not already set
             if "required_vars" not in playbook:
                 playbook_path = playbook.get("path")
