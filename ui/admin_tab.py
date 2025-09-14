@@ -295,6 +295,83 @@ class AdminTab(Gtk.Box):
             
             admin_notebook.append_page(external_repo_box, Gtk.Label(label="External Repository"))
 
+            # --- Ubuntu Landscape Tab ---
+            landscape_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            landscape_box.set_margin_start(10)
+            landscape_box.set_margin_end(10)
+            landscape_box.set_margin_top(10)
+            landscape_box.set_margin_bottom(10)
+            
+            landscape_label = Gtk.Label(label="Ubuntu Landscape Configuration:")
+            landscape_box.pack_start(landscape_label, False, False, 0)
+            
+            # Registration key entry
+            reg_key_label = Gtk.Label(label="Registration Key:")
+            reg_key_label.set_xalign(0)
+            landscape_box.pack_start(reg_key_label, False, False, 0)
+            
+            reg_key_entry = Gtk.Entry()
+            reg_key_entry.set_text(local_config.get('landscape_registration_key', ''))
+            reg_key_entry.set_placeholder_text("YOUR-REGISTRATION-KEY")
+            reg_key_entry.set_tooltip_text("ℹ️ Enter your Ubuntu Landscape registration key")
+            landscape_box.pack_start(reg_key_entry, False, False, 0)
+            
+            # Account name entry
+            account_name_label = Gtk.Label(label="Account Name:")
+            account_name_label.set_xalign(0)
+            landscape_box.pack_start(account_name_label, False, False, 0)
+            
+            account_name_entry = Gtk.Entry()
+            account_name_entry.set_text(local_config.get('landscape_account_name', 'standalone'))
+            account_name_entry.set_placeholder_text("standalone")
+            account_name_entry.set_tooltip_text("ℹ️ Enter your Landscape account name (default: standalone)")
+            landscape_box.pack_start(account_name_entry, False, False, 0)
+            
+            # Ping URL entry
+            ping_url_label = Gtk.Label(label="Ping URL:")
+            ping_url_label.set_xalign(0)
+            landscape_box.pack_start(ping_url_label, False, False, 0)
+            
+            ping_url_entry = Gtk.Entry()
+            ping_url_entry.set_text(local_config.get('landscape_ping_url', 'https://landscape.canonical.com/ping'))
+            ping_url_entry.set_placeholder_text("https://landscape.canonical.com/ping")
+            ping_url_entry.set_tooltip_text("ℹ️ Enter the Landscape ping URL (default: https://landscape.canonical.com/ping)")
+            landscape_box.pack_start(ping_url_entry, False, False, 0)
+            
+            # Status label
+            landscape_status_label = Gtk.Label(label="")
+            landscape_box.pack_start(landscape_status_label, False, False, 0)
+            
+            # Save Landscape settings
+            save_landscape_btn = Gtk.Button(label="Save Landscape Configuration")
+            save_landscape_btn.set_tooltip_text("ℹ️ Save the Landscape configuration to local.yml")
+            def on_save_landscape(btn):
+                reg_key = reg_key_entry.get_text().strip()
+                account_name = account_name_entry.get_text().strip()
+                ping_url = ping_url_entry.get_text().strip()
+                
+                # Update local config with Landscape settings
+                local_config['landscape_registration_key'] = reg_key
+                local_config['landscape_account_name'] = account_name or 'standalone'
+                local_config['landscape_ping_url'] = ping_url or 'https://landscape.canonical.com/ping'
+                
+                # Use proper config manager to save
+                yaml_ruamel = YAML()
+                yaml_ruamel.preserve_quotes = True
+                with open(local_file, 'w') as f:
+                    yaml_ruamel.dump(local_config, f)
+                
+                landscape_status_label.set_text("Landscape configuration saved successfully!")
+                
+                # Refresh playbook list to update requirement status
+                if hasattr(self.main_window, 'playbook_manager'):
+                    self.main_window.playbook_manager.update_playbook_list()
+                
+            save_landscape_btn.connect("clicked", on_save_landscape)
+            landscape_box.pack_start(save_landscape_btn, False, False, 0)
+            
+            admin_notebook.append_page(landscape_box, Gtk.Label(label="Ubuntu Landscape"))
+
             # --- Application Tab ---
             application_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
             application_box.set_margin_start(15)
