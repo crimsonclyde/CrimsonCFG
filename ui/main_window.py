@@ -388,7 +388,7 @@ class CrimsonCFGGUI:
             self.status_label.set_text("Updating playbooks from external repository...")
             
             # Update external repository if configured
-            success = external_repo_manager.update_external_repo_sync(self.sudo_password)
+            success = external_repo_manager.update_external_repo_sync(self.sudo_password, self.logger)
             
             if not success:
                 self.status_label.set_text("Failed to update external repository. Check logs for details.")
@@ -423,7 +423,7 @@ class CrimsonCFGGUI:
         if self.debug:
             self.debug_manager.print("[DEBUG] Updating external repository...")
         try:
-            external_repo_manager.update_external_repo_sync(self.sudo_password)
+            external_repo_manager.update_external_repo_sync(self.sudo_password, self.logger)
             if self.debug:
                 self.debug_manager.print("[DEBUG] External repository updated successfully")
         except Exception as e:

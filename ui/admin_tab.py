@@ -280,7 +280,7 @@ class AdminTab(Gtk.Box):
                     # Update external repository if configured
                     from . import external_repo_manager
                     sudo_password = getattr(self.main_window, 'sudo_password', None)
-                    external_repo_manager.update_external_repo_sync(sudo_password)
+                    external_repo_manager.update_external_repo_sync(sudo_password, self.main_window.logger)
                     
                     # Regenerate config and update playbook list
                     self.main_window.config_manager.regenerate_gui_config()
